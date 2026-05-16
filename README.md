@@ -16,9 +16,9 @@ npm test
 
 ## Read next
 
-Read [HANDBOOK.md](./HANDBOOK.md) for the full explanation of Eyesharl as code and as a reasoning machine.
+Read [Handbook](https://eyereasoner.github.io/eyesharl/HANDBOOK) for the full explanation of Eyesharl as code and as a reasoning machine.
 
-Open [playground.html](./playground.html) for a self-contained browser playground with URL loading, autosave, share links, diagnostics, queries, and SRL/RDF Rules syntax selection.
+Open [Playground](https://eyereasoner.github.io/eyesharl/playground) for a self-contained browser playground with URL loading, autosave, share links, diagnostics, queries, and SRL/RDF Rules syntax selection.
 
 `npm run build` writes the command-line bundle to `eyesharl.js` and the browser API bundle to `dist/browser/eyesharl.browser.js`. In a browser, the bundle exposes the API as `window.eyesharl`.
 
