@@ -9,6 +9,7 @@ const cliEntry = 'src/cli.js';
 const cliOutput = 'eyesharl.js';
 const browserEntry = 'src/index.js';
 const browserOutput = 'dist/browser/eyesharl.browser.js';
+const playgroundOutput = 'playground.html';
 
 function toPosix(file) {
   return file.split(path.sep).join('/');
@@ -53,6 +54,24 @@ function collectGraph(entry) {
 
 function js(value) {
   return JSON.stringify(value);
+}
+
+
+function packageVersion() {
+  const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  if (!packageJson.version) throw new Error('package.json is missing a version');
+  return packageJson.version;
+}
+
+function syncPlaygroundVersion() {
+  const version = packageVersion();
+  const outPath = path.join(root, playgroundOutput);
+  const html = fs.readFileSync(outPath, 'utf8');
+  const pattern = /(window\.__EYESHARL_VERSION__\s*=\s*)["'][^"']*["']\s*;/;
+  if (!pattern.test(html)) throw new Error('Could not find window.__EYESHARL_VERSION__ in playground.html');
+  const next = html.replace(pattern, `$1${js(version)};`);
+  fs.writeFileSync(outPath, next, 'utf8');
+  console.log(`wrote ${playgroundOutput} version ${version}`);
 }
 
 function ensureParentDir(filename) {
@@ -153,3 +172,4 @@ function indent(source, spaces) {
 
 buildCli();
 buildBrowser();
+syncPlaygroundVersion();

@@ -36,6 +36,7 @@
     "pretest": "node tools/bundle.js",
     "test": "node --test test/*.test.js",
     "preversion": "npm test",
+    "version": "npm run build && git add eyesharl.js dist/browser/eyesharl.browser.js playground.html",
     "postversion": "git push origin HEAD --follow-tags"
   },
   "publishConfig": {
