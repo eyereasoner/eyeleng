@@ -1,0 +1,2 @@
+:alice :knowsNamed "Bob" .
+:team :firstMember :alice .

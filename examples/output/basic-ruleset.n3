@@ -1,0 +1,5 @@
+:alice :ancestorOf :bob .
+:alice :ancestorOf :carol .
+:bob :ancestorOf :carol .
+:bob :childOf :alice .
+:carol :childOf :bob .

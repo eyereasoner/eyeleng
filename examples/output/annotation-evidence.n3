@@ -1,0 +1,4 @@
+:test :hasNamedStatement :t .
+:test :hasStatement true .
+:test :statementAuthor :bob .
+:test :statementDate "2021-07-07"^^xsd:date .

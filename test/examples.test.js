@@ -22,7 +22,7 @@ function relativeExample(filename) {
 function collectExampleFiles(dir) {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'README.md') continue;
+    if (entry.name === 'README.md' || entry.name === 'output') continue;
     const filename = path.join(dir, entry.name);
     if (entry.isDirectory()) out.push(...collectExampleFiles(filename));
     else if (/\.(srl|ttl)$/i.test(entry.name)) out.push(filename);
@@ -39,14 +39,46 @@ function importResolver(target) {
   };
 }
 
-function runExampleFile(filename) {
-  const source = fs.readFileSync(filename, 'utf8');
-  return run(source, {
+function runOptions(filename) {
+  return {
     filename,
     baseIRI: pathToFileURL(filename).href,
     importResolver,
     syntax: filename.endsWith('.ttl') ? 'rdf' : undefined,
-  });
+    now: new Date('2026-05-15T12:34:56Z'),
+  };
+}
+
+function runExampleFile(filename) {
+  const source = fs.readFileSync(filename, 'utf8');
+  return run(source, runOptions(filename));
+}
+
+function runExampleFileToString(filename) {
+  const source = fs.readFileSync(filename, 'utf8');
+  return runToString(source, runOptions(filename));
+}
+
+function normalizeGolden(text) {
+  return String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimEnd();
+}
+
+function normalizeExampleOutput(text) {
+  return normalizeGolden(text).replace(/<file:\/\/\/[^>\s]*\/examples\//g, '<file:///__EXAMPLES__/');
+}
+
+function ensureGoldenNewline(text) {
+  const normalized = normalizeExampleOutput(text);
+  return normalized.length === 0 ? '' : `${normalized}\n`;
+}
+
+const goldenDir = path.join(examplesDir, 'output');
+const updateGoldens = process.env.UPDATE_EXAMPLE_GOLDENS === '1';
+
+function goldenPath(filename) {
+  const rel = relativeExample(filename);
+  const stem = path.basename(rel, path.extname(rel));
+  return path.join(goldenDir, `${stem}.n3`);
 }
 
 const expectedCheckExamples = new Map([
@@ -54,6 +86,14 @@ const expectedCheckExamples = new Map([
   ['unstratified-negation.srl', { status: 1, pattern: /unstratified-negation|Unstratified negation/ }],
   ['variable-predicate-dependency.srl', { status: 1, pattern: /unstratified-negation|Unstratified negation/ }],
   ['well-formedness-error.srl', { status: 1, pattern: /unbound-filter-variable|FILTER uses \?score/ }],
+]);
+
+const examplesWithoutGoldens = new Set([
+  // Static-check examples do not have ordinary inference output.
+  ...expectedCheckExamples.keys(),
+  // Large benchmark outputs are intentionally covered by test/deep-taxonomy.test.js.
+  'deep-taxonomy-10000.srl',
+  'deep-taxonomy-100000.srl',
 ]);
 
 for (const filename of collectExampleFiles(examplesDir)) {
@@ -70,6 +110,25 @@ for (const filename of collectExampleFiles(examplesDir)) {
     const result = runExampleFile(filename);
     assert.ok(Array.isArray(result.closure), rel);
     assert.ok(result.closure.length >= result.input.length, rel);
+  });
+}
+
+for (const filename of collectExampleFiles(examplesDir)) {
+  const rel = relativeExample(filename);
+  if (examplesWithoutGoldens.has(rel)) continue;
+
+  test(`example output matches golden: ${rel}`, () => {
+    const expectedPath = goldenPath(filename);
+    const actual = runExampleFileToString(filename);
+
+    if (updateGoldens) {
+      fs.mkdirSync(goldenDir, { recursive: true });
+      fs.writeFileSync(expectedPath, ensureGoldenNewline(actual), 'utf8');
+    }
+
+    assert.equal(fs.existsSync(expectedPath), true, `Missing golden output: ${path.relative(root, expectedPath)}`);
+    const expected = fs.readFileSync(expectedPath, 'utf8');
+    assert.equal(normalizeExampleOutput(actual), normalizeExampleOutput(expected), `${rel} output differs from ${path.relative(root, expectedPath)}`);
   });
 }
 

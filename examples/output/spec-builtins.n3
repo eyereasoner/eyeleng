@@ -1,0 +1,4 @@
+:event :blank _:event .
+:event :month 5 .
+:event :tripleSubject :subject .
+:event :year 2026 .

@@ -1,0 +1,3 @@
+:alice :parentOf :carol .
+:bob :childOf :alice .
+:dora :spouseOf :alice .

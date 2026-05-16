@@ -1,0 +1,6 @@
+:Adam :generation 0 .
+:Bob :generation 1 .
+:Carol :generation 1 .
+:Heidi :branch :b .
+:Ivan :branch :b .
+:Judy :branch :c .

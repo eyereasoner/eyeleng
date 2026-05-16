@@ -9,7 +9,7 @@ const { parseRdfSyntax, runToString, compile } = require('../src/index.js');
 const root = path.join(__dirname, '..');
 
 function example(name) {
-  return readFileSync(path.join(root, 'examples', 'rdf-syntax', name), 'utf8');
+  return readFileSync(path.join(root, 'examples', name), 'utf8');
 }
 
 test('RDF Rules syntax parses srl:RuleSet, srl:data and srl:rules lists', () => {

@@ -1,0 +1,4 @@
+:bob :knownBy :alice .
+:bob :scoredFor 8 .
+:carol :knownBy :alice .
+:carol :scoredFor 8 .

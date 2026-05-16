@@ -1,0 +1,4 @@
+:alice :statementSource :chat .
+:bob :statementSource :email .
+:claim1 :isClaim true .
+:claim2 :isClaim true .

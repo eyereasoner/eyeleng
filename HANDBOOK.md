@@ -791,7 +791,7 @@ The next pass adds nothing. The layer has reached a fixpoint, and the program is
 
 ## 25. W3C Draft Examples
 
-The directory `examples/w3c/` mirrors the examples from the SHACL 1.2 Rules Working Draft. These files serve two purposes.
+The `examples/spec-*` files mirror examples from the SHACL 1.2 Rules Working Draft. These files serve two purposes.
 
 First, the `.srl` files are executable regression examples. They cover the introductory rule examples: basic inference, recursion, filtering, negation, assignment, assignment guarded by negation, and the SRL syntax comparison example from section 4.
 
@@ -800,8 +800,8 @@ Second, the `.ttl` files preserve Turtle/RDF examples from the draft. Eyesharl c
 When adding future draft examples, keep this distinction clear:
 
 ```text
-examples/w3c/*.srl  executable SRL examples
-examples/w3c/*.ttl  captured RDF/Turtle sketches from the draft
+examples/spec-*.srl  executable SRL examples
+examples/spec-*.ttl  captured RDF/Turtle sketches from the draft
 ```
 
 The test file `test/w3c-examples.test.js` checks that all runnable W3C `.srl` examples execute through both the API and the bundled CLI.
@@ -988,16 +988,16 @@ become the same expression AST used by SRL `FILTER(?age < 18)`. Supported operat
 The CLI auto-detects `.ttl` input as RDF syntax, and also accepts explicit syntax selection:
 
 ```sh
-./eyesharl.js --syntax rdf examples/rdf-syntax/basic-ruleset.ttl
+./eyesharl.js --syntax rdf examples/basic-ruleset.ttl
 ```
 
 If a Turtle file contains several rule sets, select one with `--ruleset`:
 
 ```sh
-./eyesharl.js --syntax rdf --ruleset :familyRules examples/rdf-syntax/basic-ruleset.ttl
+./eyesharl.js --syntax rdf --ruleset :familyRules examples/basic-ruleset.ttl
 ```
 
-The examples in `examples/rdf-syntax/` are executable regression files. One of them, `w3c-rule-set-snippet.ttl`, is adapted from the W3C `data-shapes` repository's `shacl12-rules/rules-rdf-syntax/test-rules.ttl` file and exercises the same core vocabulary shape: `srl:RuleSet`, RDF lists, rule nodes, triple objects, filters, assignments, and triple terms in data blocks.
+The RDF syntax examples in `examples/*.ttl` are executable regression files. One of them, `w3c-rule-set-snippet.ttl`, is adapted from the W3C `data-shapes` repository's `shacl12-rules/rules-rdf-syntax/test-rules.ttl` file and exercises the same core vocabulary shape: `srl:RuleSet`, RDF lists, rule nodes, triple objects, filters, assignments, and triple terms in data blocks.
 
 This front-end is intentionally not a full SHACL validator. It can execute RDF Rules syntax rule sets, but it does not validate arbitrary RDF files against the `srl-sh:` SHACL shapes from the repository.
 

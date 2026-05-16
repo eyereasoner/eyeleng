@@ -1,0 +1,3 @@
+:A :childOf :C .
+:X :childOf :A .
+:X :childOf :B .

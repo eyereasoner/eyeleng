@@ -8,14 +8,14 @@ const { spawnSync } = require('node:child_process');
 const { runToString } = require('../src/index.js');
 
 const root = path.join(__dirname, '..');
-const w3cDir = path.join(root, 'examples', 'w3c');
+const examplesDir = path.join(root, 'examples');
 
 function read(name) {
-  return fs.readFileSync(path.join(w3cDir, name), 'utf8');
+  return fs.readFileSync(path.join(examplesDir, name), 'utf8');
 }
 
-test('W3C draft example files are present', () => {
-  const names = new Set(fs.readdirSync(w3cDir));
+test('W3C draft example files are present at examples/ level', () => {
+  const names = new Set(fs.readdirSync(examplesDir));
   for (const name of [
     'spec-2-1-basic-usage.srl',
     'spec-2-1-descended-from.srl',
@@ -80,18 +80,18 @@ test('W3C section 4.1 SRL syntax example runs', () => {
 });
 
 test('W3C section 4.2 RDF Rules syntax example runs', () => {
-  const result = spawnSync(process.execPath, [path.join(root, 'eyesharl.js'), '--syntax', 'rdf', path.join(w3cDir, 'spec-4-2-rdf-rules-syntax.ttl')], { encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [path.join(root, 'eyesharl.js'), '--syntax', 'rdf', path.join(examplesDir, 'spec-4-2-rdf-rules-syntax.ttl')], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /:x :bothPositive true \./);
   assert.doesNotMatch(result.stdout, /:x :oneIsZero true/);
 });
 
 test('bundled CLI runs every W3C example file', () => {
-  const files = fs.readdirSync(w3cDir).filter((name) => /\.(srl|ttl)$/i.test(name)).sort();
+  const files = fs.readdirSync(examplesDir).filter((name) => /^spec-.*\.(srl|ttl)$/i.test(name)).sort();
   for (const file of files) {
     const args = [path.join(root, 'eyesharl.js')];
     if (file.endsWith('.ttl')) args.push('--syntax', 'rdf');
-    args.push(path.join(w3cDir, file));
+    args.push(path.join(examplesDir, file));
     const result = spawnSync(process.execPath, args, { encoding: 'utf8' });
     assert.equal(result.status, 0, `${file}\nSTDERR:\n${result.stderr}`);
     assert.equal(result.stderr, '', `${file} should not emit warnings`);

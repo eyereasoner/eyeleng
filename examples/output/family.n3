@@ -1,0 +1,7 @@
+:A :childOf :C .
+:A :descendedFrom :C .
+:X :childOf :A .
+:X :childOf :B .
+:X :descendedFrom :A .
+:X :descendedFrom :B .
+:X :descendedFrom :C .

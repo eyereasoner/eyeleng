@@ -1,0 +1,2 @@
+:alice :statementSource :chat .
+:bob :statementSource :email .
