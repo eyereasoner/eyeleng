@@ -139,6 +139,15 @@ test('family example derives descendants', () => {
   assert.match(output, /:X :descendedFrom :C \./);
 });
 
+
+test('family-cousins example derives generations and cousins without recursive SET', () => {
+  const output = runToString(example('family-cousins.srl'));
+  assert.match(output, /:Dave :generation 2 \./);
+  assert.match(output, /:Heidi :generation 3 \./);
+  assert.match(output, /:Dave :cousin :Frank \./);
+  assert.match(output, /:Heidi :cousin :Judy \./);
+});
+
 test('negation example excludes blocked people', () => {
   const output = runToString(example('negation.srl'));
   assert.match(output, /:alice :eligible true \./);
