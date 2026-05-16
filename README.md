@@ -18,6 +18,10 @@ npm test
 
 Read [HANDBOOK.md](./HANDBOOK.md) for the full explanation of Eyesharl as code and as a reasoning machine.
 
+Open [playground.html](./playground.html) for a self-contained browser playground with URL loading, autosave, share links, diagnostics, queries, and SRL/RDF Rules syntax selection.
+
+`npm run build` writes the command-line bundle to `eyesharl.js` and the browser API bundle to `dist/browser/eyesharl.browser.js`. In a browser, the bundle exposes the API as `window.eyesharl`.
+
 The examples live in [examples/](./examples/) at one level. Draft SRL examples are named `spec-*.srl`, RDF Rules syntax examples use `.ttl`, and deep taxonomy benchmarks are named `deep-taxonomy-*.srl`.
 
 Status: Eyesharl runs a growing implementation of the SHACL 1.2 Rules draft surface. It is not a conformance claim and does not implement SHACL validation.
