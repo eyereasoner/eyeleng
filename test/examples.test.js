@@ -78,7 +78,7 @@ const updateGoldens = process.env.UPDATE_EXAMPLE_GOLDENS === '1';
 function goldenPath(filename) {
   const rel = relativeExample(filename);
   const stem = path.basename(rel, path.extname(rel));
-  return path.join(goldenDir, `${stem}.n3`);
+  return path.join(goldenDir, `${stem}.trig`);
 }
 
 const expectedCheckExamples = new Map([
@@ -126,7 +126,7 @@ for (const filename of collectExampleFiles(examplesDir)) {
       fs.writeFileSync(expectedPath, ensureGoldenNewline(actual), 'utf8');
     }
 
-    assert.equal(fs.existsSync(expectedPath), true, `Missing golden output: ${path.relative(root, expectedPath)}`);
+    assert.equal(fs.existsSync(expectedPath), true, `Missing golden TriG output: ${path.relative(root, expectedPath)}`);
     const expected = fs.readFileSync(expectedPath, 'utf8');
     assert.equal(normalizeExampleOutput(actual), normalizeExampleOutput(expected), `${rel} output differs from ${path.relative(root, expectedPath)}`);
   });

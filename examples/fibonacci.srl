@@ -1,0 +1,34 @@
+# Adapted from eyeling/examples/fibonacci.n3
+# Uses a bounded successor chain and explicit SRL rules so the forward examples
+# derive Fibonacci values without requiring backward evaluation.
+
+PREFIX : <http://example/eyeling/fibonacci/>
+
+DATA {
+  :n0 :index 0 ; :fib 0 .
+  :n1 :index 1 ; :fib 1 .
+}
+
+RULE { :n2 :index 2 ; :fib ?sum }
+WHERE { :n0 :fib ?a . :n1 :fib ?b . SET(?sum := ?a + ?b) }
+
+RULE { :n3 :index 3 ; :fib ?sum }
+WHERE { :n1 :fib ?a . :n2 :fib ?b . SET(?sum := ?a + ?b) }
+
+RULE { :n4 :index 4 ; :fib ?sum }
+WHERE { :n2 :fib ?a . :n3 :fib ?b . SET(?sum := ?a + ?b) }
+
+RULE { :n5 :index 5 ; :fib ?sum }
+WHERE { :n3 :fib ?a . :n4 :fib ?b . SET(?sum := ?a + ?b) }
+
+RULE { :n6 :index 6 ; :fib ?sum }
+WHERE { :n4 :fib ?a . :n5 :fib ?b . SET(?sum := ?a + ?b) }
+
+RULE { :n7 :index 7 ; :fib ?sum }
+WHERE { :n5 :fib ?a . :n6 :fib ?b . SET(?sum := ?a + ?b) }
+
+RULE { :n8 :index 8 ; :fib ?sum }
+WHERE { :n6 :fib ?a . :n7 :fib ?b . SET(?sum := ?a + ?b) }
+
+RULE { :test :fib8 ?value }
+WHERE { :n8 :fib ?value }

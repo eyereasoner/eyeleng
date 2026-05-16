@@ -1,0 +1,3 @@
+:test :blankNodeProperty :q .
+:test :first 1 .
+:test :nestedFirst 2 .
