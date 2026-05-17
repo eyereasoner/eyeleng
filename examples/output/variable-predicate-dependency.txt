@@ -1,0 +1,1 @@
+eyesharl: error: Unstratified negation through rule#1 -> rule#2 using :blocked

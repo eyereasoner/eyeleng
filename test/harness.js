@@ -47,7 +47,7 @@ function createHarness(section) {
 
   async function main() {
     const suiteStart = Date.now();
-    const idxWidth = String(Math.max(1, tests.length)).length;
+    const idxWidth = Math.max(3, String(Math.max(1, tests.length)).length);
     let passed = 0;
     let failed = 0;
 
