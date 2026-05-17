@@ -2505,10 +2505,10 @@
               throw new Error(`Unsupported body clause ${clause.type}`);
             }
           }
-          bindings = uniqueBindings(next);
+          bindings = next;
           if (bindings.length === 0) break;
         }
-        return bindings;
+        return bindings.length > 1 ? uniqueBindings(bindings) : bindings;
       }
       
       function uniqueBindings(bindings) {
@@ -2594,16 +2594,24 @@
         }
       
         matchPath(pattern, binding = {}) {
-          const out = [];
-          for (const pair of pathPairs(this, pattern.p)) {
-            let next = mergeBindingTerm(binding, pattern.s, pair.s);
-            if (!next) continue;
-            next = mergeBindingTerm(next, pattern.o, pair.o);
-            if (next) out.push(next);
-          }
-          return out;
+          const prefix = `__path_${pathCallCounter++}_`;
+          const tempVars = [];
+          const bindings = matchPathExpression(this, pattern.p, pattern.s, pattern.o, binding, prefix, tempVars);
+          if (tempVars.length === 0) return bindings;
+          return bindings.map((matched) => {
+            let cleaned = matched;
+            for (const name of tempVars) {
+              if (Object.prototype.hasOwnProperty.call(cleaned, name)) {
+                if (cleaned === matched) cleaned = { ...matched };
+                delete cleaned[name];
+              }
+            }
+            return cleaned;
+          });
         }
       }
+      
+      let pathCallCounter = 0;
       
       function addIndex(index, key, tripleKeyValue, triple) {
         if (!index.has(key)) index.set(key, new Map());
@@ -2684,6 +2692,41 @@
         if (!s || !p || !o) return null;
         if (p.type !== 'iri') return null;
         return { s, p, o };
+      }
+      
+      function matchPathExpression(store, path, start, end, binding, tempPrefix, tempVars) {
+        if (!path || path.type !== 'path') return store.match({ s: start, p: path, o: end }, binding);
+      
+        if (path.kind === 'iri') return store.match({ s: start, p: path.iri, o: end }, binding);
+      
+        if (path.kind === 'inverse') {
+          return matchPathExpression(store, path.path, end, start, binding, tempPrefix, tempVars);
+        }
+      
+        if (path.kind === 'sequence') {
+          let bindings = [binding];
+          let currentStart = start;
+          for (let index = 0; index < path.parts.length; index += 1) {
+            let currentEnd = end;
+            if (index + 1 < path.parts.length) {
+              const tempName = `${tempPrefix}${tempVars.length}`;
+              currentEnd = { type: 'var', value: tempName };
+              tempVars.push(tempName);
+            }
+            const next = [];
+            for (const candidate of bindings) {
+              for (const matched of matchPathExpression(store, path.parts[index], currentStart, currentEnd, candidate, tempPrefix, tempVars)) {
+                next.push(matched);
+              }
+            }
+            if (next.length === 0) return [];
+            bindings = next;
+            currentStart = currentEnd;
+          }
+          return bindings;
+        }
+      
+        throw new Error(`Unsupported path kind ${path.kind}`);
       }
       
       function pathPairs(store, path) {

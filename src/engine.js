@@ -208,10 +208,10 @@ function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
         throw new Error(`Unsupported body clause ${clause.type}`);
       }
     }
-    bindings = uniqueBindings(next);
+    bindings = next;
     if (bindings.length === 0) break;
   }
-  return bindings;
+  return bindings.length > 1 ? uniqueBindings(bindings) : bindings;
 }
 
 function uniqueBindings(bindings) {
