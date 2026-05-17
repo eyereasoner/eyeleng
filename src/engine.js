@@ -6,7 +6,7 @@ const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
 const { analyze } = require('./analyze.js');
 
 function evaluate(program, options = {}) {
-  const maxIterations = options.maxIterations ?? 1000;
+  const maxIterations = options.maxIterations ?? 10000;
   const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
   const store = new TripleStore(program.data);
   const inputKeys = new Set(program.data.map(tripleKey));

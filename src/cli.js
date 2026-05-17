@@ -48,7 +48,7 @@ function parseArgs(argv) {
     deps: false,
     query: null,
     queryFile: null,
-    maxIterations: 1000,
+    maxIterations: 10000,
     imports: true,
     syntax: 'auto',
     ruleSet: null,

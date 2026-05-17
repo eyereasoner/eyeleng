@@ -116,8 +116,8 @@ function evalExpression(expr, binding, options = {}) {
     case 'unary': {
       const value = evalExpression(expr.expr, binding, options);
       if (expr.op === '!') return !booleanValue(value);
-      if (expr.op === '-') return -Number(termToPrimitive(valueToTermIfNeeded(value)));
-      if (expr.op === '+') return Number(termToPrimitive(valueToTermIfNeeded(value)));
+      if (expr.op === '-') return negateNumeric(termToPrimitive(valueToTermIfNeeded(value)));
+      if (expr.op === '+') return unaryPlusNumeric(termToPrimitive(valueToTermIfNeeded(value)));
       throw new Error(`Unsupported unary operator ${expr.op}`);
     }
     case 'binary': {
@@ -162,13 +162,73 @@ function evalBinary(op, left, right) {
   const lp = termToPrimitive(valueToTermIfNeeded(left));
   const rp = termToPrimitive(valueToTermIfNeeded(right));
   if (op === '+') {
-    if (typeof lp === 'number' && typeof rp === 'number') return lp + rp;
+    if (isNumericPrimitive(lp) && isNumericPrimitive(rp)) return addNumeric(lp, rp);
     return String(lp) + String(rp);
   }
-  if (op === '-') return Number(lp) - Number(rp);
-  if (op === '*') return Number(lp) * Number(rp);
+  if (op === '-') return subtractNumeric(lp, rp);
+  if (op === '*') return multiplyNumeric(lp, rp);
   if (op === '/') return Number(lp) / Number(rp);
   throw new Error(`Unsupported binary operator ${op}`);
+}
+
+
+function isNumericPrimitive(value) {
+  return typeof value === 'number' || typeof value === 'bigint';
+}
+
+function isIntegerPrimitive(value) {
+  return typeof value === 'bigint' || (typeof value === 'number' && Number.isInteger(value));
+}
+
+function toBigIntInteger(value) {
+  if (typeof value === 'bigint') return value;
+  if (typeof value === 'number' && Number.isInteger(value) && Number.isSafeInteger(value)) return BigInt(value);
+  throw new Error(`Cannot convert ${String(value)} to BigInt safely`);
+}
+
+function fromIntegerResult(value) {
+  if (value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)) return Number(value);
+  return value;
+}
+
+function addNumeric(left, right) {
+  if (isIntegerPrimitive(left) && isIntegerPrimitive(right)) {
+    if (typeof left === 'bigint' || typeof right === 'bigint') return fromIntegerResult(toBigIntInteger(left) + toBigIntInteger(right));
+    const result = left + right;
+    if (Number.isSafeInteger(result)) return result;
+    return toBigIntInteger(left) + toBigIntInteger(right);
+  }
+  return Number(left) + Number(right);
+}
+
+function subtractNumeric(left, right) {
+  if (isIntegerPrimitive(left) && isIntegerPrimitive(right)) {
+    if (typeof left === 'bigint' || typeof right === 'bigint') return fromIntegerResult(toBigIntInteger(left) - toBigIntInteger(right));
+    const result = left - right;
+    if (Number.isSafeInteger(result)) return result;
+    return toBigIntInteger(left) - toBigIntInteger(right);
+  }
+  return Number(left) - Number(right);
+}
+
+function multiplyNumeric(left, right) {
+  if (isIntegerPrimitive(left) && isIntegerPrimitive(right)) {
+    if (typeof left === 'bigint' || typeof right === 'bigint') return fromIntegerResult(toBigIntInteger(left) * toBigIntInteger(right));
+    const result = left * right;
+    if (Number.isSafeInteger(result)) return result;
+    return toBigIntInteger(left) * toBigIntInteger(right);
+  }
+  return Number(left) * Number(right);
+}
+
+function negateNumeric(value) {
+  if (typeof value === 'bigint') return -value;
+  return -Number(value);
+}
+
+function unaryPlusNumeric(value) {
+  if (typeof value === 'bigint') return value;
+  return Number(value);
 }
 
 function valueToTermIfNeeded(value) {
@@ -319,6 +379,7 @@ function datatypeOf(value) {
 
 function isNumericValue(value) {
   const term = valueToTermIfNeeded(value);
+  if (typeof termToPrimitive(term) === 'bigint') return true;
   if (typeof termToPrimitive(term) === 'number') return true;
   return term.type === 'literal' && NUMERIC_DATATYPES.has(term.datatype);
 }

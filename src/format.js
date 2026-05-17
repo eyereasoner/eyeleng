@@ -51,12 +51,34 @@ function toJSON(result, options = {}) {
     perRule: result.perRule,
     prefixes: result.prefixes,
     diagnostics: result.diagnostics || [],
-    triples: sortTriples(triples, result.prefixes),
+    triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
     trace: options.trace ? result.trace : undefined,
   };
-  if (result.query) json.query = result.query;
+  if (result.query) json.query = jsonSafeValue(result.query);
   if (result.analysis && options.analysis) json.analysis = result.analysis;
   return json;
+}
+
+
+function jsonSafeTriple(triple) {
+  return { s: jsonSafeTerm(triple.s), p: jsonSafeTerm(triple.p), o: jsonSafeTerm(triple.o) };
+}
+
+function jsonSafeTerm(term) {
+  if (!term || typeof term !== 'object') return jsonSafeValue(term);
+  if (term.type === 'triple') return { type: 'triple', s: jsonSafeTerm(term.s), p: jsonSafeTerm(term.p), o: jsonSafeTerm(term.o) };
+  if (term.type === 'literal' && typeof term.value === 'bigint') return { ...term, value: term.value.toString() };
+  return { ...term };
+}
+
+function jsonSafeValue(value) {
+  if (typeof value === 'bigint') return value.toString();
+  if (Array.isArray(value)) return value.map(jsonSafeValue);
+  if (value && typeof value === 'object') {
+    if (value.type) return jsonSafeTerm(value);
+    return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, jsonSafeValue(val)]));
+  }
+  return value;
 }
 
 module.exports = { sortTriples, formatTriples, formatTrace, formatBindings, formatBinding, toJSON };

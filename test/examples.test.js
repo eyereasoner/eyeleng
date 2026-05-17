@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('node:test');
+const { test, main } = require('./harness.js').createHarness('Examples');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -289,3 +289,5 @@ test('NOW and language builtins example runs', () => {
   assert.match(output, /:msg :sameLanguageLiteral true \./);
   assert.match(output, /:clock :snapshot "2026-05-15T12:34:56\.000Z"\^\^xsd:dateTime \./);
 });
+
+main();

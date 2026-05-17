@@ -244,11 +244,16 @@ function containsVariableTerm(term) {
   return false;
 }
 
+function literalIndexValue(value) {
+  if (typeof value === 'bigint') return `${value.toString()}n`;
+  return JSON.stringify(value);
+}
+
 function termIndexKey(term) {
   if (!term) return 'null';
   if (term.type === 'iri') return `I:${term.value}`;
   if (term.type === 'blank') return `B:${term.value}`;
-  if (term.type === 'literal') return `L:${JSON.stringify(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
+  if (term.type === 'literal') return `L:${literalIndexValue(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
   if (term.type === 'triple') return `T:${termIndexKey(term.s)} ${termIndexKey(term.p)} ${termIndexKey(term.o)}`;
   return JSON.stringify(term);
 }

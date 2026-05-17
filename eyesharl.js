@@ -54,7 +54,7 @@
           deps: false,
           query: null,
           queryFile: null,
-          maxIterations: 1000,
+          maxIterations: 10000,
           imports: true,
           syntax: 'auto',
           ruleSet: null,
@@ -1020,8 +1020,14 @@
         return literal(value, XSD_DECIMAL);
       }
       
+      function parseIntegerLiteral(value) {
+        const text = String(value);
+        const asNumber = Number.parseInt(text, 10);
+        return Number.isSafeInteger(asNumber) && String(asNumber) === text.replace(/^\+/, '') ? asNumber : BigInt(text);
+      }
+      
       function coerceLexicalLiteral(value, datatype) {
-        if (datatype === XSD_INTEGER) return Number.parseInt(value, 10);
+        if (datatype === XSD_INTEGER) return parseIntegerLiteral(value);
         if (datatype === XSD_DECIMAL || datatype === XSD_DOUBLE) return Number.parseFloat(value);
         if (datatype === XSD_BOOLEAN) return value === 'true' || value === '1';
         return value;
@@ -1429,8 +1435,8 @@
           case 'unary': {
             const value = evalExpression(expr.expr, binding, options);
             if (expr.op === '!') return !booleanValue(value);
-            if (expr.op === '-') return -Number(termToPrimitive(valueToTermIfNeeded(value)));
-            if (expr.op === '+') return Number(termToPrimitive(valueToTermIfNeeded(value)));
+            if (expr.op === '-') return negateNumeric(termToPrimitive(valueToTermIfNeeded(value)));
+            if (expr.op === '+') return unaryPlusNumeric(termToPrimitive(valueToTermIfNeeded(value)));
             throw new Error(`Unsupported unary operator ${expr.op}`);
           }
           case 'binary': {
@@ -1475,13 +1481,73 @@
         const lp = termToPrimitive(valueToTermIfNeeded(left));
         const rp = termToPrimitive(valueToTermIfNeeded(right));
         if (op === '+') {
-          if (typeof lp === 'number' && typeof rp === 'number') return lp + rp;
+          if (isNumericPrimitive(lp) && isNumericPrimitive(rp)) return addNumeric(lp, rp);
           return String(lp) + String(rp);
         }
-        if (op === '-') return Number(lp) - Number(rp);
-        if (op === '*') return Number(lp) * Number(rp);
+        if (op === '-') return subtractNumeric(lp, rp);
+        if (op === '*') return multiplyNumeric(lp, rp);
         if (op === '/') return Number(lp) / Number(rp);
         throw new Error(`Unsupported binary operator ${op}`);
+      }
+      
+      
+      function isNumericPrimitive(value) {
+        return typeof value === 'number' || typeof value === 'bigint';
+      }
+      
+      function isIntegerPrimitive(value) {
+        return typeof value === 'bigint' || (typeof value === 'number' && Number.isInteger(value));
+      }
+      
+      function toBigIntInteger(value) {
+        if (typeof value === 'bigint') return value;
+        if (typeof value === 'number' && Number.isInteger(value) && Number.isSafeInteger(value)) return BigInt(value);
+        throw new Error(`Cannot convert ${String(value)} to BigInt safely`);
+      }
+      
+      function fromIntegerResult(value) {
+        if (value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)) return Number(value);
+        return value;
+      }
+      
+      function addNumeric(left, right) {
+        if (isIntegerPrimitive(left) && isIntegerPrimitive(right)) {
+          if (typeof left === 'bigint' || typeof right === 'bigint') return fromIntegerResult(toBigIntInteger(left) + toBigIntInteger(right));
+          const result = left + right;
+          if (Number.isSafeInteger(result)) return result;
+          return toBigIntInteger(left) + toBigIntInteger(right);
+        }
+        return Number(left) + Number(right);
+      }
+      
+      function subtractNumeric(left, right) {
+        if (isIntegerPrimitive(left) && isIntegerPrimitive(right)) {
+          if (typeof left === 'bigint' || typeof right === 'bigint') return fromIntegerResult(toBigIntInteger(left) - toBigIntInteger(right));
+          const result = left - right;
+          if (Number.isSafeInteger(result)) return result;
+          return toBigIntInteger(left) - toBigIntInteger(right);
+        }
+        return Number(left) - Number(right);
+      }
+      
+      function multiplyNumeric(left, right) {
+        if (isIntegerPrimitive(left) && isIntegerPrimitive(right)) {
+          if (typeof left === 'bigint' || typeof right === 'bigint') return fromIntegerResult(toBigIntInteger(left) * toBigIntInteger(right));
+          const result = left * right;
+          if (Number.isSafeInteger(result)) return result;
+          return toBigIntInteger(left) * toBigIntInteger(right);
+        }
+        return Number(left) * Number(right);
+      }
+      
+      function negateNumeric(value) {
+        if (typeof value === 'bigint') return -value;
+        return -Number(value);
+      }
+      
+      function unaryPlusNumeric(value) {
+        if (typeof value === 'bigint') return value;
+        return Number(value);
       }
       
       function valueToTermIfNeeded(value) {
@@ -1632,6 +1698,7 @@
       
       function isNumericValue(value) {
         const term = valueToTermIfNeeded(value);
+        if (typeof termToPrimitive(term) === 'bigint') return true;
         if (typeof termToPrimitive(term) === 'number') return true;
         return term.type === 'literal' && NUMERIC_DATATYPES.has(term.datatype);
       }
@@ -1762,12 +1829,45 @@
         return termKey(a) === termKey(b);
       }
       
+      function literalKeyValue(value) {
+        if (typeof value === 'bigint') return `${value.toString()}n`;
+        return JSON.stringify(value);
+      }
+      
+      function isNumericPrimitive(value) {
+        return typeof value === 'number' || typeof value === 'bigint';
+      }
+      
+      function compareNumericPrimitives(a, b) {
+        if (typeof a === 'bigint' && typeof b === 'bigint') {
+          if (a < b) return -1;
+          if (a > b) return 1;
+          return 0;
+        }
+        if (typeof a === 'bigint' && typeof b === 'number' && Number.isInteger(b) && Number.isSafeInteger(b)) {
+          const bi = BigInt(b);
+          if (a < bi) return -1;
+          if (a > bi) return 1;
+          return 0;
+        }
+        if (typeof a === 'number' && typeof b === 'bigint' && Number.isInteger(a) && Number.isSafeInteger(a)) {
+          const ai = BigInt(a);
+          if (ai < b) return -1;
+          if (ai > b) return 1;
+          return 0;
+        }
+        const diff = Number(a) - Number(b);
+        if (diff < 0) return -1;
+        if (diff > 0) return 1;
+        return 0;
+      }
+      
       function termKey(term) {
         if (!term) return 'null';
         if (term.type === 'iri') return `I:${term.value}`;
         if (term.type === 'blank') return `B:${term.value}`;
         if (term.type === 'var') return `V:${term.value}`;
-        if (term.type === 'literal') return `L:${JSON.stringify(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
+        if (term.type === 'literal') return `L:${literalKeyValue(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
         if (term.type === 'triple') return `T:${termKey(term.s)} ${termKey(term.p)} ${termKey(term.o)}`;
         return JSON.stringify(term);
       }
@@ -1789,6 +1889,7 @@
       
       function inferDatatype(value) {
         if (typeof value === 'boolean') return XSD_BOOLEAN;
+        if (typeof value === 'bigint') return XSD_INTEGER;
         if (typeof value === 'number' && Number.isInteger(value)) return XSD_INTEGER;
         if (typeof value === 'number') return XSD_DECIMAL;
         if (typeof value === 'string') return XSD_STRING;
@@ -1816,6 +1917,7 @@
         const primitive = value && value.type ? termToPrimitive(value) : value;
         if (primitive === undefined || primitive === null) return false;
         if (typeof primitive === 'boolean') return primitive;
+        if (typeof primitive === 'bigint') return primitive !== 0n;
         if (typeof primitive === 'number') return primitive !== 0 && !Number.isNaN(primitive);
         if (typeof primitive === 'string') return primitive.length > 0 && primitive !== 'false';
         return Boolean(primitive);
@@ -1824,7 +1926,7 @@
       function comparePrimitives(a, b) {
         const av = a && a.type ? termToPrimitive(a) : a;
         const bv = b && b.type ? termToPrimitive(b) : b;
-        if (typeof av === 'number' && typeof bv === 'number') return av - bv;
+        if (isNumericPrimitive(av) && isNumericPrimitive(bv)) return compareNumericPrimitives(av, bv);
         const as = String(av);
         const bs = String(bv);
         if (as < bs) return -1;
@@ -1863,6 +1965,7 @@
         if (term.type === 'triple') return `<<(${formatTerm(term.s, prefixes)} ${formatTerm(term.p, prefixes)} ${formatTerm(term.o, prefixes)})>>`;
         if (term.type === 'literal') {
           const v = term.value;
+          if (typeof v === 'bigint' && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER)) return String(v);
           if (typeof v === 'number' && Number.isFinite(v) && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER || term.datatype === XSD_DECIMAL || term.datatype === XSD_DOUBLE)) return String(v);
           if (typeof v === 'boolean' && !term.lang && (!term.datatype || term.datatype === XSD_BOOLEAN)) return v ? 'true' : 'false';
           const lexical = `"${escapeString(v)}"`;
@@ -2487,8 +2590,14 @@
         return literal(value, XSD_DECIMAL);
       }
       
+      function parseIntegerLiteral(value) {
+        const text = String(value);
+        const asNumber = Number.parseInt(text, 10);
+        return Number.isSafeInteger(asNumber) && String(asNumber) === text.replace(/^\+/, '') ? asNumber : BigInt(text);
+      }
+      
       function coerceLexicalLiteral(value, datatype) {
-        if (datatype === XSD_INTEGER) return Number.parseInt(value, 10);
+        if (datatype === XSD_INTEGER) return parseIntegerLiteral(value);
         if (datatype === XSD_DECIMAL || datatype === XSD_DOUBLE) return Number(value);
         if (datatype === XSD_BOOLEAN) return value === true || value === 'true' || value === '1';
         return value;
@@ -2527,7 +2636,7 @@
       const { analyze } = require('./analyze.js');
       
       function evaluate(program, options = {}) {
-        const maxIterations = options.maxIterations ?? 1000;
+        const maxIterations = options.maxIterations ?? 10000;
         const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
         const store = new TripleStore(program.data);
         const inputKeys = new Set(program.data.map(tripleKey));
@@ -3256,11 +3365,16 @@
         return false;
       }
       
+      function literalIndexValue(value) {
+        if (typeof value === 'bigint') return `${value.toString()}n`;
+        return JSON.stringify(value);
+      }
+      
       function termIndexKey(term) {
         if (!term) return 'null';
         if (term.type === 'iri') return `I:${term.value}`;
         if (term.type === 'blank') return `B:${term.value}`;
-        if (term.type === 'literal') return `L:${JSON.stringify(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
+        if (term.type === 'literal') return `L:${literalIndexValue(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
         if (term.type === 'triple') return `T:${termIndexKey(term.s)} ${termIndexKey(term.p)} ${termIndexKey(term.o)}`;
         return JSON.stringify(term);
       }
@@ -3696,12 +3810,34 @@
           perRule: result.perRule,
           prefixes: result.prefixes,
           diagnostics: result.diagnostics || [],
-          triples: sortTriples(triples, result.prefixes),
+          triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
           trace: options.trace ? result.trace : undefined,
         };
-        if (result.query) json.query = result.query;
+        if (result.query) json.query = jsonSafeValue(result.query);
         if (result.analysis && options.analysis) json.analysis = result.analysis;
         return json;
+      }
+      
+      
+      function jsonSafeTriple(triple) {
+        return { s: jsonSafeTerm(triple.s), p: jsonSafeTerm(triple.p), o: jsonSafeTerm(triple.o) };
+      }
+      
+      function jsonSafeTerm(term) {
+        if (!term || typeof term !== 'object') return jsonSafeValue(term);
+        if (term.type === 'triple') return { type: 'triple', s: jsonSafeTerm(term.s), p: jsonSafeTerm(term.p), o: jsonSafeTerm(term.o) };
+        if (term.type === 'literal' && typeof term.value === 'bigint') return { ...term, value: term.value.toString() };
+        return { ...term };
+      }
+      
+      function jsonSafeValue(value) {
+        if (typeof value === 'bigint') return value.toString();
+        if (Array.isArray(value)) return value.map(jsonSafeValue);
+        if (value && typeof value === 'object') {
+          if (value.type) return jsonSafeTerm(value);
+          return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, jsonSafeValue(val)]));
+        }
+        return value;
       }
       
       module.exports = { sortTriples, formatTriples, formatTrace, formatBindings, formatBinding, toJSON };

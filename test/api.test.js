@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('node:test');
+const { test, main } = require('./harness.js').createHarness('API');
 const assert = require('node:assert/strict');
 const { parse, compile, run, runToString } = require('../src/index.js');
 
@@ -423,3 +423,5 @@ RULE { :clock :consistent true ; :snapshot ?t1 } WHERE {
   assert.match(output, /:clock :consistent true \./);
   assert.match(output, /:clock :snapshot "2026-05-15T12:34:56\.000Z"\^\^xsd:dateTime \./);
 });
+
+main();

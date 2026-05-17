@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('node:test');
+const { test, main } = require('./harness.js').createHarness('Built-ins');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { readFileSync } = require('node:fs');
@@ -70,3 +70,5 @@ RULE { :x :ok ?value } WHERE { SET(?value := IF(false, :missingFunction(), "safe
 `);
   assert.match(output, /:x :ok "safe" \./);
 });
+
+main();

@@ -56,12 +56,45 @@ function termEquals(a, b) {
   return termKey(a) === termKey(b);
 }
 
+function literalKeyValue(value) {
+  if (typeof value === 'bigint') return `${value.toString()}n`;
+  return JSON.stringify(value);
+}
+
+function isNumericPrimitive(value) {
+  return typeof value === 'number' || typeof value === 'bigint';
+}
+
+function compareNumericPrimitives(a, b) {
+  if (typeof a === 'bigint' && typeof b === 'bigint') {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+  }
+  if (typeof a === 'bigint' && typeof b === 'number' && Number.isInteger(b) && Number.isSafeInteger(b)) {
+    const bi = BigInt(b);
+    if (a < bi) return -1;
+    if (a > bi) return 1;
+    return 0;
+  }
+  if (typeof a === 'number' && typeof b === 'bigint' && Number.isInteger(a) && Number.isSafeInteger(a)) {
+    const ai = BigInt(a);
+    if (ai < b) return -1;
+    if (ai > b) return 1;
+    return 0;
+  }
+  const diff = Number(a) - Number(b);
+  if (diff < 0) return -1;
+  if (diff > 0) return 1;
+  return 0;
+}
+
 function termKey(term) {
   if (!term) return 'null';
   if (term.type === 'iri') return `I:${term.value}`;
   if (term.type === 'blank') return `B:${term.value}`;
   if (term.type === 'var') return `V:${term.value}`;
-  if (term.type === 'literal') return `L:${JSON.stringify(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
+  if (term.type === 'literal') return `L:${literalKeyValue(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
   if (term.type === 'triple') return `T:${termKey(term.s)} ${termKey(term.p)} ${termKey(term.o)}`;
   return JSON.stringify(term);
 }
@@ -83,6 +116,7 @@ function valueToTerm(value) {
 
 function inferDatatype(value) {
   if (typeof value === 'boolean') return XSD_BOOLEAN;
+  if (typeof value === 'bigint') return XSD_INTEGER;
   if (typeof value === 'number' && Number.isInteger(value)) return XSD_INTEGER;
   if (typeof value === 'number') return XSD_DECIMAL;
   if (typeof value === 'string') return XSD_STRING;
@@ -110,6 +144,7 @@ function booleanValue(value) {
   const primitive = value && value.type ? termToPrimitive(value) : value;
   if (primitive === undefined || primitive === null) return false;
   if (typeof primitive === 'boolean') return primitive;
+  if (typeof primitive === 'bigint') return primitive !== 0n;
   if (typeof primitive === 'number') return primitive !== 0 && !Number.isNaN(primitive);
   if (typeof primitive === 'string') return primitive.length > 0 && primitive !== 'false';
   return Boolean(primitive);
@@ -118,7 +153,7 @@ function booleanValue(value) {
 function comparePrimitives(a, b) {
   const av = a && a.type ? termToPrimitive(a) : a;
   const bv = b && b.type ? termToPrimitive(b) : b;
-  if (typeof av === 'number' && typeof bv === 'number') return av - bv;
+  if (isNumericPrimitive(av) && isNumericPrimitive(bv)) return compareNumericPrimitives(av, bv);
   const as = String(av);
   const bs = String(bv);
   if (as < bs) return -1;
@@ -157,6 +192,7 @@ function formatTerm(term, prefixes = {}) {
   if (term.type === 'triple') return `<<(${formatTerm(term.s, prefixes)} ${formatTerm(term.p, prefixes)} ${formatTerm(term.o, prefixes)})>>`;
   if (term.type === 'literal') {
     const v = term.value;
+    if (typeof v === 'bigint' && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER)) return String(v);
     if (typeof v === 'number' && Number.isFinite(v) && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER || term.datatype === XSD_DECIMAL || term.datatype === XSD_DOUBLE)) return String(v);
     if (typeof v === 'boolean' && !term.lang && (!term.datatype || term.datatype === XSD_BOOLEAN)) return v ? 'true' : 'false';
     const lexical = `"${escapeString(v)}"`;

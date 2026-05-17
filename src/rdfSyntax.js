@@ -524,8 +524,14 @@ function numericLiteral(value) {
   return literal(value, XSD_DECIMAL);
 }
 
+function parseIntegerLiteral(value) {
+  const text = String(value);
+  const asNumber = Number.parseInt(text, 10);
+  return Number.isSafeInteger(asNumber) && String(asNumber) === text.replace(/^\+/, '') ? asNumber : BigInt(text);
+}
+
 function coerceLexicalLiteral(value, datatype) {
-  if (datatype === XSD_INTEGER) return Number.parseInt(value, 10);
+  if (datatype === XSD_INTEGER) return parseIntegerLiteral(value);
   if (datatype === XSD_DECIMAL || datatype === XSD_DOUBLE) return Number(value);
   if (datatype === XSD_BOOLEAN) return value === true || value === 'true' || value === '1';
   return value;

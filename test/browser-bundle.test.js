@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('node:test');
+const { test, main } = require('./harness.js').createHarness('Browser bundle');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -43,3 +43,5 @@ test('playground inline scripts are syntactically valid', () => {
   }
   assert.ok(checked > 0, 'expected at least one inline playground script');
 });
+
+main();
