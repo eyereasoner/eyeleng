@@ -536,7 +536,7 @@ WHERE {
 
 Eyesharl marks rules containing `SET` as run-once rules. They are evaluated at their layer position after ordinary rules in that layer have reached a fixpoint.
 
-This is a compact approximation of the draft’s warning that assignment rules need special ordering. It avoids repeatedly creating different values for the same conceptual assignment.
+Deterministic assignment rules can participate in the ordinary fixpoint loop. Rules containing volatile generators such as UUID(), STRUUID(), or argument-less BNODE() are evaluated once so they do not repeatedly create different values for the same conceptual assignment.
 
 If a `SET` rule is recursive, the analyzer warns because recursive assignment is often a sign that the program can be non-obvious or non-terminating.
 

@@ -18,6 +18,7 @@
         formatTrace,
         formatBindings,
         toJSON,
+        resultTriples,
       } = require('./api.js');
       const { compactIRI } = require('./term.js');
       
@@ -201,13 +202,13 @@
           if (querySpec) result.query = queryResult(result, querySpec, options);
       
           if (options.json) {
-            io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, trace: options.trace, analysis: options.deps }), null, 2)}\n`);
+            io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, trace: options.trace, analysis: options.deps, output: compiled.program.output }), null, 2)}\n`);
           } else if (result.query) {
             const out = formatBindings(result.query.bindings, result.prefixes, result.query.select);
             if (out) io.stdout.write(`${out}\n`);
           } else {
             if (options.trace && result.trace.length > 0) io.stderr.write(`${formatTrace(result.trace, result.prefixes)}\n`);
-            const triples = options.all ? result.closure : result.inferred;
+            const triples = resultTriples(result, compiled.program, options);
             const out = formatTriples(triples, result.prefixes);
             if (out) io.stdout.write(`${out}\n`);
           }
@@ -239,6 +240,7 @@
       const { analyze } = require('./analyze.js');
       const { formatTriples, sortTriples, toJSON, formatTrace, formatBindings } = require('./format.js');
       const { runQuery, queryResult } = require('./query.js');
+      const { resultTriples, outputTriples } = require('./output.js');
       
       function parseInput(source, options = {}) {
         if (typeof source !== 'string') return source;
@@ -290,6 +292,7 @@
           prefixes: { ...(program.prefixes || {}) },
           data: [],
           rules: [],
+          output: [],
         };
       }
       
@@ -301,6 +304,7 @@
           prefixes: { ...(program.prefixes || {}) },
           data: (program.data || []).slice(),
           rules: (program.rules || []).slice(),
+          output: (program.output || []).slice(),
         };
       }
       
@@ -312,6 +316,7 @@
           prefixes: { ...(left.prefixes || {}), ...(right.prefixes || {}) },
           data: [...(left.data || []), ...(right.data || [])],
           rules: [...(left.rules || []), ...(right.rules || [])],
+          output: [...(left.output || []), ...(right.output || [])],
         };
       }
       
@@ -324,8 +329,11 @@
       }
       
       function runToString(source, options = {}) {
-        const result = run(source, options);
-        const triples = options.all ? result.closure : result.inferred;
+        const { program, diagnostics, analysis } = compile(source, options);
+        const result = evaluate(program, { ...options, analysis });
+        result.diagnostics = diagnostics;
+        result.analysis = analysis;
+        const triples = resultTriples(result, program, options);
         return formatTriples(triples, result.prefixes);
       }
       
@@ -350,6 +358,8 @@
         sortTriples,
         toJSON,
         formatTrace,
+        outputTriples,
+        resultTriples,
       };
       
     },
@@ -358,6 +368,7 @@
       
       const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
       const { isBuiltinName } = require('./builtins.js');
+      const { assignmentsNeedRunOnce } = require('./assignments.js');
       const {
         iri,
         variable,
@@ -395,6 +406,7 @@
         parseProgram() {
           const data = [];
           const rules = [];
+          const output = [];
           while (!this.is('eof')) {
             if (this.matchWord('PREFIX')) {
               this.parsePrefix(false);
@@ -407,6 +419,9 @@
             } else if (this.matchWord('DATA')) {
               this.expectValue('{');
               data.push(...this.parseTriplesBlock({ allowPath: false, context: 'data' }));
+            } else if (this.matchWord('OUTPUT')) {
+              this.expectValue('{');
+              output.push(...this.parseTriplesBlock({ allowPath: false, context: 'output' }));
             } else if (this.matchWord('RULE')) {
               rules.push(this.parseRule());
             } else if (this.matchWord('IF')) {
@@ -414,7 +429,7 @@
             } else if (this.checkDeclarationKeyword()) {
               rules.push(...this.parseDeclaration());
             } else {
-              throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE; got ${this.peek().value}`);
+              throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE; got ${this.peek().value}`);
             }
           }
           return {
@@ -424,6 +439,7 @@
             prefixes: { ...this.prefixes },
             data,
             rules,
+            output,
           };
         }
       
@@ -461,7 +477,7 @@
           this.expectWord('WHERE');
           this.expectValue('{');
           const body = this.parseBodyBlockAlreadyOpen();
-          return { name: null, head, body, runOnce: body.some((clause) => clause.type === 'set') };
+          return { name: null, head, body, runOnce: assignmentsNeedRunOnce(body) };
         }
       
         parseIfThenRule() {
@@ -470,7 +486,7 @@
           this.expectWord('THEN');
           this.expectValue('{');
           const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-          return { name: null, head, body, runOnce: body.some((clause) => clause.type === 'set') };
+          return { name: null, head, body, runOnce: assignmentsNeedRunOnce(body) };
         }
       
         checkDeclarationKeyword() {
@@ -1899,10 +1915,56 @@
       };
       
     },
+    "src/assignments.js": function (require, module, exports) {
+      'use strict';
+      
+      // Most SET expressions are deterministic and can safely participate in the
+      // ordinary fixpoint loop.  Only genuinely fresh generators need run-once
+      // evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
+      // creating new terms forever.
+      function assignmentsNeedRunOnce(clauses = []) {
+        const hasSet = clauses.some((clause) => clause.type === 'set');
+        const hasNegation = clauses.some((clause) => clause.type === 'not');
+        return (hasSet && hasNegation) || clauses.some((clause) => clause.type === 'set' && expressionIsVolatile(clause.expr));
+      }
+      
+      function expressionIsVolatile(expr) {
+        if (!expr) return false;
+        switch (expr.type) {
+          case 'call': {
+            const name = localName(expr.name).toLowerCase();
+            if (name === 'uuid' || name === 'struuid') return true;
+            if (name === 'bnode' && (!expr.args || expr.args.length === 0)) return true;
+            return (expr.args || []).some(expressionIsVolatile);
+          }
+          case 'binary':
+            return expressionIsVolatile(expr.left) || expressionIsVolatile(expr.right);
+          case 'unary':
+            return expressionIsVolatile(expr.expr);
+          case 'list':
+            return (expr.items || []).some(expressionIsVolatile);
+          default:
+            return false;
+        }
+      }
+      
+      function localName(name) {
+        const text = String(name || '');
+        const hash = text.lastIndexOf('#');
+        const slash = text.lastIndexOf('/');
+        const colon = text.lastIndexOf(':');
+        const index = Math.max(hash, slash, colon);
+        return index >= 0 ? text.slice(index + 1) : text;
+      }
+      
+      module.exports = { assignmentsNeedRunOnce, expressionIsVolatile };
+      
+    },
     "src/rdfSyntax.js": function (require, module, exports) {
       'use strict';
       
       const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
+      const { assignmentsNeedRunOnce } = require('./assignments.js');
       const {
         iri,
         variable,
@@ -2216,7 +2278,7 @@
         if (bodyLists.length !== 1 || headLists.length !== 1) throw new Error(`RDF Rule ${graph.label(ruleNode)} must have exactly one srl:body and one srl:head`);
         const body = graph.list(bodyLists[0]).map((item) => toBodyElement(item, graph));
         const head = graph.list(headLists[0]).map((item) => toTripleLike(item, graph));
-        return { name: graph.label(ruleNode), head, body, runOnce: body.some((clause) => clause.type === 'set') };
+        return { name: graph.label(ruleNode), head, body, runOnce: assignmentsNeedRunOnce(body) };
       }
       
       function toBodyElement(node, graph) {
@@ -2950,7 +3012,7 @@
               code: 'recursive-assignment-rule',
               severity: 'warning',
               rule: name,
-              message: `${label} contains SET and is recursive; assignment rules are run once in Eyesharl`,
+              message: `${label} contains a volatile SET expression and is recursive; fresh-value assignment rules are run once in Eyesharl`,
             });
           }
       
@@ -3541,6 +3603,7 @@
       'use strict';
       
       const { formatTriple, formatTerm } = require('./term.js');
+      const { outputTriples } = require('./output.js');
       
       function sortTriples(triples, prefixes = {}) {
         return triples
@@ -3582,7 +3645,7 @@
       }
       
       function toJSON(result, options = {}) {
-        const triples = options.all ? result.closure : result.inferred;
+        const triples = options.all ? result.closure : (outputTriples(result, options.output || []) || result.inferred);
         const json = {
           baseIRI: result.baseIRI || null,
           iterations: result.iterations,
@@ -3599,6 +3662,40 @@
       }
       
       module.exports = { sortTriples, formatTriples, formatTrace, formatBindings, formatBinding, toJSON };
+      
+    },
+    "src/output.js": function (require, module, exports) {
+      'use strict';
+      
+      const { TripleStore, instantiateTriple } = require('./store.js');
+      const { tripleKey } = require('./term.js');
+      
+      function outputTriples(result, patterns = []) {
+        if (!patterns || patterns.length === 0) return null;
+        const store = new TripleStore(result.closure || []);
+        const seen = new Set();
+        const out = [];
+        for (const pattern of patterns) {
+          for (const binding of store.match(pattern, {})) {
+            const triple = instantiateTriple(pattern, binding);
+            if (!triple) continue;
+            const key = tripleKey(triple);
+            if (!seen.has(key)) {
+              seen.add(key);
+              out.push(triple);
+            }
+          }
+        }
+        return out;
+      }
+      
+      function resultTriples(result, program = {}, options = {}) {
+        if (options.all) return result.closure;
+        const projected = outputTriples(result, program.output || []);
+        return projected || result.inferred;
+      }
+      
+      module.exports = { outputTriples, resultTriples };
       
     },
     "src/query.js": function (require, module, exports) {
@@ -3660,7 +3757,7 @@
       
     },
   };
-  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./term.js":"src/term.js"},"src/rdfSyntax.js":{"./tokenizer.js":"src/tokenizer.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js"},"src/format.js":{"./term.js":"src/term.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./api.js":"src/api.js"},"src/api.js":{"./parser.js":"src/parser.js","./rdfSyntax.js":"src/rdfSyntax.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
+  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdfSyntax.js":{"./tokenizer.js":"src/tokenizer.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js"},"src/output.js":{"./store.js":"src/store.js","./term.js":"src/term.js"},"src/format.js":{"./term.js":"src/term.js","./output.js":"src/output.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./api.js":"src/api.js"},"src/api.js":{"./parser.js":"src/parser.js","./rdfSyntax.js":"src/rdfSyntax.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
   const __cache = {};
   function __require(id) {
     if (!id.startsWith("src/")) return __nativeRequire(id);

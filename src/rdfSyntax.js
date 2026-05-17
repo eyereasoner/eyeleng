@@ -1,6 +1,7 @@
 'use strict';
 
 const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
+const { assignmentsNeedRunOnce } = require('./assignments.js');
 const {
   iri,
   variable,
@@ -314,7 +315,7 @@ function toRule(ruleNode, graph) {
   if (bodyLists.length !== 1 || headLists.length !== 1) throw new Error(`RDF Rule ${graph.label(ruleNode)} must have exactly one srl:body and one srl:head`);
   const body = graph.list(bodyLists[0]).map((item) => toBodyElement(item, graph));
   const head = graph.list(headLists[0]).map((item) => toTripleLike(item, graph));
-  return { name: graph.label(ruleNode), head, body, runOnce: body.some((clause) => clause.type === 'set') };
+  return { name: graph.label(ruleNode), head, body, runOnce: assignmentsNeedRunOnce(body) };
 }
 
 function toBodyElement(node, graph) {

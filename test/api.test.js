@@ -55,6 +55,47 @@ RULE { ?x a :Mortal } WHERE { ?x a :Man }
   assert.equal(result.closure.length, 2);
 });
 
+
+
+test('OUTPUT projects selected triples after recursive deterministic SET rules', () => {
+  const source = `
+PREFIX : <http://example/>
+DATA {
+  :a :p :b .
+  :b :p :c .
+  :query :max 1 .
+}
+OUTPUT { :answer :path ?label . }
+RULE {
+  ?route a :Path ; :last ?next ; :depth 0 ; :label ?label .
+}
+WHERE {
+  :a :p ?next .
+  SET(?label := CONCAT("a -> ", STR(?next)))
+  SET(?route := BNODE(?label))
+}
+RULE {
+  ?nextRoute a :Path ; :last ?next ; :depth ?nextDepth ; :label ?nextLabel .
+}
+WHERE {
+  ?route a :Path ; :last ?last ; :depth ?depth ; :label ?label .
+  :query :max ?max .
+  FILTER(?depth < ?max) .
+  ?last :p ?next .
+  SET(?nextDepth := ?depth + 1)
+  SET(?nextLabel := CONCAT(?label, " -> ", STR(?next)))
+  SET(?nextRoute := BNODE(?nextLabel))
+}
+RULE { :answer :path ?label }
+WHERE { ?route a :Path ; :last :c ; :label ?label . }
+`;
+  const output = runToString(source);
+  assert.match(output, /^:answer :path /);
+  assert.doesNotMatch(output, /:Path/);
+  const result = run(source);
+  assert.ok(result.inferred.length > 1);
+});
+
 test('BASE resolves relative IRIs and default prefix', () => {
   const output = runToString(`
 BASE <http://example/base/>
@@ -129,9 +170,9 @@ test('parseQuery accepts raw body text and rejects non-SRL QUERY/SELECT syntax',
 });
 
 test('top-level QUERY, SELECT, and N3 implication are not accepted as SRL', () => {
-  assert.throws(() => parse('PREFIX : <http://example/> QUERY ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
-  assert.throws(() => parse('PREFIX : <http://example/> SELECT ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
-  assert.throws(() => parse('PREFIX : <http://example/> { ?x :p :y } => { ?x :q :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
+  assert.throws(() => parse('PREFIX : <http://example/> QUERY ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
+  assert.throws(() => parse('PREFIX : <http://example/> SELECT ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
+  assert.throws(() => parse('PREFIX : <http://example/> { ?x :p :y } => { ?x :q :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
 });
 
 test('IF THEN rule form works', () => {

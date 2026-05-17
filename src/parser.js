@@ -2,6 +2,7 @@
 
 const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
 const { isBuiltinName } = require('./builtins.js');
+const { assignmentsNeedRunOnce } = require('./assignments.js');
 const {
   iri,
   variable,
@@ -39,6 +40,7 @@ class Parser {
   parseProgram() {
     const data = [];
     const rules = [];
+    const output = [];
     while (!this.is('eof')) {
       if (this.matchWord('PREFIX')) {
         this.parsePrefix(false);
@@ -51,6 +53,9 @@ class Parser {
       } else if (this.matchWord('DATA')) {
         this.expectValue('{');
         data.push(...this.parseTriplesBlock({ allowPath: false, context: 'data' }));
+      } else if (this.matchWord('OUTPUT')) {
+        this.expectValue('{');
+        output.push(...this.parseTriplesBlock({ allowPath: false, context: 'output' }));
       } else if (this.matchWord('RULE')) {
         rules.push(this.parseRule());
       } else if (this.matchWord('IF')) {
@@ -58,7 +63,7 @@ class Parser {
       } else if (this.checkDeclarationKeyword()) {
         rules.push(...this.parseDeclaration());
       } else {
-        throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE; got ${this.peek().value}`);
+        throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE; got ${this.peek().value}`);
       }
     }
     return {
@@ -68,6 +73,7 @@ class Parser {
       prefixes: { ...this.prefixes },
       data,
       rules,
+      output,
     };
   }
 
@@ -105,7 +111,7 @@ class Parser {
     this.expectWord('WHERE');
     this.expectValue('{');
     const body = this.parseBodyBlockAlreadyOpen();
-    return { name: null, head, body, runOnce: body.some((clause) => clause.type === 'set') };
+    return { name: null, head, body, runOnce: assignmentsNeedRunOnce(body) };
   }
 
   parseIfThenRule() {
@@ -114,7 +120,7 @@ class Parser {
     this.expectWord('THEN');
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-    return { name: null, head, body, runOnce: body.some((clause) => clause.type === 'set') };
+    return { name: null, head, body, runOnce: assignmentsNeedRunOnce(body) };
   }
 
   checkDeclarationKeyword() {

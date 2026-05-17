@@ -12,6 +12,7 @@ const {
   formatTrace,
   formatBindings,
   toJSON,
+  resultTriples,
 } = require('./api.js');
 const { compactIRI } = require('./term.js');
 
@@ -195,13 +196,13 @@ function main(argv = process.argv.slice(2), io = process) {
     if (querySpec) result.query = queryResult(result, querySpec, options);
 
     if (options.json) {
-      io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, trace: options.trace, analysis: options.deps }), null, 2)}\n`);
+      io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, trace: options.trace, analysis: options.deps, output: compiled.program.output }), null, 2)}\n`);
     } else if (result.query) {
       const out = formatBindings(result.query.bindings, result.prefixes, result.query.select);
       if (out) io.stdout.write(`${out}\n`);
     } else {
       if (options.trace && result.trace.length > 0) io.stderr.write(`${formatTrace(result.trace, result.prefixes)}\n`);
-      const triples = options.all ? result.closure : result.inferred;
+      const triples = resultTriples(result, compiled.program, options);
       const out = formatTriples(triples, result.prefixes);
       if (out) io.stdout.write(`${out}\n`);
     }

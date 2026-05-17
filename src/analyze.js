@@ -43,7 +43,7 @@ function analyze(program) {
         code: 'recursive-assignment-rule',
         severity: 'warning',
         rule: name,
-        message: `${label} contains SET and is recursive; assignment rules are run once in Eyesharl`,
+        message: `${label} contains a volatile SET expression and is recursive; fresh-value assignment rules are run once in Eyesharl`,
       });
     }
 
