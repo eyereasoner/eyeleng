@@ -4,9 +4,6 @@
 
 PREFIX : <http://example/eyeling/sudoku/>
 
-OUTPUT {
-  ?cell :value ?value .
-}
 
 DATA {
   :digit1 :char "1" ; :digitValue 1 .

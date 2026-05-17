@@ -6,7 +6,7 @@
 # The original N3 example uses backward rules over RDF collection terms.  This
 # forward SRL version materializes only demanded vectors from asserted 32-sample
 # WaveForms, keeps all intermediate vectors and complex numbers deterministic,
-# and projects only the final query result:
+# and materializes deterministic intermediate vectors plus final :fft triples:
 #
 #   { ?in a :WaveForm. ?in :fft32 ?out. } log:query { ?in :fft ?out. }.
 #
@@ -1000,74 +1000,3 @@ WHERE {
   SET(?spectrum := BNODE(CONCAT(STR(?vector), "-spectrum")))
 }
 
-# Output only the final query projection, not the intermediate vectors.
-OUTPUT {
-  ?in :fft ?spectrum .
-  ?spectrum a :FFT32Spectrum .
-  ?spectrum :fftInput ?in .
-  ?spectrum :fftWaveformName ?name .
-  ?spectrum :bin0Re ?r0 .
-  ?spectrum :bin0Im ?i0 .
-  ?spectrum :bin1Re ?r1 .
-  ?spectrum :bin1Im ?i1 .
-  ?spectrum :bin2Re ?r2 .
-  ?spectrum :bin2Im ?i2 .
-  ?spectrum :bin3Re ?r3 .
-  ?spectrum :bin3Im ?i3 .
-  ?spectrum :bin4Re ?r4 .
-  ?spectrum :bin4Im ?i4 .
-  ?spectrum :bin5Re ?r5 .
-  ?spectrum :bin5Im ?i5 .
-  ?spectrum :bin6Re ?r6 .
-  ?spectrum :bin6Im ?i6 .
-  ?spectrum :bin7Re ?r7 .
-  ?spectrum :bin7Im ?i7 .
-  ?spectrum :bin8Re ?r8 .
-  ?spectrum :bin8Im ?i8 .
-  ?spectrum :bin9Re ?r9 .
-  ?spectrum :bin9Im ?i9 .
-  ?spectrum :bin10Re ?r10 .
-  ?spectrum :bin10Im ?i10 .
-  ?spectrum :bin11Re ?r11 .
-  ?spectrum :bin11Im ?i11 .
-  ?spectrum :bin12Re ?r12 .
-  ?spectrum :bin12Im ?i12 .
-  ?spectrum :bin13Re ?r13 .
-  ?spectrum :bin13Im ?i13 .
-  ?spectrum :bin14Re ?r14 .
-  ?spectrum :bin14Im ?i14 .
-  ?spectrum :bin15Re ?r15 .
-  ?spectrum :bin15Im ?i15 .
-  ?spectrum :bin16Re ?r16 .
-  ?spectrum :bin16Im ?i16 .
-  ?spectrum :bin17Re ?r17 .
-  ?spectrum :bin17Im ?i17 .
-  ?spectrum :bin18Re ?r18 .
-  ?spectrum :bin18Im ?i18 .
-  ?spectrum :bin19Re ?r19 .
-  ?spectrum :bin19Im ?i19 .
-  ?spectrum :bin20Re ?r20 .
-  ?spectrum :bin20Im ?i20 .
-  ?spectrum :bin21Re ?r21 .
-  ?spectrum :bin21Im ?i21 .
-  ?spectrum :bin22Re ?r22 .
-  ?spectrum :bin22Im ?i22 .
-  ?spectrum :bin23Re ?r23 .
-  ?spectrum :bin23Im ?i23 .
-  ?spectrum :bin24Re ?r24 .
-  ?spectrum :bin24Im ?i24 .
-  ?spectrum :bin25Re ?r25 .
-  ?spectrum :bin25Im ?i25 .
-  ?spectrum :bin26Re ?r26 .
-  ?spectrum :bin26Im ?i26 .
-  ?spectrum :bin27Re ?r27 .
-  ?spectrum :bin27Im ?i27 .
-  ?spectrum :bin28Re ?r28 .
-  ?spectrum :bin28Im ?i28 .
-  ?spectrum :bin29Re ?r29 .
-  ?spectrum :bin29Im ?i29 .
-  ?spectrum :bin30Re ?r30 .
-  ?spectrum :bin30Im ?i30 .
-  ?spectrum :bin31Re ?r31 .
-  ?spectrum :bin31Im ?i31 .
-}

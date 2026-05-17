@@ -6,7 +6,7 @@ const { evaluate } = require('./engine.js');
 const { analyze } = require('./analyze.js');
 const { formatTriples, sortTriples, toJSON, formatTrace, formatBindings } = require('./format.js');
 const { runQuery, queryResult } = require('./query.js');
-const { resultTriples, outputTriples } = require('./output.js');
+const { resultTriples } = require('./output.js');
 
 function parseInput(source, options = {}) {
   if (typeof source !== 'string') return source;
@@ -58,7 +58,6 @@ function emptyProgram(program = {}) {
     prefixes: { ...(program.prefixes || {}) },
     data: [],
     rules: [],
-    output: [],
   };
 }
 
@@ -70,7 +69,6 @@ function cloneProgram(program) {
     prefixes: { ...(program.prefixes || {}) },
     data: (program.data || []).slice(),
     rules: (program.rules || []).slice(),
-    output: (program.output || []).slice(),
   };
 }
 
@@ -82,7 +80,6 @@ function mergePrograms(left, right) {
     prefixes: { ...(left.prefixes || {}), ...(right.prefixes || {}) },
     data: [...(left.data || []), ...(right.data || [])],
     rules: [...(left.rules || []), ...(right.rules || [])],
-    output: [...(left.output || []), ...(right.output || [])],
   };
 }
 
@@ -124,6 +121,5 @@ module.exports = {
   sortTriples,
   toJSON,
   formatTrace,
-  outputTriples,
   resultTriples,
 };

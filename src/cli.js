@@ -196,7 +196,7 @@ function main(argv = process.argv.slice(2), io = process) {
     if (querySpec) result.query = queryResult(result, querySpec, options);
 
     if (options.json) {
-      io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, trace: options.trace, analysis: options.deps, output: compiled.program.output }), null, 2)}\n`);
+      io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, trace: options.trace, analysis: options.deps }), null, 2)}\n`);
     } else if (result.query) {
       const out = formatBindings(result.query.bindings, result.prefixes, result.query.select);
       if (out) io.stdout.write(`${out}\n`);

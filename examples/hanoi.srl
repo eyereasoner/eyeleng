@@ -1,0 +1,72 @@
+# Adapted from eyeling/examples/hanoi.n3
+# Towers of Hanoi move planner.
+#
+# The problem is generic for the configured disk count, start peg,
+# target peg and spare peg.  For the sample case it derives the same
+# 3-disk move sequence as the eyeling N3 example.
+
+PREFIX : <http://example/eyeling/hanoi/>
+
+
+DATA {
+  :case :disks 3 ; :startPeg :left ; :targetPeg :right ; :sparePeg :center .
+
+  :level0 :value 0 ; :pow2 1 .
+  :level1 :value 1 ; :previous :level0 .
+  :level2 :value 2 ; :previous :level1 .
+  :level3 :value 3 ; :previous :level2 .
+  :level4 :value 4 ; :previous :level3 .
+  :level5 :value 5 ; :previous :level4 .
+  :level6 :value 6 ; :previous :level5 .
+  :level7 :value 7 ; :previous :level6 .
+  :level8 :value 8 ; :previous :level7 .
+  :level9 :value 9 ; :previous :level8 .
+  :level10 :value 10 ; :previous :level9 .
+}
+
+RULE { ?level :pow2 ?pow }
+WHERE {
+  ?level :previous ?previous .
+  ?previous :pow2 ?previousPow .
+  SET(?pow := ?previousPow * 2)
+}
+
+RULE { :root a :HanoiProblem ; :diskCount ?disks ; :startPeg ?from ; :targetPeg ?to ; :sparePeg ?via ; :start 0 }
+WHERE {
+  :case :disks ?disks ; :startPeg ?from ; :targetPeg ?to ; :sparePeg ?via .
+}
+
+RULE { ?move a :HanoiMove ; :step ?step ; :disk 1 ; :from ?from ; :to ?to }
+WHERE {
+  ?problem a :HanoiProblem ; :diskCount 1 ; :startPeg ?from ; :targetPeg ?to ; :start ?start .
+  SET(?step := ?start + 1)
+  SET(?move := IRI(CONCAT("http://example/eyeling/hanoi/move-", STR(?step))))
+}
+
+RULE { ?first a :HanoiProblem ; :diskCount ?smaller ; :startPeg ?from ; :targetPeg ?via ; :sparePeg ?to ; :start ?start }
+WHERE {
+  ?problem a :HanoiProblem ; :diskCount ?disks ; :startPeg ?from ; :targetPeg ?to ; :sparePeg ?via ; :start ?start .
+  FILTER(?disks > 1)
+  SET(?smaller := ?disks - 1)
+  SET(?first := BNODE(CONCAT(STR(?problem), "-first")))
+}
+
+RULE { ?move a :HanoiMove ; :step ?step ; :disk ?disks ; :from ?from ; :to ?to }
+WHERE {
+  ?problem a :HanoiProblem ; :diskCount ?disks ; :startPeg ?from ; :targetPeg ?to ; :start ?start .
+  FILTER(?disks > 1)
+  SET(?smaller := ?disks - 1)
+  ?level :value ?smaller ; :pow2 ?offset .
+  SET(?step := ?start + ?offset)
+  SET(?move := IRI(CONCAT("http://example/eyeling/hanoi/move-", STR(?step))))
+}
+
+RULE { ?second a :HanoiProblem ; :diskCount ?smaller ; :startPeg ?via ; :targetPeg ?to ; :sparePeg ?from ; :start ?secondStart }
+WHERE {
+  ?problem a :HanoiProblem ; :diskCount ?disks ; :startPeg ?from ; :targetPeg ?to ; :sparePeg ?via ; :start ?start .
+  FILTER(?disks > 1)
+  SET(?smaller := ?disks - 1)
+  ?level :value ?smaller ; :pow2 ?offset .
+  SET(?secondStart := ?start + ?offset)
+  SET(?second := BNODE(CONCAT(STR(?problem), "-second")))
+}

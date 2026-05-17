@@ -40,7 +40,6 @@ class Parser {
   parseProgram() {
     const data = [];
     const rules = [];
-    const output = [];
     while (!this.is('eof')) {
       if (this.matchWord('PREFIX')) {
         this.parsePrefix(false);
@@ -53,9 +52,6 @@ class Parser {
       } else if (this.matchWord('DATA')) {
         this.expectValue('{');
         data.push(...this.parseTriplesBlock({ allowPath: false, context: 'data' }));
-      } else if (this.matchWord('OUTPUT')) {
-        this.expectValue('{');
-        output.push(...this.parseTriplesBlock({ allowPath: false, context: 'output' }));
       } else if (this.matchWord('RULE')) {
         rules.push(this.parseRule());
       } else if (this.matchWord('IF')) {
@@ -63,7 +59,7 @@ class Parser {
       } else if (this.checkDeclarationKeyword()) {
         rules.push(...this.parseDeclaration());
       } else {
-        throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE; got ${this.peek().value}`);
+        throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE; got ${this.peek().value}`);
       }
     }
     return {
@@ -73,7 +69,6 @@ class Parser {
       prefixes: { ...this.prefixes },
       data,
       rules,
-      output,
     };
   }
 

@@ -1,7 +1,6 @@
 'use strict';
 
 const { formatTriple, formatTerm } = require('./term.js');
-const { outputTriples } = require('./output.js');
 
 function sortTriples(triples, prefixes = {}) {
   return triples
@@ -43,7 +42,7 @@ function inferColumns(bindings) {
 }
 
 function toJSON(result, options = {}) {
-  const triples = options.all ? result.closure : (outputTriples(result, options.output || []) || result.inferred);
+  const triples = options.all ? result.closure : result.inferred;
   const json = {
     baseIRI: result.baseIRI || null,
     iterations: result.iterations,

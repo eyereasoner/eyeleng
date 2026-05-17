@@ -57,7 +57,7 @@ RULE { ?x a :Mortal } WHERE { ?x a :Man }
 
 
 
-test('OUTPUT projects selected triples after recursive deterministic SET rules', () => {
+test('recursive deterministic SET rules infer a fixpoint', () => {
   const source = `
 PREFIX : <http://example/>
 DATA {
@@ -65,7 +65,6 @@ DATA {
   :b :p :c .
   :query :max 1 .
 }
-OUTPUT { :answer :path ?label . }
 RULE {
   ?route a :Path ; :last ?next ; :depth 0 ; :label ?label .
 }
@@ -90,8 +89,8 @@ RULE { :answer :path ?label }
 WHERE { ?route a :Path ; :last :c ; :label ?label . }
 `;
   const output = runToString(source);
-  assert.match(output, /^:answer :path /);
-  assert.doesNotMatch(output, /:Path/);
+  assert.match(output, /:answer :path "a -> http:\/\/example\/b -> http:\/\/example\/c" \./);
+  assert.match(output, /a :Path/);
   const result = run(source);
   assert.ok(result.inferred.length > 1);
 });
@@ -170,9 +169,9 @@ test('parseQuery accepts raw body text and rejects non-SRL QUERY/SELECT syntax',
 });
 
 test('top-level QUERY, SELECT, and N3 implication are not accepted as SRL', () => {
-  assert.throws(() => parse('PREFIX : <http://example/> QUERY ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
-  assert.throws(() => parse('PREFIX : <http://example/> SELECT ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
-  assert.throws(() => parse('PREFIX : <http://example/> { ?x :p :y } => { ?x :q :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, OUTPUT, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
+  assert.throws(() => parse('PREFIX : <http://example/> QUERY ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
+  assert.throws(() => parse('PREFIX : <http://example/> SELECT ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
+  assert.throws(() => parse('PREFIX : <http://example/> { ?x :p :y } => { ?x :q :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
 });
 
 test('IF THEN rule form works', () => {
