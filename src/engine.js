@@ -148,14 +148,17 @@ function computeRecursiveLayerFlags(layerIndexes, edges = []) {
 
 function applyRuleOnce(program, store, ruleIndex, context) {
   const rule = program.rules[ruleIndex];
-  const bindings = evaluateBody(rule.body, store, {}, context);
   let applications = 0;
   let added = 0;
-  if (bindings.length > 0) {
-    applications += bindings.length;
-    context.perRule[ruleIndex].applications += bindings.length;
-  }
-  for (const binding of bindings) {
+  const seenBindings = new Set();
+
+  for (const binding of evaluateBodyStream(rule.body, store, {}, context)) {
+    const key = bindingKey(binding);
+    if (seenBindings.has(key)) continue;
+    seenBindings.add(key);
+    applications += 1;
+    context.perRule[ruleIndex].applications += 1;
+
     for (const head of rule.head) {
       const triple = instantiateTriple(head, binding);
       if (!triple) continue;
@@ -175,43 +178,81 @@ function applyRuleOnce(program, store, ruleIndex, context) {
       }
     }
   }
+
   return { applications, added };
 }
 
 function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
-  let bindings = [initialBinding];
-  for (const clause of clauses) {
-    const next = [];
-    for (const binding of bindings) {
-      if (clause.type === 'triple') {
-        for (const matched of store.match(clause.triple, binding)) next.push(matched);
-      } else if (clause.type === 'path') {
-        for (const matched of store.matchPath(clause.triple, binding)) next.push(matched);
-      } else if (clause.type === 'filter') {
-        try {
-          if (booleanValue(evalExpression(clause.expr, binding, options))) next.push(binding);
-        } catch (_) {
-          // SPARQL-style FILTER errors reject the current solution.
-        }
-      } else if (clause.type === 'set') {
-        try {
-          const value = asTerm(evalExpression(clause.expr, binding, options));
-          if (!binding[clause.variable]) next.push({ ...binding, [clause.variable]: value });
-          else if (termEquals(binding[clause.variable], value)) next.push(binding);
-        } catch (_) {
-          // The SRL evaluation sketch drops a solution when assignment evaluation errors.
-        }
-      } else if (clause.type === 'not') {
-        const found = evaluateBody(clause.body, store, binding, options);
-        if (found.length === 0) next.push(binding);
-      } else {
-        throw new Error(`Unsupported body clause ${clause.type}`);
-      }
-    }
-    bindings = next;
-    if (bindings.length === 0) break;
+  const bindings = [];
+  const seen = new Set();
+  for (const binding of evaluateBodyStream(clauses, store, initialBinding, options)) {
+    const key = bindingKey(binding);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    bindings.push(binding);
   }
-  return bindings.length > 1 ? uniqueBindings(bindings) : bindings;
+  return bindings;
+}
+
+function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, index = 0) {
+  if (index >= clauses.length) {
+    yield initialBinding;
+    return;
+  }
+
+  const clause = clauses[index];
+  if (clause.type === 'triple') {
+    for (const matched of store.match(clause.triple, initialBinding)) {
+      yield* evaluateBodyStream(clauses, store, matched, options, index + 1);
+    }
+    return;
+  }
+
+  if (clause.type === 'path') {
+    for (const matched of store.matchPath(clause.triple, initialBinding)) {
+      yield* evaluateBodyStream(clauses, store, matched, options, index + 1);
+    }
+    return;
+  }
+
+  if (clause.type === 'filter') {
+    try {
+      if (booleanValue(evalExpression(clause.expr, initialBinding, options))) {
+        yield* evaluateBodyStream(clauses, store, initialBinding, options, index + 1);
+      }
+    } catch (_) {
+      // SPARQL-style FILTER errors reject the current solution.
+    }
+    return;
+  }
+
+  if (clause.type === 'set') {
+    try {
+      const value = asTerm(evalExpression(clause.expr, initialBinding, options));
+      if (!initialBinding[clause.variable]) {
+        yield* evaluateBodyStream(clauses, store, { ...initialBinding, [clause.variable]: value }, options, index + 1);
+      } else if (termEquals(initialBinding[clause.variable], value)) {
+        yield* evaluateBodyStream(clauses, store, initialBinding, options, index + 1);
+      }
+    } catch (_) {
+      // The SRL evaluation sketch drops a solution when assignment evaluation errors.
+    }
+    return;
+  }
+
+  if (clause.type === 'not') {
+    if (!bodyHasAny(clause.body, store, initialBinding, options)) {
+      yield* evaluateBodyStream(clauses, store, initialBinding, options, index + 1);
+    }
+    return;
+  }
+
+  throw new Error(`Unsupported body clause ${clause.type}`);
+}
+
+function bodyHasAny(clauses, store, initialBinding, options) {
+  for (const _ of evaluateBodyStream(clauses, store, initialBinding, options)) return true;
+  return false;
 }
 
 function uniqueBindings(bindings) {

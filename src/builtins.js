@@ -246,6 +246,11 @@ function callBuiltin(name, args, binding = {}, options = {}) {
   const injected = options.builtins && (options.builtins[name] || options.builtins[String(name).toLowerCase()]);
   if (injected) return injected(args, { binding, iri, blankNode, literal, tripleTerm, termToString, booleanValue, termToPrimitive });
 
+  if (localName(name).toLowerCase() === 'sudoku') {
+    if (args.length !== 1) throw new Error(`SUDOKU expects 1 argument, got ${args.length}`);
+    return solveSudoku(termToString(args[0]));
+  }
+
   const canonical = canonicalBuiltinName(name);
   if (!canonical) throw new Error(`Unknown builtin ${name}`);
   validateArity(canonical, args.length);
@@ -313,6 +318,89 @@ function callBuiltin(name, args, binding = {}, options = {}) {
   if (key === 'uuid') return iri(`urn:uuid:${freshUuid(options)}`);
   if (key === 'struuid') return freshUuid(options);
   throw new Error(`Unimplemented builtin ${name}`);
+}
+
+
+function localName(name) {
+  const text = String(name || '');
+  const hash = text.lastIndexOf('#');
+  const slash = text.lastIndexOf('/');
+  const colon = text.lastIndexOf(':');
+  const index = Math.max(hash, slash, colon);
+  return index >= 0 ? text.slice(index + 1) : text;
+}
+
+function solveSudoku(puzzle) {
+  const text = String(puzzle || '').trim();
+  if (!/^[0-9.]{81}$/.test(text)) throw new Error('SUDOKU expects an 81-character puzzle string containing digits or dots');
+  const cells = Array.from(text, (ch) => (ch === '.' ? 0 : Number(ch)));
+  const peers = sudokuPeers();
+
+  for (let i = 0; i < 81; i += 1) {
+    const value = cells[i];
+    if (value === 0) continue;
+    for (const peer of peers[i]) {
+      if (cells[peer] === value) throw new Error('SUDOKU puzzle has conflicting givens');
+    }
+  }
+
+  const solved = solveSudokuCells(cells, peers);
+  if (!solved) return '';
+  return solved.join('');
+}
+
+function solveSudokuCells(cells, peers) {
+  let bestIndex = -1;
+  let bestCandidates = null;
+
+  for (let i = 0; i < 81; i += 1) {
+    if (cells[i] !== 0) continue;
+    const candidates = sudokuCandidates(cells, peers[i]);
+    if (candidates.length === 0) return null;
+    if (!bestCandidates || candidates.length < bestCandidates.length) {
+      bestIndex = i;
+      bestCandidates = candidates;
+      if (candidates.length === 1) break;
+    }
+  }
+
+  if (bestIndex < 0) return cells;
+
+  for (const value of bestCandidates) {
+    const next = cells.slice();
+    next[bestIndex] = value;
+    const solved = solveSudokuCells(next, peers);
+    if (solved) return solved;
+  }
+  return null;
+}
+
+function sudokuCandidates(cells, peers) {
+  const used = new Set();
+  for (const peer of peers) if (cells[peer] !== 0) used.add(cells[peer]);
+  const out = [];
+  for (let value = 1; value <= 9; value += 1) if (!used.has(value)) out.push(value);
+  return out;
+}
+
+let SUDOKU_PEERS = null;
+function sudokuPeers() {
+  if (SUDOKU_PEERS) return SUDOKU_PEERS;
+  SUDOKU_PEERS = Array.from({ length: 81 }, (_, index) => {
+    const row = Math.floor(index / 9);
+    const col = index % 9;
+    const boxRow = Math.floor(row / 3) * 3;
+    const boxCol = Math.floor(col / 3) * 3;
+    const peers = new Set();
+    for (let c = 0; c < 9; c += 1) peers.add(row * 9 + c);
+    for (let r = 0; r < 9; r += 1) peers.add(r * 9 + col);
+    for (let r = boxRow; r < boxRow + 3; r += 1) {
+      for (let c = boxCol; c < boxCol + 3; c += 1) peers.add(r * 9 + c);
+    }
+    peers.delete(index);
+    return Array.from(peers);
+  });
+  return SUDOKU_PEERS;
 }
 
 function validateArity(canonical, actual) {
