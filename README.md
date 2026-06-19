@@ -1,5 +1,6 @@
 # eyesharl
 
+[![npm version](https://img.shields.io/npm/v/eyesharl.svg)](https://www.npmjs.com/package/eyesharl)
 [![DOI](https://zenodo.org/badge/1240088195.svg)](https://doi.org/10.5281/zenodo.20342577)
 
 `eyesharl` is a JavaScript implementation of SHACL 1.2 Rules, including SRL and RDF Rules syntax front-ends.
