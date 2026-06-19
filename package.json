@@ -1,6 +1,6 @@
 {
   "name": "eyesharl",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "A JavaScript implementation of SHACL Rules, including SRL and RDF Rules syntax front-ends.",
   "keywords": [
     "SRL",
