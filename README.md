@@ -27,4 +27,6 @@ Open [Playground](https://eyereasoner.github.io/eyeleng/playground) for a self-c
 
 The examples live in [examples/](./examples/) at one level. Draft SRL examples are named `spec-*.srl`, RDF Rules syntax examples use `.ttl`, and deep taxonomy benchmarks are named `deep-taxonomy-*.srl`.
 
-Status: Eyeleng runs a growing implementation of the SHACL 1.2 Rules draft surface. It is not a conformance claim and does not implement SHACL validation.
+Status: Eyeleng runs a growing implementation of the SHACL 1.2 Rules draft surface. It does not implement SHACL validation.
+
+The official Eyeleng EARL 1.0 test report for the W3C SHACL 1.2 Rules manifest is in [reports/w3c-shacl12-rules-earl.ttl](./reports/w3c-shacl12-rules-earl.ttl). It records 88/88 passing tests for `https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl`.

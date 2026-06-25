@@ -25,6 +25,7 @@
     "dist",
     "src",
     "tools",
+    "reports",
     "test",
     "examples"
   ],
