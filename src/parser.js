@@ -24,6 +24,7 @@ class Parser {
   constructor(source, options = {}) {
     this.tokens = Array.isArray(source) ? source : tokenize(source, options.filename);
     this.pos = 0;
+    this.options = options;
     this.baseIRI = options.baseIRI || null;
     this.version = null;
     this.imports = [];
@@ -106,7 +107,7 @@ class Parser {
     this.expectWord('WHERE');
     this.expectValue('{');
     const body = this.parseBodyBlockAlreadyOpen();
-    return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body) };
+    return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body, this.options) };
   }
 
   parseIfThenRule() {
@@ -115,7 +116,7 @@ class Parser {
     this.expectWord('THEN');
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-    return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body) };
+    return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body, this.options) };
   }
 
   checkDeclarationKeyword() {

@@ -16,7 +16,7 @@ function parseInput(source, options = {}) {
 function compile(source, options = {}) {
   const parsed = parseInput(source, options);
   const program = options.resolveImports === false ? parsed : resolveImports(parsed, options);
-  const analysis = analyze(program);
+  const analysis = analyze(program, options);
   const diagnostics = analysis.diagnostics;
   const fatal = analysis.errors.length > 0 || (options.strict && analysis.warnings.length > 0);
   if (fatal && options.throwOnDiagnostics !== false) {

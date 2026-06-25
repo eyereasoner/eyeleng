@@ -3,10 +3,11 @@
 const { compactIRI, iri, variable, termEquals } = require('./term.js');
 const { tripleHasBlankNode } = require('./assignments.js');
 
-function analyze(program) {
+function analyze(program, options = {}) {
   const diagnostics = [];
-  const dependency = dependencyGraph(program);
-  const recursiveIndexes = recursiveRuleIndexes(dependency);
+  const dependency = dependencyGraph(program, options);
+  const hasRunOnceRules = program.rules.some((rule) => rule.runOnce);
+  const recursiveIndexes = hasRunOnceRules ? recursiveRuleIndexes(dependency) : new Set();
 
   program.rules.forEach((rule, index) => {
     const name = ruleName(rule, index);
@@ -76,7 +77,7 @@ function displayRuleName(name, prefixes = {}) {
   return /^https?:/.test(name) ? compactIRI(name, prefixes) : name;
 }
 
-function dependencyGraph(program) {
+function dependencyGraph(program, options = {}) {
   const rules = program.rules.map((rule, index) => {
     const positivePatterns = bodyTriplePatterns(rule.body, false);
     const negativePatterns = bodyTriplePatterns(rule.body, true);
@@ -91,7 +92,7 @@ function dependencyGraph(program) {
       positivePredicates: new Set(positivePatterns.flatMap((triple) => predicateIRIs(triple))),
       negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
       runOnce: !!rule.runOnce,
-      hasAssignment: ruleHasAssignment(rule),
+      hasAssignment: ruleHasAssignment(rule, options),
       headHasBlankNode: ruleHeadHasBlankNode(rule),
     };
   });
@@ -327,15 +328,19 @@ function componentMin(component) {
 
 function recursiveRuleIndexes(dependency) {
   const out = new Set();
+  const ruleByName = new Map(dependency.rules.map((rule) => [rule.name, rule]));
+  const ruleByIndex = new Map(dependency.rules.map((rule) => [rule.index, rule]));
+
   for (const component of dependency.components) {
     if (component.length <= 1) continue;
     for (const name of component) {
-      const rule = dependency.rules.find((item) => item.name === name);
+      const rule = ruleByName.get(name);
       if (rule) out.add(rule.index);
     }
   }
+
   for (const edge of dependency.edges) {
-    const rule = dependency.rules.find((item) => item.index === edge.from);
+    const rule = ruleByIndex.get(edge.from);
     if (edge.from === edge.to && edge.negative && rule && rule.runOnce && !rule.headHasBlankNode) continue;
     out.add(edge.from);
   }
@@ -609,8 +614,8 @@ function substituteAssignedConstant(term, constants) {
   return term;
 }
 
-function ruleHasAssignment(rule) {
-  return (rule.body || []).some((clause) => clause.type === 'set');
+function ruleHasAssignment(rule, options = {}) {
+  return !!options.shacl12Conformance && (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
 }
 
 function ruleHeadHasBlankNode(rule) {

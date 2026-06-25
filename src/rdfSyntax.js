@@ -275,6 +275,7 @@ function rdfDocumentToProgram(document, options = {}) {
     data: [],
     rules: [],
     rdfSyntax: true,
+    options: { shacl12Conformance: !!options.shacl12Conformance },
     ruleSets: ruleSetNodes.map((term) => formatTerm(term, document.prefixes)),
   };
 
@@ -283,7 +284,7 @@ function rdfDocumentToProgram(document, options = {}) {
       for (const item of graph.list(dataList)) program.data.push(toDataTriple(item, graph));
     }
     for (const rulesList of graph.objects(ruleSet, SRL_RULES)) {
-      for (const ruleNode of graph.list(rulesList)) program.rules.push(toRule(ruleNode, graph));
+      for (const ruleNode of graph.list(rulesList)) program.rules.push(toRule(ruleNode, graph, options));
     }
   }
   return program;
@@ -309,13 +310,13 @@ function toDataTriple(item, graph) {
   return triple;
 }
 
-function toRule(ruleNode, graph) {
+function toRule(ruleNode, graph, options = {}) {
   const bodyLists = graph.objects(ruleNode, SRL_BODY);
   const headLists = graph.objects(ruleNode, SRL_HEAD);
   if (bodyLists.length !== 1 || headLists.length !== 1) throw new Error(`RDF Rule ${graph.label(ruleNode)} must have exactly one srl:body and one srl:head`);
   const body = graph.list(bodyLists[0]).map((item) => toBodyElement(item, graph));
   const head = graph.list(headLists[0]).map((item) => toTripleLike(item, graph));
-  return { name: graph.label(ruleNode), head, body, runOnce: ruleNeedsRunOnce(head, body) };
+  return { name: graph.label(ruleNode), head, body, runOnce: ruleNeedsRunOnce(head, body, options) };
 }
 
 function toBodyElement(node, graph) {

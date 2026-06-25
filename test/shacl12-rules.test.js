@@ -129,7 +129,7 @@ function shouldPass(type) {
 
 async function runSyntaxOrWellformedTest(test) {
   const source = await fetchText(test.actionUrl);
-  const options = { filename: test.actionUrl, baseIRI: test.actionUrl };
+  const options = { filename: test.actionUrl, baseIRI: test.actionUrl, shacl12Conformance: true };
 
   if (test.type.includes('Syntax')) {
     if (shouldPass(test.type)) eyesharl.parse(source, options);
@@ -162,9 +162,9 @@ async function runEvalTest(test) {
     parseTurtleTriples(test.resultUrl),
   ]);
 
-  const compiled = eyesharl.compile(rulesSource, { filename: test.rulesetUrl, baseIRI: test.rulesetUrl });
+  const compiled = eyesharl.compile(rulesSource, { filename: test.rulesetUrl, baseIRI: test.rulesetUrl, shacl12Conformance: true });
   const program = { ...compiled.program, data: [...compiled.program.data, ...dataTriples] };
-  const result = eyesharl.evaluate(program, { analysis: compiled.analysis });
+  const result = eyesharl.evaluate(program, { analysis: compiled.analysis, shacl12Conformance: true });
 
   const externalInput = new Set(dataTriples.map(tripleKey));
   const actualTriples = result.closure.filter((triple) => !externalInput.has(tripleKey(triple)));

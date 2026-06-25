@@ -4,12 +4,18 @@
 // ordinary fixpoint loop.  Only genuinely fresh generators need run-once
 // evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
 // creating new terms forever.
-function assignmentsNeedRunOnce(clauses = []) {
-  return clauses.some((clause) => clause.type === 'set');
+function assignmentsNeedRunOnce(clauses = [], options = {}) {
+  if (options.shacl12Conformance) {
+    return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
+  }
+  const hasSet = clauses.some((clause) => clause.type === 'set');
+  const hasNegation = clauses.some((clause) => clause.type === 'not');
+  return (hasSet && hasNegation)
+    || clauses.some((clause) => (clause.type === 'set' || clause.type === 'bind') && expressionIsVolatile(clause.expr));
 }
 
-function ruleNeedsRunOnce(head = [], body = []) {
-  return assignmentsNeedRunOnce(body) || head.some(tripleHasBlankNode);
+function ruleNeedsRunOnce(head = [], body = [], options = {}) {
+  return assignmentsNeedRunOnce(body, options) || head.some(tripleHasBlankNode);
 }
 
 function tripleHasBlankNode(triple) {

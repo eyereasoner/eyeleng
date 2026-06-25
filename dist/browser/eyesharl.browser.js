@@ -26,7 +26,7 @@
       function compile(source, options = {}) {
         const parsed = parseInput(source, options);
         const program = options.resolveImports === false ? parsed : resolveImports(parsed, options);
-        const analysis = analyze(program);
+        const analysis = analyze(program, options);
         const diagnostics = analysis.diagnostics;
         const fatal = analysis.errors.length > 0 || (options.strict && analysis.warnings.length > 0);
         if (fatal && options.throwOnDiagnostics !== false) {
@@ -162,6 +162,7 @@
         constructor(source, options = {}) {
           this.tokens = Array.isArray(source) ? source : tokenize(source, options.filename);
           this.pos = 0;
+          this.options = options;
           this.baseIRI = options.baseIRI || null;
           this.version = null;
           this.imports = [];
@@ -244,7 +245,7 @@
           this.expectWord('WHERE');
           this.expectValue('{');
           const body = this.parseBodyBlockAlreadyOpen();
-          return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body) };
+          return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body, this.options) };
         }
       
         parseIfThenRule() {
@@ -253,7 +254,7 @@
           this.expectWord('THEN');
           this.expectValue('{');
           const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-          return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body) };
+          return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body, this.options) };
         }
       
         checkDeclarationKeyword() {
@@ -1900,12 +1901,18 @@
       // ordinary fixpoint loop.  Only genuinely fresh generators need run-once
       // evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
       // creating new terms forever.
-      function assignmentsNeedRunOnce(clauses = []) {
-        return clauses.some((clause) => clause.type === 'set');
+      function assignmentsNeedRunOnce(clauses = [], options = {}) {
+        if (options.shacl12Conformance) {
+          return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
+        }
+        const hasSet = clauses.some((clause) => clause.type === 'set');
+        const hasNegation = clauses.some((clause) => clause.type === 'not');
+        return (hasSet && hasNegation)
+          || clauses.some((clause) => (clause.type === 'set' || clause.type === 'bind') && expressionIsVolatile(clause.expr));
       }
       
-      function ruleNeedsRunOnce(head = [], body = []) {
-        return assignmentsNeedRunOnce(body) || head.some(tripleHasBlankNode);
+      function ruleNeedsRunOnce(head = [], body = [], options = {}) {
+        return assignmentsNeedRunOnce(body, options) || head.some(tripleHasBlankNode);
       }
       
       function tripleHasBlankNode(triple) {
@@ -2231,6 +2238,7 @@
           data: [],
           rules: [],
           rdfSyntax: true,
+          options: { shacl12Conformance: !!options.shacl12Conformance },
           ruleSets: ruleSetNodes.map((term) => formatTerm(term, document.prefixes)),
         };
       
@@ -2239,7 +2247,7 @@
             for (const item of graph.list(dataList)) program.data.push(toDataTriple(item, graph));
           }
           for (const rulesList of graph.objects(ruleSet, SRL_RULES)) {
-            for (const ruleNode of graph.list(rulesList)) program.rules.push(toRule(ruleNode, graph));
+            for (const ruleNode of graph.list(rulesList)) program.rules.push(toRule(ruleNode, graph, options));
           }
         }
         return program;
@@ -2265,13 +2273,13 @@
         return triple;
       }
       
-      function toRule(ruleNode, graph) {
+      function toRule(ruleNode, graph, options = {}) {
         const bodyLists = graph.objects(ruleNode, SRL_BODY);
         const headLists = graph.objects(ruleNode, SRL_HEAD);
         if (bodyLists.length !== 1 || headLists.length !== 1) throw new Error(`RDF Rule ${graph.label(ruleNode)} must have exactly one srl:body and one srl:head`);
         const body = graph.list(bodyLists[0]).map((item) => toBodyElement(item, graph));
         const head = graph.list(headLists[0]).map((item) => toTripleLike(item, graph));
-        return { name: graph.label(ruleNode), head, body, runOnce: ruleNeedsRunOnce(head, body) };
+        return { name: graph.label(ruleNode), head, body, runOnce: ruleNeedsRunOnce(head, body, options) };
       }
       
       function toBodyElement(node, graph) {
@@ -3055,10 +3063,11 @@
       const { compactIRI, iri, variable, termEquals } = require('./term.js');
       const { tripleHasBlankNode } = require('./assignments.js');
       
-      function analyze(program) {
+      function analyze(program, options = {}) {
         const diagnostics = [];
-        const dependency = dependencyGraph(program);
-        const recursiveIndexes = recursiveRuleIndexes(dependency);
+        const dependency = dependencyGraph(program, options);
+        const hasRunOnceRules = program.rules.some((rule) => rule.runOnce);
+        const recursiveIndexes = hasRunOnceRules ? recursiveRuleIndexes(dependency) : new Set();
       
         program.rules.forEach((rule, index) => {
           const name = ruleName(rule, index);
@@ -3128,7 +3137,7 @@
         return /^https?:/.test(name) ? compactIRI(name, prefixes) : name;
       }
       
-      function dependencyGraph(program) {
+      function dependencyGraph(program, options = {}) {
         const rules = program.rules.map((rule, index) => {
           const positivePatterns = bodyTriplePatterns(rule.body, false);
           const negativePatterns = bodyTriplePatterns(rule.body, true);
@@ -3143,7 +3152,7 @@
             positivePredicates: new Set(positivePatterns.flatMap((triple) => predicateIRIs(triple))),
             negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
             runOnce: !!rule.runOnce,
-            hasAssignment: ruleHasAssignment(rule),
+            hasAssignment: ruleHasAssignment(rule, options),
             headHasBlankNode: ruleHeadHasBlankNode(rule),
           };
         });
@@ -3379,15 +3388,19 @@
       
       function recursiveRuleIndexes(dependency) {
         const out = new Set();
+        const ruleByName = new Map(dependency.rules.map((rule) => [rule.name, rule]));
+        const ruleByIndex = new Map(dependency.rules.map((rule) => [rule.index, rule]));
+      
         for (const component of dependency.components) {
           if (component.length <= 1) continue;
           for (const name of component) {
-            const rule = dependency.rules.find((item) => item.name === name);
+            const rule = ruleByName.get(name);
             if (rule) out.add(rule.index);
           }
         }
+      
         for (const edge of dependency.edges) {
-          const rule = dependency.rules.find((item) => item.index === edge.from);
+          const rule = ruleByIndex.get(edge.from);
           if (edge.from === edge.to && edge.negative && rule && rule.runOnce && !rule.headHasBlankNode) continue;
           out.add(edge.from);
         }
@@ -3661,8 +3674,8 @@
         return term;
       }
       
-      function ruleHasAssignment(rule) {
-        return (rule.body || []).some((clause) => clause.type === 'set');
+      function ruleHasAssignment(rule, options = {}) {
+        return !!options.shacl12Conformance && (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
       }
       
       function ruleHeadHasBlankNode(rule) {
