@@ -6,9 +6,9 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 const cliEntry = 'src/cli.js';
-const cliOutput = 'eyesharl.js';
+const cliOutput = 'eyeleng.js';
 const browserEntry = 'src/index.js';
-const browserOutput = 'dist/browser/eyesharl.browser.js';
+const browserOutput = 'dist/browser/eyeleng.browser.js';
 const playgroundOutput = 'playground.html';
 
 function toPosix(file) {
@@ -67,8 +67,8 @@ function syncPlaygroundVersion() {
   const version = packageVersion();
   const outPath = path.join(root, playgroundOutput);
   const html = fs.readFileSync(outPath, 'utf8');
-  const pattern = /(window\.__EYESHARL_VERSION__\s*=\s*)["'][^"']*["']\s*;/;
-  if (!pattern.test(html)) throw new Error('Could not find window.__EYESHARL_VERSION__ in playground.html');
+  const pattern = /(window\.__EYELENG_VERSION__\s*=\s*)["'][^"']*["']\s*;/;
+  if (!pattern.test(html)) throw new Error('Could not find window.__EYELENG_VERSION__ in playground.html');
   const next = html.replace(pattern, `$1${js(version)};`);
   fs.writeFileSync(outPath, next, 'utf8');
   console.log(`wrote ${playgroundOutput} version ${version}`);
@@ -157,8 +157,8 @@ function buildBrowser() {
   chunks.push('  }');
   chunks.push(`  const api = __require(${js(browserEntry)});`);
   chunks.push('  if (typeof module === "object" && module.exports) module.exports = api;');
-  chunks.push('  global.eyesharl = api;');
-  chunks.push('  global.Eyesharl = api;');
+  chunks.push('  global.eyeleng = api;');
+  chunks.push('  global.Eyeleng = api;');
   chunks.push('}(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : this));');
   chunks.push('');
 

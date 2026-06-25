@@ -40,7 +40,7 @@
       const VERSION = readPackageVersion();
       
       function help() {
-        return `eyesharl ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyesharl [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyesharl reads from stdin.\n`;
+        return `eyeleng ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
       }
       
       function parseArgs(argv) {
@@ -128,7 +128,7 @@
       }
       
       function printDiagnostics(diagnostics, stderr) {
-        for (const diagnostic of diagnostics) stderr.write(`eyesharl: ${diagnostic.severity}: ${diagnostic.message}\n`);
+        for (const diagnostic of diagnostics) stderr.write(`eyeleng: ${diagnostic.severity}: ${diagnostic.message}\n`);
       }
       
       function hasFatalDiagnostics(analysis, strict) {
@@ -138,18 +138,18 @@
       function printDependencies(analysis, prefixes, stderr) {
         const edges = analysis.dependency.edges;
         if (edges.length === 0) {
-          stderr.write('eyesharl: deps: no rule dependencies\n');
+          stderr.write('eyeleng: deps: no rule dependencies\n');
           return;
         }
         for (const edge of edges) {
           const from = formatRuleName(analysis.dependency.rules[edge.from].name, prefixes);
           const to = formatRuleName(analysis.dependency.rules[edge.to].name, prefixes);
           const kind = edge.negative ? 'NOT' : 'uses';
-          stderr.write(`eyesharl: deps: ${from} --${kind} ${edge.predicate ? compactIRI(edge.predicate, prefixes) : '*'}--> ${to}\n`);
+          stderr.write(`eyeleng: deps: ${from} --${kind} ${edge.predicate ? compactIRI(edge.predicate, prefixes) : '*'}--> ${to}\n`);
         }
         if (analysis.dependency.layers && analysis.dependency.layers.length > 0) {
           analysis.dependency.layers.forEach((layer, index) => {
-            stderr.write(`eyesharl: deps: layer ${index + 1}: ${layer.join(', ')}\n`);
+            stderr.write(`eyeleng: deps: layer ${index + 1}: ${layer.join(', ')}\n`);
           });
         }
       }
@@ -186,7 +186,7 @@
           if (options.deps) printDependencies(compiled.analysis, compiled.program.prefixes, io.stderr);
       
           if (options.check) {
-            if (compiled.diagnostics.length === 0) io.stderr.write('eyesharl: ok\n');
+            if (compiled.diagnostics.length === 0) io.stderr.write('eyeleng: ok\n');
             return fatal ? 1 : 0;
           }
           if (fatal) return 1;
@@ -214,14 +214,14 @@
           }
       
           if (options.stats) {
-            io.stderr.write(`eyesharl: iterations=${result.iterations} layers=${result.layers.length} input=${result.input.length} inferred=${result.inferred.length} closure=${result.closure.length} ruleApplications=${result.ruleApplications}\n`);
+            io.stderr.write(`eyeleng: iterations=${result.iterations} layers=${result.layers.length} input=${result.input.length} inferred=${result.inferred.length} closure=${result.closure.length} ruleApplications=${result.ruleApplications}\n`);
             for (const rule of result.perRule) {
-              if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyesharl: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
+              if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyeleng: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
             }
           }
           return 0;
         } catch (error) {
-          io.stderr.write(`eyesharl: ${error.message}\n`);
+          io.stderr.write(`eyeleng: ${error.message}\n`);
           return 1;
         }
       }
@@ -1843,13 +1843,13 @@
       
       function freshUuid(options) {
         if (typeof options.uuidGenerator === 'function') return String(options.uuidGenerator());
-        options.__eyesharlUuidCounter = (options.__eyesharlUuidCounter || 0) + 1;
-        return `00000000-0000-4000-8000-${String(options.__eyesharlUuidCounter).padStart(12, '0')}`;
+        options.__eyelengUuidCounter = (options.__eyelengUuidCounter || 0) + 1;
+        return `00000000-0000-4000-8000-${String(options.__eyelengUuidCounter).padStart(12, '0')}`;
       }
       
       function freshId(options) {
-        options.__eyesharlCounter = (options.__eyesharlCounter || 0) + 1;
-        return `eyesharl-${options.__eyesharlCounter}`;
+        options.__eyelengCounter = (options.__eyelengCounter || 0) + 1;
+        return `eyeleng-${options.__eyelengCounter}`;
       }
       
       function asTerm(value) {

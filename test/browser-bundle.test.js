@@ -9,26 +9,26 @@ const { spawnSync } = require('node:child_process');
 
 const root = path.join(__dirname, '..');
 
-test('browser ES module wrapper runs Eyesharl', () => {
+test('browser ES module wrapper runs Eyeleng', () => {
   const script = `
-    import eyesharl from ${JSON.stringify(path.join(root, 'dist', 'browser', 'index.mjs'))};
+    import eyeleng from ${JSON.stringify(path.join(root, 'dist', 'browser', 'index.mjs'))};
     const source = 'PREFIX : <http://example/> DATA { :Socrates a :Man . } RULE { ?x a :Mortal } WHERE { ?x a :Man }';
-    const output = eyesharl.runToString(source).trim();
+    const output = eyeleng.runToString(source).trim();
     if (output !== ':Socrates a :Mortal .') throw new Error(output);
   `;
   const result = spawnSync(process.execPath, ['--input-type=module', '--eval', script], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
 });
 
-test('browser global bundle exposes Eyesharl without ES modules', () => {
-  const bundle = fs.readFileSync(path.join(root, 'dist', 'browser', 'eyesharl.browser.js'), 'utf8');
+test('browser global bundle exposes Eyeleng without ES modules', () => {
+  const bundle = fs.readFileSync(path.join(root, 'dist', 'browser', 'eyeleng.browser.js'), 'utf8');
   const context = vm.createContext({});
-  vm.runInContext(bundle, context, { filename: 'eyesharl.browser.js' });
-  assert.equal(typeof context.eyesharl, 'object');
-  assert.equal(typeof context.eyesharl.runToString, 'function');
+  vm.runInContext(bundle, context, { filename: 'eyeleng.browser.js' });
+  assert.equal(typeof context.eyeleng, 'object');
+  assert.equal(typeof context.eyeleng.runToString, 'function');
 
   const source = 'PREFIX : <http://example/> DATA { :Socrates a :Man . } RULE { ?x a :Mortal } WHERE { ?x a :Man }';
-  assert.equal(context.eyesharl.runToString(source).trim(), ':Socrates a :Mortal .');
+  assert.equal(context.eyeleng.runToString(source).trim(), ':Socrates a :Mortal .');
 });
 
 test('playground inline scripts are syntactically valid', () => {

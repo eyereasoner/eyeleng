@@ -6,16 +6,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { colors: C, info, msTag } = require('./harness.js');
 
-const eyesharl = require('../src/index.js');
+const eyeleng = require('../src/index.js');
 const { tripleKey } = require('../src/term.js');
 
 const DEFAULT_MANIFEST = 'https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl';
-const rootManifestUrl = process.env.EYESHARL_SHACL12_RULES_MANIFEST || DEFAULT_MANIFEST;
-const fetchTimeoutMs = Number(process.env.EYESHARL_SHACL12_FETCH_TIMEOUT_MS || 30000);
+const rootManifestUrl = process.env.EYELENG_SHACL12_RULES_MANIFEST || DEFAULT_MANIFEST;
+const fetchTimeoutMs = Number(process.env.EYELENG_SHACL12_FETCH_TIMEOUT_MS || 30000);
 const textCache = new Map();
 
 function appendSummary(summary) {
-  const file = process.env.EYESHARL_TEST_SUMMARY_FILE;
+  const file = process.env.EYELENG_TEST_SUMMARY_FILE;
   if (!file) return;
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.appendFileSync(file, `${JSON.stringify(summary)}\n`, 'utf8');
@@ -132,18 +132,18 @@ async function runSyntaxOrWellformedTest(test) {
   const options = { filename: test.actionUrl, baseIRI: test.actionUrl, shacl12Conformance: true };
 
   if (test.type.includes('Syntax')) {
-    if (shouldPass(test.type)) eyesharl.parse(source, options);
-    else assert.throws(() => eyesharl.parse(source, options), Error);
+    if (shouldPass(test.type)) eyeleng.parse(source, options);
+    else assert.throws(() => eyeleng.parse(source, options), Error);
     return;
   }
 
-  if (shouldPass(test.type)) eyesharl.compile(source, options);
-  else assert.throws(() => eyesharl.compile(source, options), Error);
+  if (shouldPass(test.type)) eyeleng.compile(source, options);
+  else assert.throws(() => eyeleng.compile(source, options), Error);
 }
 
 async function parseTurtleTriples(url) {
   const source = await fetchText(url);
-  return eyesharl.parseRdfDocument(source, { filename: url, baseIRI: url }).triples;
+  return eyeleng.parseRdfDocument(source, { filename: url, baseIRI: url }).triples;
 }
 
 function sortedTripleKeys(triples) {
@@ -162,9 +162,9 @@ async function runEvalTest(test) {
     parseTurtleTriples(test.resultUrl),
   ]);
 
-  const compiled = eyesharl.compile(rulesSource, { filename: test.rulesetUrl, baseIRI: test.rulesetUrl, shacl12Conformance: true });
+  const compiled = eyeleng.compile(rulesSource, { filename: test.rulesetUrl, baseIRI: test.rulesetUrl, shacl12Conformance: true });
   const program = { ...compiled.program, data: [...compiled.program.data, ...dataTriples] };
-  const result = eyesharl.evaluate(program, { analysis: compiled.analysis, shacl12Conformance: true });
+  const result = eyeleng.evaluate(program, { analysis: compiled.analysis, shacl12Conformance: true });
 
   const externalInput = new Set(dataTriples.map(tripleKey));
   const actualTriples = result.closure.filter((triple) => !externalInput.has(tripleKey(triple)));

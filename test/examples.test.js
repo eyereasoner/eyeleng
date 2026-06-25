@@ -74,7 +74,7 @@ const checkExamples = new Map([
 ]);
 
 function runCheckExample(filename, expectedStatus) {
-  const result = spawnSync(process.execPath, [path.join(root, 'eyesharl.js'), '--check', filename], { encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [path.join(root, 'eyeleng.js'), '--check', filename], { encoding: 'utf8' });
   assert.equal(result.status, expectedStatus, `${relativeExample(filename)}\nSTDERR:\n${result.stderr}`);
   return result.stderr || result.stdout || '';
 }

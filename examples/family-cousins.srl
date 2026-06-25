@@ -23,7 +23,7 @@ DATA {
 
 RULE { :Adam :generation 0 } WHERE { }
 
-# Eyesharl treats SET assignments as run-once rules, so this example avoids
+# Eyeleng treats SET assignments as run-once rules, so this example avoids
 # recursive arithmetic assignment and uses bounded family-tree paths instead.
 RULE { ?child :generation 1 }
 WHERE { :Adam :parentOf ?child }

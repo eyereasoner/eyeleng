@@ -32,7 +32,7 @@ function summarizeError(err) {
 }
 
 function appendSummary(summary) {
-  const file = process.env.EYESHARL_TEST_SUMMARY_FILE;
+  const file = process.env.EYELENG_TEST_SUMMARY_FILE;
   if (!file) return;
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.appendFileSync(file, `${JSON.stringify(summary)}\n`, 'utf8');

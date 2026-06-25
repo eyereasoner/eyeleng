@@ -1,5 +1,5 @@
 {
-  "name": "eyesharl",
+  "name": "eyeleng",
   "version": "1.0.1",
   "description": "A JavaScript implementation of SHACL Rules, including SRL and RDF Rules syntax front-ends.",
   "keywords": [
@@ -10,18 +10,18 @@
   "author": "Jos De Roo",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eyereasoner/eyesharl.git"
+    "url": "git+https://github.com/eyereasoner/eyeleng.git"
   },
-  "homepage": "https://github.com/eyereasoner/eyesharl#readme",
+  "homepage": "https://github.com/eyereasoner/eyeleng#readme",
   "bin": {
-    "eyesharl": "./eyesharl.js"
+    "eyeleng": "./eyeleng.js"
   },
   "files": [
     "LICENSE.md",
     "README.md",
     "HANDBOOK.md",
     "playground.html",
-    "eyesharl.js",
+    "eyeleng.js",
     "dist",
     "src",
     "tools",

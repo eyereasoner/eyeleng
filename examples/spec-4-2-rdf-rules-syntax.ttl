@@ -1,5 +1,5 @@
 # Captured from the SHACL 1.2 Rules draft section 4.2.
-# This is RDF Rules syntax in Turtle and is executable by Eyesharl.
+# This is RDF Rules syntax in Turtle and is executable by Eyeleng.
 
 PREFIX :       <http://example/>
 PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>

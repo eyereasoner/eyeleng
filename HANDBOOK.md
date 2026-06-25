@@ -1,12 +1,12 @@
-# Eyesharl Handbook
+# Eyeleng Handbook
 
-This handbook explains Eyesharl both as JavaScript code and as a reasoning machine. It is written for a computer science student who knows basic programming, data structures, and logic, but may not yet know RDF, SHACL Rules, or forward-chaining reasoners.
+This handbook explains Eyeleng both as JavaScript code and as a reasoning machine. It is written for a computer science student who knows basic programming, data structures, and logic, but may not yet know RDF, SHACL Rules, or forward-chaining reasoners.
 
 The chapters are meant to be read linearly. Each chapter also stands on its own, so you can jump directly to the parser, the evaluator, dependency analysis, imports, or the command-line interface when you need that part.
 
 ## Contents
 
-- [1. What Eyesharl Is](#1-what-eyesharl-is)
+- [1. What Eyeleng Is](#1-what-eyeleng-is)
 - [2. The Reasoning Model](#2-the-reasoning-model)
 - [3. Project Layout](#3-project-layout)
 - [4. Terms: The Atoms of the Machine](#4-terms-the-atoms-of-the-machine)
@@ -36,14 +36,14 @@ The chapters are meant to be read linearly. Each chapter also stands on its own,
 - [28. BuiltInCall Coverage](#28-builtincall-coverage)
 - [29. RDF Rules Syntax Front-End](#29-rdf-rules-syntax-front-end)
 - [30. Known Limitations](#30-known-limitations)
-- [31. How to Extend Eyesharl Safely](#31-how-to-extend-eyesharl-safely)
+- [31. How to Extend Eyeleng Safely](#31-how-to-extend-eyeleng-safely)
 - [32. The Big Picture](#32-the-big-picture)
 
-## 1. What Eyesharl Is
+## 1. What Eyeleng Is
 
-Eyesharl is a compact JavaScript implementation of the Shape Rules Language, or SRL, from the SHACL 1.2 Rules draft.
+Eyeleng is a compact JavaScript implementation of the Shape Rules Language, or SRL, from the SHACL 1.2 Rules draft.
 
-A tiny Eyesharl program looks like this:
+A tiny Eyeleng program looks like this:
 
 ```srl
 PREFIX : <http://example/>
@@ -55,13 +55,13 @@ DATA {
 RULE { ?x a :Mortal } WHERE { ?x a :Man }
 ```
 
-The data says that Socrates is a man. The rule says that every man is mortal. Eyesharl applies the rule and derives:
+The data says that Socrates is a man. The rule says that every man is mortal. Eyeleng applies the rule and derives:
 
 ```srl
 :Socrates a :Mortal .
 ```
 
-Eyesharl is deliberately small. It has no runtime dependencies and avoids parser generators, RDF databases, and SPARQL engines. The point is that the whole reasoning pipeline can be read as ordinary JavaScript.
+Eyeleng is deliberately small. It has no runtime dependencies and avoids parser generators, RDF databases, and SPARQL engines. The point is that the whole reasoning pipeline can be read as ordinary JavaScript.
 
 The main pieces are:
 
@@ -76,11 +76,11 @@ The main pieces are:
 9. query-as-an-operation,
 10. CLI output and bundling.
 
-Eyesharl is not a standards conformance claim. It follows the SRL draft where it implements a feature, while staying honest about missing features.
+Eyeleng is not a standards conformance claim. It follows the SRL draft where it implements a feature, while staying honest about missing features.
 
 ## 2. The Reasoning Model
 
-Eyesharl reasons over triples. A triple has this shape:
+Eyeleng reasons over triples. A triple has this shape:
 
 ```text
 subject predicate object
@@ -171,7 +171,7 @@ A good reading order is:
 
 The file `src/term.js` defines the values that can appear in triples and bindings.
 
-Eyesharl uses plain JavaScript objects:
+Eyeleng uses plain JavaScript objects:
 
 ```js
 { type: 'iri', value: 'http://example/alice' }
@@ -257,7 +257,7 @@ The parser intentionally rejects optional rule-name syntax such as:
 RULE :myRule { ... } WHERE { ... }
 ```
 
-That form was useful in earlier prototypes, but it is not part of the SRL grammar used by Eyesharl now.
+That form was useful in earlier prototypes, but it is not part of the SRL grammar used by Eyeleng now.
 
 ## 7. Data, Heads, and Bodies
 
@@ -273,7 +273,7 @@ RULE {
 WHERE { ?x :p ?y }
 ```
 
-A rule body is a list of clauses. Eyesharl uses these internal shapes:
+A rule body is a list of clauses. Eyeleng uses these internal shapes:
 
 ```js
 { type: 'triple', triple }
@@ -287,7 +287,7 @@ A normal triple body clause matches one triple. A path body clause matches a res
 
 ## 8. Turtle-Style Abbreviations
 
-SRL’s grammar uses Turtle-like predicate and object lists. Eyesharl supports examples such as:
+SRL’s grammar uses Turtle-like predicate and object lists. Eyeleng supports examples such as:
 
 ```srl
 DATA {
@@ -317,11 +317,11 @@ WHERE {
 }
 ```
 
-This syntax makes examples shorter, but internally Eyesharl still stores plain triples.
+This syntax makes examples shorter, but internally Eyeleng still stores plain triples.
 
 ## 9. Property Paths in Bodies
 
-The SRL grammar includes restricted property paths. Eyesharl supports sequence `/` and inverse `^` paths in rule bodies.
+The SRL grammar includes restricted property paths. Eyeleng supports sequence `/` and inverse `^` paths in rule bodies.
 
 Example:
 
@@ -358,7 +358,7 @@ It also keeps indexes by predicate, by predicate plus subject, and by predicate 
 ?x :parentOf ?y
 ```
 
-Eyesharl only scans triples whose predicate is `:parentOf`. If the subject or object is already fixed by the pattern or by previous bindings, the more specific index is used. This is much cheaper than scanning the whole graph for every pattern and is especially important for type-heavy rule sets.
+Eyeleng only scans triples whose predicate is `:parentOf`. If the subject or object is already fixed by the pattern or by previous bindings, the more specific index is used. This is much cheaper than scanning the whole graph for every pattern and is especially important for type-heavy rule sets.
 
 Matching a pattern against a triple either fails or produces a binding. Pattern:
 
@@ -433,7 +433,7 @@ For a filter, the expression must evaluate to true.
 
 For `SET`, the expression result is converted to a term and assigned to a variable.
 
-For `NOT`, Eyesharl tries to evaluate the inner body. If the inner body has no matches, the outer binding survives.
+For `NOT`, Eyeleng tries to evaluate the inner body. If the inner body has no matches, the outer binding survives.
 
 The order of clauses can matter for safety and performance. A filter or assignment should normally use variables that have already been bound by previous positive clauses.
 
@@ -470,11 +470,11 @@ These rules compute ancestry. If the input graph is finite and the rules do not 
 
 ## 14. Dependency Analysis
 
-Negation and assignment make rule order important. Eyesharl therefore analyzes dependencies before evaluation.
+Negation and assignment make rule order important. Eyeleng therefore analyzes dependencies before evaluation.
 
 A rule depends on another rule when a body triple pattern can possibly be generated by a head template of the other rule. The analyzer indexes head templates before comparing them, using fixed subject, predicate, and object positions when available. Without that index, a deep taxonomy with thousands of rules would spend most of its time comparing every rule body with every rule head.
 
-The evaluator also precomputes which dependency layers are genuinely recursive. A deep taxonomy can have tens of thousands of acyclic layers, and checking each layer by scanning every dependency edge would turn a linear benchmark into a quadratic one. Eyesharl therefore computes layer recursion once and then evaluates each acyclic layer in a single pass.
+The evaluator also precomputes which dependency layers are genuinely recursive. A deep taxonomy can have tens of thousands of acyclic layers, and checking each layer by scanning every dependency edge would turn a linear benchmark into a quadratic one. Eyeleng therefore computes layer recursion once and then evaluates each acyclic layer in a single pass.
 
 A positive dependency looks like this:
 
@@ -497,7 +497,7 @@ The first rule depends negatively on the second, because the meaning of `NOT { ?
 `src/analyze.js` builds this dependency graph. The CLI can print it with:
 
 ```sh
-./eyesharl.js --check --deps examples/stratified-negation.srl
+./eyeleng.js --check --deps examples/stratified-negation.srl
 ```
 
 ## 15. Stratified Evaluation
@@ -506,7 +506,7 @@ Stratification turns the dependency graph into evaluation layers.
 
 If rule A has `NOT` over a predicate that rule B can produce, then B must finish before A runs. Otherwise A could infer something based on missing information and never retract it.
 
-Eyesharl’s evaluator now uses layers from the dependency analysis. Each layer is evaluated to a fixpoint before moving to the next layer.
+Eyeleng’s evaluator now uses layers from the dependency analysis. Each layer is evaluated to a fixpoint before moving to the next layer.
 
 This matters when source order is misleading:
 
@@ -518,9 +518,9 @@ RULE { ?x :blocked true }
 WHERE { ?x :flagged true }
 ```
 
-Even though the `:eligible` rule appears first, Eyesharl runs the `:blocked` producer in an earlier layer. That prevents incorrect `:eligible` triples.
+Even though the `:eligible` rule appears first, Eyeleng runs the `:blocked` producer in an earlier layer. That prevents incorrect `:eligible` triples.
 
-If a dependency cycle contains a negative edge, Eyesharl reports `unstratified-negation` and refuses to evaluate by default.
+If a dependency cycle contains a negative edge, Eyeleng reports `unstratified-negation` and refuses to evaluate by default.
 
 ## 16. Assignment Rules
 
@@ -534,7 +534,7 @@ WHERE {
 }
 ```
 
-Eyesharl marks rules containing `SET` as run-once rules. They are evaluated at their layer position after ordinary rules in that layer have reached a fixpoint.
+Eyeleng marks rules containing `SET` as run-once rules. They are evaluated at their layer position after ordinary rules in that layer have reached a fixpoint.
 
 Deterministic assignment rules can participate in the ordinary fixpoint loop. Rules containing volatile generators such as UUID(), STRUUID(), or argument-less BNODE() are evaluated once so they do not repeatedly create different values for the same conceptual assignment.
 
@@ -551,7 +551,7 @@ IMPORTS <library.srl>
 The API can merge imported rule sets when you provide an `importResolver`. The CLI has a built-in resolver for local `file:` imports. When you run:
 
 ```sh
-./eyesharl.js examples/import-main.srl
+./eyeleng.js examples/import-main.srl
 ```
 
 and `import-main.srl` contains:
@@ -560,7 +560,7 @@ and `import-main.srl` contains:
 IMPORTS <import-lib.srl>
 ```
 
-Eyesharl resolves the relative IRI against the importing file, reads the imported file, recursively processes its imports, and merges imported rules and data before local evaluation.
+Eyeleng resolves the relative IRI against the importing file, reads the imported file, recursively processes its imports, and merges imported rules and data before local evaluation.
 
 Import cycles are tracked with a visited set, so a cycle does not cause infinite loading.
 
@@ -591,16 +591,16 @@ Static analysis prevents the engine from silently doing something meaningless. F
 RULE { ?x :bad true } WHERE { :alice :knows :bob }
 ```
 
-The body never binds `?x`, so the head cannot be instantiated. Eyesharl warns about that.
+The body never binds `?x`, so the head cannot be instantiated. Eyeleng warns about that.
 
 ## 19. Query as an Operation
 
-The SHACL Rules draft describes a query operation, but Eyesharl does not add top-level `QUERY` or SPARQL `SELECT` syntax to `.srl` files.
+The SHACL Rules draft describes a query operation, but Eyeleng does not add top-level `QUERY` or SPARQL `SELECT` syntax to `.srl` files.
 
 Instead, query mode is external:
 
 ```sh
-./eyesharl.js --query '?person :ancestorOf ?descendant . FILTER(?person = :alice)' examples/query.srl
+./eyeleng.js --query '?person :ancestorOf ?descendant . FILTER(?person = :alice)' examples/query.srl
 ```
 
 The steps are:
@@ -621,11 +621,11 @@ This keeps `.srl` files focused on SRL rule sets while still making the query op
 Common commands:
 
 ```sh
-./eyesharl.js examples/family.srl
-./eyesharl.js --all examples/family.srl
-./eyesharl.js --check --deps examples/stratified-negation.srl
-./eyesharl.js --json --trace --stats examples/if-then.srl
-./eyesharl.js --query-file examples/query-body.txt examples/query.srl
+./eyeleng.js examples/family.srl
+./eyeleng.js --all examples/family.srl
+./eyeleng.js --check --deps examples/stratified-negation.srl
+./eyeleng.js --json --trace --stats examples/if-then.srl
+./eyeleng.js --query-file examples/query-body.txt examples/query.srl
 ```
 
 Important options:
@@ -688,7 +688,7 @@ The public API returns structured objects: parsed programs, diagnostics, inferre
 
 ## 22. The Bundle
 
-`tools/bundle.js` generates `eyesharl.js`.
+`tools/bundle.js` generates `eyeleng.js`.
 
 The bundler starts at `src/cli.js`, follows local `require('./...')` calls, places modules into a small runtime table, and writes one executable file.
 
@@ -795,7 +795,7 @@ The `examples/spec-*` files mirror examples from the SHACL 1.2 Rules Working Dra
 
 First, the `.srl` files are executable regression examples. They cover the introductory rule examples: basic inference, recursion, filtering, negation, assignment, assignment guarded by negation, and the SRL syntax comparison example from section 4.
 
-Second, the `.ttl` files preserve Turtle/RDF examples from the draft. Eyesharl can execute the RDF Rules syntax subset that maps `srl:RuleSet`, `srl:data`, `srl:rules`, `srl:body`, and `srl:head` into the same internal rule-set model used by SRL.
+Second, the `.ttl` files preserve Turtle/RDF examples from the draft. Eyeleng can execute the RDF Rules syntax subset that maps `srl:RuleSet`, `srl:data`, `srl:rules`, `srl:body`, and `srl:head` into the same internal rule-set model used by SRL.
 
 When adding future draft examples, keep this distinction clear:
 
@@ -808,7 +808,7 @@ The test file `test/w3c-examples.test.js` checks that all runnable W3C `.srl` ex
 
 ## 26. Advanced SRL Grammar Features
 
-The SRL grammar is not only `RULE`, `WHERE`, and simple triples. Eyesharl also supports several RDF-style term forms that make rule sets closer to the draft grammar.
+The SRL grammar is not only `RULE`, `WHERE`, and simple triples. Eyeleng also supports several RDF-style term forms that make rule sets closer to the draft grammar.
 
 Collections are written with parentheses:
 
@@ -848,7 +848,7 @@ Triple terms can appear in data and patterns. Matching is recursive, so a patter
 
 ## 27. Reifiers, Triple Terms, and Annotations
 
-Eyesharl distinguishes triple terms from reifiers.
+Eyeleng distinguishes triple terms from reifiers.
 
 A triple term is a term whose value is a triple:
 
@@ -862,7 +862,7 @@ A reified triple can introduce a reifier:
 << :alice :says :hello ~ :claim1 >>
 ```
 
-Eyesharl expands that into a reifier relationship:
+Eyeleng expands that into a reifier relationship:
 
 ```srl
 :claim1 rdf:reifies <<( :alice :says :hello )>> .
@@ -892,11 +892,11 @@ WHERE {
 }
 ```
 
-This feature shows why Eyesharl has both parser tests and reasoning tests. It is not enough to accept the surface syntax. The parser must expand the syntax into triples that the engine can match.
+This feature shows why Eyeleng has both parser tests and reasoning tests. It is not enough to accept the surface syntax. The parser must expand the syntax into triples that the engine can match.
 
 ## 28. BuiltInCall Coverage
 
-The SRL grammar has a production named `BuiltInCall`. Eyesharl represents that production directly in `src/builtins.js` with `BUILTIN_SIGNATURES`.
+The SRL grammar has a production named `BuiltInCall`. Eyeleng represents that production directly in `src/builtins.js` with `BUILTIN_SIGNATURES`.
 
 The registry maps each grammar-level built-in name to its arity. That gives a clear path from syntax to execution:
 
@@ -920,7 +920,7 @@ SET(?slug := REPLACE(LCASE(STR(?name)), " ", "-"))
 
 The assignment result becomes a new variable binding. Later body elements and the rule head can use `?slug`.
 
-The parser treats unprefixed function names strictly. A bare function such as `LCASE(...)` is accepted because it is a grammar built-in. A custom function must be an IRI-named function call, such as `:startsWithA(...)` or `<http://example/fn>(...)`. This keeps Eyesharl close to the grammar instead of quietly accepting JavaScript-style helper names.
+The parser treats unprefixed function names strictly. A bare function such as `LCASE(...)` is accepted because it is a grammar built-in. A custom function must be an IRI-named function call, such as `:startsWithA(...)` or `<http://example/fn>(...)`. This keeps Eyeleng close to the grammar instead of quietly accepting JavaScript-style helper names.
 
 The most subtle built-in is `IF`. It is lazy. Only the selected branch is evaluated. That means this is safe when the condition is false:
 
@@ -930,11 +930,11 @@ SET(?value := IF(false, :missingFunction(), "safe"))
 
 The missing function is part of the unchosen branch, so it is not evaluated.
 
-`examples/builtin-call-complete.srl` exercises every built-in named by the grammar. `test/builtins.test.js` compares Eyesharl's registry against the complete BuiltInCall name list and runs the example as an executable smoke test.
+`examples/builtin-call-complete.srl` exercises every built-in named by the grammar. `test/builtins.test.js` compares Eyeleng's registry against the complete BuiltInCall name list and runs the example as an executable smoke test.
 
 ## 29. RDF Rules Syntax Front-End
 
-Eyesharl has two front-ends for rule sets: SRL text and RDF Rules syntax in Turtle. The RDF front-end does not replace the SRL parser. It translates an RDF graph that uses the `srl:` vocabulary into the same internal program shape that the SRL parser produces.
+Eyeleng has two front-ends for rule sets: SRL text and RDF Rules syntax in Turtle. The RDF front-end does not replace the SRL parser. It translates an RDF graph that uses the `srl:` vocabulary into the same internal program shape that the SRL parser produces.
 
 The important idea is this:
 
@@ -942,7 +942,7 @@ The important idea is this:
 Turtle/RDF input -> RDF graph -> srl:RuleSet translator -> internal program -> analyzer -> engine
 ```
 
-That keeps the reasoning machine small. Once RDF syntax has been translated, the rest of Eyesharl does not care whether a rule originally came from this SRL text:
+That keeps the reasoning machine small. Once RDF syntax has been translated, the rest of Eyeleng does not care whether a rule originally came from this SRL text:
 
 ```srl
 RULE { ?y :childOf ?x } WHERE { ?x :parentOf ?y }
@@ -983,18 +983,18 @@ RDF expression nodes such as:
 [ sparql:less-than ( [ shnex:var "age" ] 18 ) ]
 ```
 
-become the same expression AST used by SRL `FILTER(?age < 18)`. Supported operator nodes include comparison, arithmetic, boolean connectives, and calls that map onto Eyesharl's BuiltInCall registry.
+become the same expression AST used by SRL `FILTER(?age < 18)`. Supported operator nodes include comparison, arithmetic, boolean connectives, and calls that map onto Eyeleng's BuiltInCall registry.
 
 The CLI auto-detects `.ttl` input as RDF syntax, and also accepts explicit syntax selection:
 
 ```sh
-./eyesharl.js --syntax rdf examples/basic-ruleset.ttl
+./eyeleng.js --syntax rdf examples/basic-ruleset.ttl
 ```
 
 If a Turtle file contains several rule sets, select one with `--ruleset`:
 
 ```sh
-./eyesharl.js --syntax rdf --ruleset :familyRules examples/basic-ruleset.ttl
+./eyeleng.js --syntax rdf --ruleset :familyRules examples/basic-ruleset.ttl
 ```
 
 The RDF syntax examples in `examples/*.ttl` are executable regression files. One of them, `w3c-rule-set-snippet.ttl`, is adapted from the W3C `data-shapes` repository's `shacl12-rules/rules-rdf-syntax/test-rules.ttl` file and exercises the same core vocabulary shape: `srl:RuleSet`, RDF lists, rule nodes, triple objects, filters, assignments, and triple terms in data blocks.
@@ -1003,7 +1003,7 @@ This front-end is intentionally not a full SHACL validator. It can execute RDF R
 
 ## 30. Known Limitations
 
-Eyesharl is not a standards conformance claim. The most important remaining limitations are:
+Eyeleng is not a standards conformance claim. The most important remaining limitations are:
 
 - it does not implement SHACL validation or validation reports,
 - it does not implement a complete RDF 1.2 parser,
@@ -1014,7 +1014,7 @@ Eyesharl is not a standards conformance claim. The most important remaining limi
 
 The best way to read these limitations is as architectural boundaries. The rule engine derives triples. A SHACL validator checks shapes and emits validation reports. Those can be connected later, but they are different machines.
 
-## 31. How to Extend Eyesharl Safely
+## 31. How to Extend Eyeleng Safely
 
 When adding a feature, preserve the pipeline:
 
@@ -1043,7 +1043,7 @@ Useful extension directions include:
 
 ## 32. The Big Picture
 
-Eyesharl is a Datalog-like forward reasoner over RDF-style triples.
+Eyeleng is a Datalog-like forward reasoner over RDF-style triples.
 
 The heart of the system is:
 
@@ -1067,4 +1067,4 @@ Everything else supports that loop:
 - tests preserve behavior,
 - the bundle makes the tool easy to run.
 
-Understanding Eyesharl means understanding how a declarative rule set becomes a deterministic computation over a growing set of facts.
+Understanding Eyeleng means understanding how a declarative rule set becomes a deterministic computation over a growing set of facts.

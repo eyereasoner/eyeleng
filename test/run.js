@@ -9,7 +9,7 @@ const { colors: C, msTag, info } = require('./harness.js');
 
 const root = path.join(__dirname, '..');
 const start = Date.now();
-const summaryFile = path.join(os.tmpdir(), `eyesharl-test-summary-${process.pid}.jsonl`);
+const summaryFile = path.join(os.tmpdir(), `eyeleng-test-summary-${process.pid}.jsonl`);
 
 const preferred = [
   'api.test.js',
@@ -25,7 +25,7 @@ for (const file of files) {
   const result = spawnSync(process.execPath, [path.join(__dirname, file)], {
     cwd: root,
     stdio: 'inherit',
-    env: { ...process.env, EYESHARL_TEST_SUMMARY_FILE: summaryFile },
+    env: { ...process.env, EYELENG_TEST_SUMMARY_FILE: summaryFile },
   });
   if (result.error) {
     console.error(result.error.stack || result.error.message || String(result.error));

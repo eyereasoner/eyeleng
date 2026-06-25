@@ -1,9 +1,9 @@
-import './eyesharl.browser.js';
+import './eyeleng.browser.js';
 
 function getBrowserApi() {
-  const api = typeof globalThis !== 'undefined' ? globalThis.eyesharl : undefined;
+  const api = typeof globalThis !== 'undefined' ? globalThis.eyeleng : undefined;
   if (!api) {
-    throw new Error('Eyesharl browser bundle is not initialized. Import "eyesharl/browser" only in a browser or worker runtime.');
+    throw new Error('Eyeleng browser bundle is not initialized. Import "eyeleng/browser" only in a browser or worker runtime.');
   }
   return api;
 }
@@ -30,7 +30,7 @@ export function sortTriples(...args) { return getBrowserApi().sortTriples(...arg
 export function toJSON(...args) { return getBrowserApi().toJSON(...args); }
 export function formatTrace(...args) { return getBrowserApi().formatTrace(...args); }
 
-const eyesharl = {
+const eyeleng = {
   get version() { return getBrowserApi().version; },
   parse,
   parseQuery,
@@ -54,4 +54,4 @@ const eyesharl = {
   formatTrace,
 };
 
-export default eyesharl;
+export default eyeleng;

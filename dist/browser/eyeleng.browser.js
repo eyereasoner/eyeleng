@@ -1619,13 +1619,13 @@
       
       function freshUuid(options) {
         if (typeof options.uuidGenerator === 'function') return String(options.uuidGenerator());
-        options.__eyesharlUuidCounter = (options.__eyesharlUuidCounter || 0) + 1;
-        return `00000000-0000-4000-8000-${String(options.__eyesharlUuidCounter).padStart(12, '0')}`;
+        options.__eyelengUuidCounter = (options.__eyelengUuidCounter || 0) + 1;
+        return `00000000-0000-4000-8000-${String(options.__eyelengUuidCounter).padStart(12, '0')}`;
       }
       
       function freshId(options) {
-        options.__eyesharlCounter = (options.__eyesharlCounter || 0) + 1;
-        return `eyesharl-${options.__eyesharlCounter}`;
+        options.__eyelengCounter = (options.__eyelengCounter || 0) + 1;
+        return `eyeleng-${options.__eyelengCounter}`;
       }
       
       function asTerm(value) {
@@ -3936,6 +3936,6 @@
   }
   const api = __require("src/index.js");
   if (typeof module === "object" && module.exports) module.exports = api;
-  global.eyesharl = api;
-  global.Eyesharl = api;
+  global.eyeleng = api;
+  global.Eyeleng = api;
 }(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : this));

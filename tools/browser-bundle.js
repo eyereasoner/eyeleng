@@ -7,7 +7,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const entry = 'src/api.js';
 const outDir = path.join(root, 'dist', 'browser');
-const browserOutput = path.join(outDir, 'eyesharl.browser.js');
+const browserOutput = path.join(outDir, 'eyeleng.browser.js');
 const moduleOutput = path.join(outDir, 'index.mjs');
 const modules = new Map();
 const mappings = new Map();
@@ -100,7 +100,7 @@ function buildBrowserBundle() {
   chunks.push('  }');
   chunks.push(`  const api = __require(${js(entry)});`);
   chunks.push(`  const browserApi = { version: ${js(readVersion())}, ...api };`);
-  chunks.push('  root.eyesharl = browserApi;');
+  chunks.push('  root.eyeleng = browserApi;');
   chunks.push('}(typeof globalThis !== "undefined" ? globalThis : (typeof self !== "undefined" ? self : this)));');
   chunks.push('');
   fs.writeFileSync(browserOutput, chunks.join('\n'), 'utf8');
@@ -132,12 +132,12 @@ function buildModuleWrapper() {
   ];
 
   const chunks = [];
-  chunks.push("import './eyesharl.browser.js';");
+  chunks.push("import './eyeleng.browser.js';");
   chunks.push('');
   chunks.push('function getBrowserApi() {');
-  chunks.push("  const api = typeof globalThis !== 'undefined' ? globalThis.eyesharl : undefined;");
+  chunks.push("  const api = typeof globalThis !== 'undefined' ? globalThis.eyeleng : undefined;");
   chunks.push('  if (!api) {');
-  chunks.push("    throw new Error('Eyesharl browser bundle is not initialized. Import \"eyesharl/browser\" only in a browser or worker runtime.');");
+  chunks.push("    throw new Error('Eyeleng browser bundle is not initialized. Import \"eyeleng/browser\" only in a browser or worker runtime.');");
   chunks.push('  }');
   chunks.push('  return api;');
   chunks.push('}');
@@ -147,12 +147,12 @@ function buildModuleWrapper() {
     chunks.push(`export function ${name}(...args) { return getBrowserApi().${name}(...args); }`);
   }
   chunks.push('');
-  chunks.push('const eyesharl = {');
+  chunks.push('const eyeleng = {');
   chunks.push('  get version() { return getBrowserApi().version; },');
   for (const name of exported) chunks.push(`  ${name},`);
   chunks.push('};');
   chunks.push('');
-  chunks.push('export default eyesharl;');
+  chunks.push('export default eyeleng;');
   chunks.push('');
   fs.writeFileSync(moduleOutput, chunks.join('\n'), 'utf8');
   console.log(`wrote ${path.relative(root, moduleOutput)}`);

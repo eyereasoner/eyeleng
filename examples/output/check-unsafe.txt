@@ -1,1 +1,1 @@
-eyesharl: error: rule#1 has unbound head variable ?someone
+eyeleng: error: rule#1 has unbound head variable ?someone
