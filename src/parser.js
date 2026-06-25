@@ -2,7 +2,7 @@
 
 const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
 const { isBuiltinName } = require('./builtins.js');
-const { assignmentsNeedRunOnce } = require('./assignments.js');
+const { ruleNeedsRunOnce } = require('./assignments.js');
 const {
   iri,
   variable,
@@ -106,7 +106,7 @@ class Parser {
     this.expectWord('WHERE');
     this.expectValue('{');
     const body = this.parseBodyBlockAlreadyOpen();
-    return { name: null, head, body, runOnce: assignmentsNeedRunOnce(body) };
+    return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body) };
   }
 
   parseIfThenRule() {
@@ -115,7 +115,7 @@ class Parser {
     this.expectWord('THEN');
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-    return { name: null, head, body, runOnce: assignmentsNeedRunOnce(body) };
+    return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body) };
   }
 
   checkDeclarationKeyword() {
@@ -208,7 +208,7 @@ class Parser {
 
     while (keepParsingPredicates) {
       if (terminators.some((value) => this.checkValue(value)) || this.checkValue('.')) break;
-      const predicate = options.allowPath ? this.parseVerbPathOrSimple() : this.parseVerbTerm();
+      const predicate = options.allowPath ? this.parseVerbPathOrSimple(options) : this.parseVerbTerm(options);
       do {
         const objectNode = this.parseGraphNode(options);
         triples.push(...objectNode.triples);
@@ -304,7 +304,7 @@ class Parser {
   parseReifiedTripleNode(options = {}) {
     this.expectValue('<<');
     const subjectNode = this.parseReifiedTripleComponent(options);
-    const p = this.parseVerbTerm();
+    const p = this.parseVerbTerm(options);
     const objectNode = this.parseReifiedTripleComponent(options);
     let reifier = null;
     if (this.matchValue('~')) reifier = this.parseOptionalReifier(options);
@@ -325,14 +325,14 @@ class Parser {
     return { term: this.parseTerm(options), triples: [] };
   }
 
-  parseVerbTerm() {
-    const term = this.parseTerm();
+  parseVerbTerm(options = {}) {
+    const term = this.parseTerm(options);
     if (term.type !== 'iri' && term.type !== 'var') throw this.error('Expected IRI or variable as predicate');
     return term;
   }
 
-  parseVerbPathOrSimple() {
-    if (this.checkType('variable')) return this.parseTerm();
+  parseVerbPathOrSimple(options = {}) {
+    if (this.checkType('variable')) return this.parseTerm(options);
     return this.parsePathSequence();
   }
 
@@ -368,18 +368,33 @@ class Parser {
     return { type: 'filter', expr };
   }
 
+  parseSetClause() {
+    this.expectValue('(');
+    const variableToken = this.expectType('variable');
+    this.expectValue(':=');
+    const expr = this.parseExpression();
+    this.expectValue(')');
+    return { type: 'set', variable: variableToken.value, expr };
+  }
+
+  parseBindClause() {
+    this.expectValue('(');
+    const expr = this.parseExpression();
+    this.expectWord('AS');
+    const variableToken = this.expectType('variable');
+    this.expectValue(')');
+    return { type: 'bind', variable: variableToken.value, expr };
+  }
+
   parseBodyBlockAlreadyOpen() {
     const clauses = [];
     while (!this.matchValue('}')) {
       if (this.matchWord('FILTER')) {
         clauses.push(this.parseFilterClause());
       } else if (this.matchWord('SET')) {
-        this.expectValue('(');
-        const variableToken = this.expectType('variable');
-        this.expectValue(':=');
-        const expr = this.parseExpression();
-        this.expectValue(')');
-        clauses.push({ type: 'set', variable: variableToken.value, expr });
+        clauses.push(this.parseSetClause());
+      } else if (this.matchWord('BIND')) {
+        clauses.push(this.parseBindClause());
       } else if (this.matchWord('NOT')) {
         this.expectValue('{');
         const body = this.parseBodyBasicAlreadyOpen();
@@ -402,6 +417,8 @@ class Parser {
         clauses.push(this.parseFilterClause());
       } else if (this.matchWord('SET')) {
         throw this.error('SET is not allowed inside NOT blocks by the SRL grammar');
+      } else if (this.matchWord('BIND')) {
+        throw this.error('BIND is not allowed inside NOT blocks by the SRL grammar');
       } else if (this.matchWord('NOT')) {
         throw this.error('Nested NOT is not allowed inside NOT blocks by the SRL grammar');
       } else {
@@ -415,17 +432,20 @@ class Parser {
     return clauses;
   }
 
-  parseTerm() {
+  parseTerm(options = {}) {
     const token = this.advance();
     if (token.type === 'operator' && (token.value === '+' || token.value === '-') && this.peek().type === 'number') {
       const numberToken = this.advance();
       return numericLiteral(token.value === '-' ? -numberToken.value : numberToken.value);
     }
-    if (token.type === 'variable') return variable(token.value);
+    if (token.type === 'variable') {
+      if (options.context === 'data') throw this.error('DATA blocks may not contain variables', token);
+      return variable(token.value);
+    }
     if (token.type === 'iri') return iri(this.resolveIRI(token.value, token));
     if (token.type === 'string') return this.parseLiteralAfterToken(token);
     if (token.type === 'number') return numericLiteral(token.value);
-    if (token.value === '<<(') return this.parseTripleTermAfterOpen();
+    if (token.value === '<<(') return this.parseTripleTermAfterOpen(options);
     if (token.value === '<<') throw this.error('Use << s p o >> as a graph node reifier; use <<( s p o )>> for a triple term', token);
     if (token.type === 'word') {
       if (token.value === 'a') return iri(RDF_TYPE);
@@ -437,18 +457,18 @@ class Parser {
     throw this.error(`Expected term, got ${token.value}`, token);
   }
 
-  parseTripleTermAfterOpen() {
-    const s = this.parseTerm();
-    const p = this.parseVerbTerm();
-    const o = this.parseTerm();
+  parseTripleTermAfterOpen(options = {}) {
+    const s = this.parseTerm(options);
+    const p = this.parseVerbTerm(options);
+    const o = this.parseTerm(options);
     this.expectValue(')>>');
     return tripleTerm(s, p, o);
   }
 
-  parseReifiedTripleAfterOpen() {
-    const s = this.parseTerm();
-    const p = this.parseVerbTerm();
-    const o = this.parseTerm();
+  parseReifiedTripleAfterOpen(options = {}) {
+    const s = this.parseTerm(options);
+    const p = this.parseVerbTerm(options);
+    const o = this.parseTerm(options);
     if (this.matchValue('~')) {
       if (!this.checkValue('>>')) this.parseVarOrReifierId();
     }

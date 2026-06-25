@@ -1,1 +1,1 @@
-eyesharl: warning: rule#1 has unbound head variable ?someone
+eyesharl: error: rule#1 has unbound head variable ?someone

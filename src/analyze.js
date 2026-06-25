@@ -1,10 +1,12 @@
 'use strict';
 
 const { compactIRI, iri, variable, termEquals } = require('./term.js');
+const { tripleHasBlankNode } = require('./assignments.js');
 
 function analyze(program) {
   const diagnostics = [];
   const dependency = dependencyGraph(program);
+  const recursiveIndexes = recursiveRuleIndexes(dependency);
 
   program.rules.forEach((rule, index) => {
     const name = ruleName(rule, index);
@@ -18,7 +20,7 @@ function analyze(program) {
       if (!bound.has(variable)) {
         diagnostics.push({
           code: 'unsafe-head-variable',
-          severity: 'warning',
+          severity: 'error',
           rule: name,
           message: `${label} has unbound head variable ?${variable}`,
         });
@@ -38,12 +40,12 @@ function analyze(program) {
 
     diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, label));
 
-    if (rule.runOnce && recursiveRuleIndexes(dependency).has(index)) {
+    if (rule.runOnce && recursiveIndexes.has(index)) {
       diagnostics.push({
         code: 'recursive-assignment-rule',
         severity: 'warning',
         rule: name,
-        message: `${label} contains a volatile SET expression and is recursive; fresh-value assignment rules are run once in Eyesharl`,
+        message: `${label} is a run-once rule in a recursive dependency cycle`,
       });
     }
 
@@ -78,16 +80,19 @@ function dependencyGraph(program) {
   const rules = program.rules.map((rule, index) => {
     const positivePatterns = bodyTriplePatterns(rule.body, false);
     const negativePatterns = bodyTriplePatterns(rule.body, true);
+    const headTemplates = effectiveHeadTemplates(rule);
     return {
       index,
       name: ruleName(rule, index),
-      headTemplates: rule.head.slice(),
+      headTemplates,
       positivePatterns,
       negativePatterns,
-      headPredicates: new Set(rule.head.map((triple) => predicateIRI(triple)).filter(Boolean)),
+      headPredicates: new Set(headTemplates.map((triple) => predicateIRI(triple)).filter(Boolean)),
       positivePredicates: new Set(positivePatterns.flatMap((triple) => predicateIRIs(triple))),
       negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
       runOnce: !!rule.runOnce,
+      hasAssignment: ruleHasAssignment(rule),
+      headHasBlankNode: ruleHeadHasBlankNode(rule),
     };
   });
 
@@ -106,9 +111,10 @@ function dependencyGraph(program) {
   const headIndex = buildHeadTemplateIndex(rules);
 
   for (const from of rules) {
+    const forceClosed = from.hasAssignment || from.headHasBlankNode;
     for (const pattern of from.positivePatterns) {
       for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
-        if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], false, dependencyPredicateLabel(pattern));
+        if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], forceClosed, dependencyPredicateLabel(pattern));
       }
     }
     for (const pattern of from.negativePatterns) {
@@ -130,7 +136,7 @@ function dependencyGraph(program) {
   const seen = new Set();
   for (const edge of edges) {
     if (!edge.negative) continue;
-    if (edge.from === edge.to && rules[edge.from] && rules[edge.from].runOnce) continue;
+    if (edge.from === edge.to && rules[edge.from].runOnce && !rules[edge.from].headHasBlankNode) continue;
     if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
     const component = components[componentOf.get(edge.from)];
     const key = `${component.slice().sort((a, b) => a - b).join(',')}|${edge.predicate || '*'}`;
@@ -152,6 +158,7 @@ function dependencyGraph(program) {
       positivePredicates: Array.from(rule.positivePredicates),
       negativePredicates: Array.from(rule.negativePredicates),
       runOnce: rule.runOnce,
+      headHasBlankNode: rule.headHasBlankNode,
     })),
     edges,
     components: components.map((component) => component.map((ruleIndex) => rules[ruleIndex].name)),
@@ -329,7 +336,8 @@ function recursiveRuleIndexes(dependency) {
   }
   for (const edge of dependency.edges) {
     const rule = dependency.rules.find((item) => item.index === edge.from);
-    if (edge.from === edge.to && !(edge.negative && rule && rule.runOnce)) out.add(edge.from);
+    if (edge.from === edge.to && edge.negative && rule && rule.runOnce && !rule.headHasBlankNode) continue;
+    out.add(edge.from);
   }
   return out;
 }
@@ -408,7 +416,7 @@ function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, label) {
             });
           }
         }
-      } else if (clause.type === 'set') {
+      } else if ((clause.type === 'set' || clause.type === 'bind')) {
         if (bound.has(clause.variable)) {
           diagnostics.push({
             code: 'assignment-variable-already-bound',
@@ -552,11 +560,68 @@ function pathPredicateIRIs(path) {
   return [];
 }
 
+function effectiveHeadTemplates(rule) {
+  const constants = assignmentConstantTerms(rule.body || []);
+  if (constants.size === 0) return rule.head.slice();
+  return rule.head.map((triple) => ({
+    s: substituteAssignedConstant(triple.s, constants),
+    p: substituteAssignedConstant(triple.p, constants),
+    o: substituteAssignedConstant(triple.o, constants),
+  }));
+}
+
+function assignmentConstantTerms(clauses) {
+  const constants = new Map();
+  const bound = new Set();
+  for (const clause of clauses) {
+    if (clause.type === 'triple' || clause.type === 'path') {
+      collectTripleVars(clause.triple, bound);
+      continue;
+    }
+    if (clause.type === 'filter') continue;
+    if (clause.type === 'not') continue;
+    if (clause.type === 'set' || clause.type === 'bind') {
+      const value = constantExpressionTerm(clause.expr);
+      if (value && !bound.has(clause.variable)) constants.set(clause.variable, value);
+      bound.add(clause.variable);
+    }
+  }
+  return constants;
+}
+
+function constantExpressionTerm(expr) {
+  if (!expr || expressionVariables(expr).size > 0) return null;
+  if (expr.type === 'term') return expr.value;
+  return null;
+}
+
+function substituteAssignedConstant(term, constants) {
+  if (!term) return term;
+  if (term.type === 'var' && constants.has(term.value)) return constants.get(term.value);
+  if (term.type === 'triple') {
+    return {
+      type: 'triple',
+      s: substituteAssignedConstant(term.s, constants),
+      p: substituteAssignedConstant(term.p, constants),
+      o: substituteAssignedConstant(term.o, constants),
+    };
+  }
+  return term;
+}
+
+function ruleHasAssignment(rule) {
+  return (rule.body || []).some((clause) => clause.type === 'set');
+}
+
+function ruleHeadHasBlankNode(rule) {
+  return (rule.head || []).some(tripleHasBlankNode);
+}
+
 function boundVariables(clauses) {
   const vars = new Set();
   for (const clause of clauses) {
     if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
-    if (clause.type === 'set') vars.add(clause.variable);
+    if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
   }
   return vars;
 }
@@ -565,7 +630,7 @@ function positiveVariables(clauses) {
   const vars = new Set();
   for (const clause of clauses) {
     if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
-    if (clause.type === 'set') vars.add(clause.variable);
+    if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
     if (clause.type === 'filter') for (const v of expressionVariables(clause.expr)) vars.add(v);
   }
   return vars;
@@ -575,7 +640,7 @@ function bodyVariables(clauses) {
   const vars = new Set();
   for (const clause of clauses) {
     if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
-    if (clause.type === 'set') {
+    if ((clause.type === 'set' || clause.type === 'bind')) {
       vars.add(clause.variable);
       for (const v of expressionVariables(clause.expr)) vars.add(v);
     }

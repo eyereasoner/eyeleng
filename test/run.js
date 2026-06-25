@@ -16,6 +16,7 @@ const preferred = [
   'builtins.test.js',
   'browser-bundle.test.js',
   'examples.test.js',
+  'shacl12-rules.test.js',
 ];
 const files = preferred.filter((name) => fs.existsSync(path.join(__dirname, name)));
 

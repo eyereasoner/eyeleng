@@ -5,9 +5,24 @@
 // evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
 // creating new terms forever.
 function assignmentsNeedRunOnce(clauses = []) {
-  const hasSet = clauses.some((clause) => clause.type === 'set');
-  const hasNegation = clauses.some((clause) => clause.type === 'not');
-  return (hasSet && hasNegation) || clauses.some((clause) => clause.type === 'set' && expressionIsVolatile(clause.expr));
+  return clauses.some((clause) => clause.type === 'set');
+}
+
+function ruleNeedsRunOnce(head = [], body = []) {
+  return assignmentsNeedRunOnce(body) || head.some(tripleHasBlankNode);
+}
+
+function tripleHasBlankNode(triple) {
+  return termHasBlankNode(triple && triple.s)
+    || termHasBlankNode(triple && triple.p)
+    || termHasBlankNode(triple && triple.o);
+}
+
+function termHasBlankNode(term) {
+  if (!term) return false;
+  if (term.type === 'blank') return true;
+  if (term.type === 'triple') return termHasBlankNode(term.s) || termHasBlankNode(term.p) || termHasBlankNode(term.o);
+  return false;
 }
 
 function expressionIsVolatile(expr) {
@@ -39,4 +54,4 @@ function localName(name) {
   return index >= 0 ? text.slice(index + 1) : text;
 }
 
-module.exports = { assignmentsNeedRunOnce, expressionIsVolatile };
+module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, expressionIsVolatile, tripleHasBlankNode, termHasBlankNode };

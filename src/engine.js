@@ -38,20 +38,6 @@ function evaluate(program, options = {}) {
     const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
     const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
 
-    const ordinaryResult = runRulesToFixpoint(program, store, ordinary, {
-      ...evalOptions,
-      maxIterations,
-      inputKeys,
-      inferred,
-      trace,
-      perRule,
-      layer: layerIndex + 1,
-      startingIterations: iterations,
-      recursiveLayer: recursiveLayerFlags[layerIndex],
-    });
-    iterations = ordinaryResult.iterations;
-    ruleApplications += ordinaryResult.ruleApplications;
-
     if (runOnce.length > 0) {
       iterations += 1;
       for (const ruleIndex of runOnce) {
@@ -67,6 +53,20 @@ function evaluate(program, options = {}) {
         ruleApplications += added.applications;
       }
     }
+
+    const ordinaryResult = runRulesToFixpoint(program, store, ordinary, {
+      ...evalOptions,
+      maxIterations,
+      inputKeys,
+      inferred,
+      trace,
+      perRule,
+      layer: layerIndex + 1,
+      startingIterations: iterations,
+      recursiveLayer: recursiveLayerFlags[layerIndex],
+    });
+    iterations = ordinaryResult.iterations;
+    ruleApplications += ordinaryResult.ruleApplications;
   }
 
   return {
@@ -226,7 +226,7 @@ function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, 
     return;
   }
 
-  if (clause.type === 'set') {
+  if (clause.type === 'set' || clause.type === 'bind') {
     try {
       const value = asTerm(evalExpression(clause.expr, initialBinding, options));
       if (!initialBinding[clause.variable]) {

@@ -57,7 +57,7 @@ RULE { ?x a :Mortal } WHERE { ?x a :Man }
 
 
 
-test('recursive deterministic SET rules infer a fixpoint', () => {
+test('deterministic SET rules can feed later run-once rules', () => {
   const source = `
 PREFIX : <http://example/>
 DATA {
@@ -132,16 +132,16 @@ RULE { :alice :slug ?slug } WHERE {
   assert.match(output, /:alice :slug "alice-smith" \./);
 });
 
-test('compile reports unsafe head variables and strict mode rejects them', () => {
+test('compile rejects unsafe head variables', () => {
   const source = `
 PREFIX : <http://example/>
 DATA { :alice :knows :bob . }
 RULE { ?x :bad true } WHERE { :alice :knows :bob }
 `;
-  const { diagnostics } = compile(source);
+  const { diagnostics } = compile(source, { throwOnDiagnostics: false });
   assert.equal(diagnostics.length, 1);
   assert.equal(diagnostics[0].code, 'unsafe-head-variable');
-  assert.throws(() => compile(source, { strict: true }), /Strict mode failed/);
+  assert.throws(() => compile(source), /unbound head variable/);
 });
 
 

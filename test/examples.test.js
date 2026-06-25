@@ -67,7 +67,9 @@ function goldenPath(filename, ext = '.trig') {
 }
 
 const checkExamples = new Map([
-  ['check-unsafe.srl', { status: 0 }],
+  ['check-unsafe.srl', { status: 1 }],
+  ['fft32-numeric.srl', { status: 1 }],
+  ['hanoi.srl', { status: 1 }],
   ['unstratified-negation.srl', { status: 1 }],
   ['variable-predicate-dependency.srl', { status: 1 }],
   ['well-formedness-error.srl', { status: 1 }],

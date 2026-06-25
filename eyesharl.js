@@ -364,7 +364,7 @@
       
       const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
       const { isBuiltinName } = require('./builtins.js');
-      const { assignmentsNeedRunOnce } = require('./assignments.js');
+      const { ruleNeedsRunOnce } = require('./assignments.js');
       const {
         iri,
         variable,
@@ -468,7 +468,7 @@
           this.expectWord('WHERE');
           this.expectValue('{');
           const body = this.parseBodyBlockAlreadyOpen();
-          return { name: null, head, body, runOnce: assignmentsNeedRunOnce(body) };
+          return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body) };
         }
       
         parseIfThenRule() {
@@ -477,7 +477,7 @@
           this.expectWord('THEN');
           this.expectValue('{');
           const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-          return { name: null, head, body, runOnce: assignmentsNeedRunOnce(body) };
+          return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body) };
         }
       
         checkDeclarationKeyword() {
@@ -570,7 +570,7 @@
       
           while (keepParsingPredicates) {
             if (terminators.some((value) => this.checkValue(value)) || this.checkValue('.')) break;
-            const predicate = options.allowPath ? this.parseVerbPathOrSimple() : this.parseVerbTerm();
+            const predicate = options.allowPath ? this.parseVerbPathOrSimple(options) : this.parseVerbTerm(options);
             do {
               const objectNode = this.parseGraphNode(options);
               triples.push(...objectNode.triples);
@@ -666,7 +666,7 @@
         parseReifiedTripleNode(options = {}) {
           this.expectValue('<<');
           const subjectNode = this.parseReifiedTripleComponent(options);
-          const p = this.parseVerbTerm();
+          const p = this.parseVerbTerm(options);
           const objectNode = this.parseReifiedTripleComponent(options);
           let reifier = null;
           if (this.matchValue('~')) reifier = this.parseOptionalReifier(options);
@@ -687,14 +687,14 @@
           return { term: this.parseTerm(options), triples: [] };
         }
       
-        parseVerbTerm() {
-          const term = this.parseTerm();
+        parseVerbTerm(options = {}) {
+          const term = this.parseTerm(options);
           if (term.type !== 'iri' && term.type !== 'var') throw this.error('Expected IRI or variable as predicate');
           return term;
         }
       
-        parseVerbPathOrSimple() {
-          if (this.checkType('variable')) return this.parseTerm();
+        parseVerbPathOrSimple(options = {}) {
+          if (this.checkType('variable')) return this.parseTerm(options);
           return this.parsePathSequence();
         }
       
@@ -730,18 +730,33 @@
           return { type: 'filter', expr };
         }
       
+        parseSetClause() {
+          this.expectValue('(');
+          const variableToken = this.expectType('variable');
+          this.expectValue(':=');
+          const expr = this.parseExpression();
+          this.expectValue(')');
+          return { type: 'set', variable: variableToken.value, expr };
+        }
+      
+        parseBindClause() {
+          this.expectValue('(');
+          const expr = this.parseExpression();
+          this.expectWord('AS');
+          const variableToken = this.expectType('variable');
+          this.expectValue(')');
+          return { type: 'bind', variable: variableToken.value, expr };
+        }
+      
         parseBodyBlockAlreadyOpen() {
           const clauses = [];
           while (!this.matchValue('}')) {
             if (this.matchWord('FILTER')) {
               clauses.push(this.parseFilterClause());
             } else if (this.matchWord('SET')) {
-              this.expectValue('(');
-              const variableToken = this.expectType('variable');
-              this.expectValue(':=');
-              const expr = this.parseExpression();
-              this.expectValue(')');
-              clauses.push({ type: 'set', variable: variableToken.value, expr });
+              clauses.push(this.parseSetClause());
+            } else if (this.matchWord('BIND')) {
+              clauses.push(this.parseBindClause());
             } else if (this.matchWord('NOT')) {
               this.expectValue('{');
               const body = this.parseBodyBasicAlreadyOpen();
@@ -764,6 +779,8 @@
               clauses.push(this.parseFilterClause());
             } else if (this.matchWord('SET')) {
               throw this.error('SET is not allowed inside NOT blocks by the SRL grammar');
+            } else if (this.matchWord('BIND')) {
+              throw this.error('BIND is not allowed inside NOT blocks by the SRL grammar');
             } else if (this.matchWord('NOT')) {
               throw this.error('Nested NOT is not allowed inside NOT blocks by the SRL grammar');
             } else {
@@ -777,17 +794,20 @@
           return clauses;
         }
       
-        parseTerm() {
+        parseTerm(options = {}) {
           const token = this.advance();
           if (token.type === 'operator' && (token.value === '+' || token.value === '-') && this.peek().type === 'number') {
             const numberToken = this.advance();
             return numericLiteral(token.value === '-' ? -numberToken.value : numberToken.value);
           }
-          if (token.type === 'variable') return variable(token.value);
+          if (token.type === 'variable') {
+            if (options.context === 'data') throw this.error('DATA blocks may not contain variables', token);
+            return variable(token.value);
+          }
           if (token.type === 'iri') return iri(this.resolveIRI(token.value, token));
           if (token.type === 'string') return this.parseLiteralAfterToken(token);
           if (token.type === 'number') return numericLiteral(token.value);
-          if (token.value === '<<(') return this.parseTripleTermAfterOpen();
+          if (token.value === '<<(') return this.parseTripleTermAfterOpen(options);
           if (token.value === '<<') throw this.error('Use << s p o >> as a graph node reifier; use <<( s p o )>> for a triple term', token);
           if (token.type === 'word') {
             if (token.value === 'a') return iri(RDF_TYPE);
@@ -799,18 +819,18 @@
           throw this.error(`Expected term, got ${token.value}`, token);
         }
       
-        parseTripleTermAfterOpen() {
-          const s = this.parseTerm();
-          const p = this.parseVerbTerm();
-          const o = this.parseTerm();
+        parseTripleTermAfterOpen(options = {}) {
+          const s = this.parseTerm(options);
+          const p = this.parseVerbTerm(options);
+          const o = this.parseTerm(options);
           this.expectValue(')>>');
           return tripleTerm(s, p, o);
         }
       
-        parseReifiedTripleAfterOpen() {
-          const s = this.parseTerm();
-          const p = this.parseVerbTerm();
-          const o = this.parseTerm();
+        parseReifiedTripleAfterOpen(options = {}) {
+          const s = this.parseTerm(options);
+          const p = this.parseVerbTerm(options);
+          const o = this.parseTerm(options);
           if (this.matchValue('~')) {
             if (!this.checkValue('>>')) this.parseVarOrReifierId();
           }
@@ -2105,9 +2125,24 @@
       // evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
       // creating new terms forever.
       function assignmentsNeedRunOnce(clauses = []) {
-        const hasSet = clauses.some((clause) => clause.type === 'set');
-        const hasNegation = clauses.some((clause) => clause.type === 'not');
-        return (hasSet && hasNegation) || clauses.some((clause) => clause.type === 'set' && expressionIsVolatile(clause.expr));
+        return clauses.some((clause) => clause.type === 'set');
+      }
+      
+      function ruleNeedsRunOnce(head = [], body = []) {
+        return assignmentsNeedRunOnce(body) || head.some(tripleHasBlankNode);
+      }
+      
+      function tripleHasBlankNode(triple) {
+        return termHasBlankNode(triple && triple.s)
+          || termHasBlankNode(triple && triple.p)
+          || termHasBlankNode(triple && triple.o);
+      }
+      
+      function termHasBlankNode(term) {
+        if (!term) return false;
+        if (term.type === 'blank') return true;
+        if (term.type === 'triple') return termHasBlankNode(term.s) || termHasBlankNode(term.p) || termHasBlankNode(term.o);
+        return false;
       }
       
       function expressionIsVolatile(expr) {
@@ -2139,14 +2174,14 @@
         return index >= 0 ? text.slice(index + 1) : text;
       }
       
-      module.exports = { assignmentsNeedRunOnce, expressionIsVolatile };
+      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, expressionIsVolatile, tripleHasBlankNode, termHasBlankNode };
       
     },
     "src/rdfSyntax.js": function (require, module, exports) {
       'use strict';
       
       const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
-      const { assignmentsNeedRunOnce } = require('./assignments.js');
+      const { ruleNeedsRunOnce } = require('./assignments.js');
       const {
         iri,
         variable,
@@ -2460,7 +2495,7 @@
         if (bodyLists.length !== 1 || headLists.length !== 1) throw new Error(`RDF Rule ${graph.label(ruleNode)} must have exactly one srl:body and one srl:head`);
         const body = graph.list(bodyLists[0]).map((item) => toBodyElement(item, graph));
         const head = graph.list(headLists[0]).map((item) => toTripleLike(item, graph));
-        return { name: graph.label(ruleNode), head, body, runOnce: assignmentsNeedRunOnce(body) };
+        return { name: graph.label(ruleNode), head, body, runOnce: ruleNeedsRunOnce(head, body) };
       }
       
       function toBodyElement(node, graph) {
@@ -2747,20 +2782,6 @@
           const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
           const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
       
-          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, {
-            ...evalOptions,
-            maxIterations,
-            inputKeys,
-            inferred,
-            trace,
-            perRule,
-            layer: layerIndex + 1,
-            startingIterations: iterations,
-            recursiveLayer: recursiveLayerFlags[layerIndex],
-          });
-          iterations = ordinaryResult.iterations;
-          ruleApplications += ordinaryResult.ruleApplications;
-      
           if (runOnce.length > 0) {
             iterations += 1;
             for (const ruleIndex of runOnce) {
@@ -2776,6 +2797,20 @@
               ruleApplications += added.applications;
             }
           }
+      
+          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, {
+            ...evalOptions,
+            maxIterations,
+            inputKeys,
+            inferred,
+            trace,
+            perRule,
+            layer: layerIndex + 1,
+            startingIterations: iterations,
+            recursiveLayer: recursiveLayerFlags[layerIndex],
+          });
+          iterations = ordinaryResult.iterations;
+          ruleApplications += ordinaryResult.ruleApplications;
         }
       
         return {
@@ -2935,7 +2970,7 @@
           return;
         }
       
-        if (clause.type === 'set') {
+        if (clause.type === 'set' || clause.type === 'bind') {
           try {
             const value = asTerm(evalExpression(clause.expr, initialBinding, options));
             if (!initialBinding[clause.variable]) {
@@ -3242,10 +3277,12 @@
       'use strict';
       
       const { compactIRI, iri, variable, termEquals } = require('./term.js');
+      const { tripleHasBlankNode } = require('./assignments.js');
       
       function analyze(program) {
         const diagnostics = [];
         const dependency = dependencyGraph(program);
+        const recursiveIndexes = recursiveRuleIndexes(dependency);
       
         program.rules.forEach((rule, index) => {
           const name = ruleName(rule, index);
@@ -3259,7 +3296,7 @@
             if (!bound.has(variable)) {
               diagnostics.push({
                 code: 'unsafe-head-variable',
-                severity: 'warning',
+                severity: 'error',
                 rule: name,
                 message: `${label} has unbound head variable ?${variable}`,
               });
@@ -3279,12 +3316,12 @@
       
           diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, label));
       
-          if (rule.runOnce && recursiveRuleIndexes(dependency).has(index)) {
+          if (rule.runOnce && recursiveIndexes.has(index)) {
             diagnostics.push({
               code: 'recursive-assignment-rule',
               severity: 'warning',
               rule: name,
-              message: `${label} contains a volatile SET expression and is recursive; fresh-value assignment rules are run once in Eyesharl`,
+              message: `${label} is a run-once rule in a recursive dependency cycle`,
             });
           }
       
@@ -3319,16 +3356,19 @@
         const rules = program.rules.map((rule, index) => {
           const positivePatterns = bodyTriplePatterns(rule.body, false);
           const negativePatterns = bodyTriplePatterns(rule.body, true);
+          const headTemplates = effectiveHeadTemplates(rule);
           return {
             index,
             name: ruleName(rule, index),
-            headTemplates: rule.head.slice(),
+            headTemplates,
             positivePatterns,
             negativePatterns,
-            headPredicates: new Set(rule.head.map((triple) => predicateIRI(triple)).filter(Boolean)),
+            headPredicates: new Set(headTemplates.map((triple) => predicateIRI(triple)).filter(Boolean)),
             positivePredicates: new Set(positivePatterns.flatMap((triple) => predicateIRIs(triple))),
             negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
             runOnce: !!rule.runOnce,
+            hasAssignment: ruleHasAssignment(rule),
+            headHasBlankNode: ruleHeadHasBlankNode(rule),
           };
         });
       
@@ -3347,9 +3387,10 @@
         const headIndex = buildHeadTemplateIndex(rules);
       
         for (const from of rules) {
+          const forceClosed = from.hasAssignment || from.headHasBlankNode;
           for (const pattern of from.positivePatterns) {
             for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
-              if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], false, dependencyPredicateLabel(pattern));
+              if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], forceClosed, dependencyPredicateLabel(pattern));
             }
           }
           for (const pattern of from.negativePatterns) {
@@ -3371,7 +3412,7 @@
         const seen = new Set();
         for (const edge of edges) {
           if (!edge.negative) continue;
-          if (edge.from === edge.to && rules[edge.from] && rules[edge.from].runOnce) continue;
+          if (edge.from === edge.to && rules[edge.from].runOnce && !rules[edge.from].headHasBlankNode) continue;
           if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
           const component = components[componentOf.get(edge.from)];
           const key = `${component.slice().sort((a, b) => a - b).join(',')}|${edge.predicate || '*'}`;
@@ -3393,6 +3434,7 @@
             positivePredicates: Array.from(rule.positivePredicates),
             negativePredicates: Array.from(rule.negativePredicates),
             runOnce: rule.runOnce,
+            headHasBlankNode: rule.headHasBlankNode,
           })),
           edges,
           components: components.map((component) => component.map((ruleIndex) => rules[ruleIndex].name)),
@@ -3570,7 +3612,8 @@
         }
         for (const edge of dependency.edges) {
           const rule = dependency.rules.find((item) => item.index === edge.from);
-          if (edge.from === edge.to && !(edge.negative && rule && rule.runOnce)) out.add(edge.from);
+          if (edge.from === edge.to && edge.negative && rule && rule.runOnce && !rule.headHasBlankNode) continue;
+          out.add(edge.from);
         }
         return out;
       }
@@ -3649,7 +3692,7 @@
                   });
                 }
               }
-            } else if (clause.type === 'set') {
+            } else if ((clause.type === 'set' || clause.type === 'bind')) {
               if (bound.has(clause.variable)) {
                 diagnostics.push({
                   code: 'assignment-variable-already-bound',
@@ -3793,11 +3836,68 @@
         return [];
       }
       
+      function effectiveHeadTemplates(rule) {
+        const constants = assignmentConstantTerms(rule.body || []);
+        if (constants.size === 0) return rule.head.slice();
+        return rule.head.map((triple) => ({
+          s: substituteAssignedConstant(triple.s, constants),
+          p: substituteAssignedConstant(triple.p, constants),
+          o: substituteAssignedConstant(triple.o, constants),
+        }));
+      }
+      
+      function assignmentConstantTerms(clauses) {
+        const constants = new Map();
+        const bound = new Set();
+        for (const clause of clauses) {
+          if (clause.type === 'triple' || clause.type === 'path') {
+            collectTripleVars(clause.triple, bound);
+            continue;
+          }
+          if (clause.type === 'filter') continue;
+          if (clause.type === 'not') continue;
+          if (clause.type === 'set' || clause.type === 'bind') {
+            const value = constantExpressionTerm(clause.expr);
+            if (value && !bound.has(clause.variable)) constants.set(clause.variable, value);
+            bound.add(clause.variable);
+          }
+        }
+        return constants;
+      }
+      
+      function constantExpressionTerm(expr) {
+        if (!expr || expressionVariables(expr).size > 0) return null;
+        if (expr.type === 'term') return expr.value;
+        return null;
+      }
+      
+      function substituteAssignedConstant(term, constants) {
+        if (!term) return term;
+        if (term.type === 'var' && constants.has(term.value)) return constants.get(term.value);
+        if (term.type === 'triple') {
+          return {
+            type: 'triple',
+            s: substituteAssignedConstant(term.s, constants),
+            p: substituteAssignedConstant(term.p, constants),
+            o: substituteAssignedConstant(term.o, constants),
+          };
+        }
+        return term;
+      }
+      
+      function ruleHasAssignment(rule) {
+        return (rule.body || []).some((clause) => clause.type === 'set');
+      }
+      
+      function ruleHeadHasBlankNode(rule) {
+        return (rule.head || []).some(tripleHasBlankNode);
+      }
+      
       function boundVariables(clauses) {
         const vars = new Set();
         for (const clause of clauses) {
           if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
-          if (clause.type === 'set') vars.add(clause.variable);
+          if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
         }
         return vars;
       }
@@ -3806,7 +3906,7 @@
         const vars = new Set();
         for (const clause of clauses) {
           if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
-          if (clause.type === 'set') vars.add(clause.variable);
+          if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
           if (clause.type === 'filter') for (const v of expressionVariables(clause.expr)) vars.add(v);
         }
         return vars;
@@ -3816,7 +3916,7 @@
         const vars = new Set();
         for (const clause of clauses) {
           if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
-          if (clause.type === 'set') {
+          if ((clause.type === 'set' || clause.type === 'bind')) {
             vars.add(clause.variable);
             for (const v of expressionVariables(clause.expr)) vars.add(v);
           }
@@ -4031,7 +4131,7 @@
       
     },
   };
-  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdfSyntax.js":{"./tokenizer.js":"src/tokenizer.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js"},"src/format.js":{"./term.js":"src/term.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./api.js":"src/api.js"},"src/output.js":{},"src/api.js":{"./parser.js":"src/parser.js","./rdfSyntax.js":"src/rdfSyntax.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
+  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdfSyntax.js":{"./tokenizer.js":"src/tokenizer.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js"},"src/format.js":{"./term.js":"src/term.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./api.js":"src/api.js"},"src/output.js":{},"src/api.js":{"./parser.js":"src/parser.js","./rdfSyntax.js":"src/rdfSyntax.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
   const __cache = {};
   function __require(id) {
     if (!id.startsWith("src/")) return __nativeRequire(id);
