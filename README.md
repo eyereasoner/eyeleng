@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/eyeleng.svg)](https://www.npmjs.com/package/eyeleng)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20342577-blue.svg)](https://doi.org/10.5281/zenodo.20342577)
 
-`eyeleng` is a JavaScript implementation of SHACL 1.2 Rules, including SRL and RDF Rules syntax front-ends.
+`eyeleng` stands for **EYE Logic Engine**. Eyeleng is a JavaScript implementation of SHACL 1.2 Rules, including SRL and RDF Rules syntax front-ends.
 
 ## Quick start
 

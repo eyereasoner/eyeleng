@@ -22,7 +22,7 @@
 <https://github.com/eyereasoner/eyeleng>
     a earl:Software, doap:Project, foaf:Agent ;
     dct:title "Eyeleng"@en ;
-    dct:description "A JavaScript implementation of SHACL 1.2 Rules, including SRL and RDF Rules syntax front-ends."@en ;
+    dct:description "The EYE Logic Engine: a JavaScript implementation of SHACL 1.2 Rules, including SRL and RDF Rules syntax front-ends."@en ;
     doap:name "eyeleng" ;
     foaf:homepage <https://github.com/eyereasoner/eyeleng> .
 

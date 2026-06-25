@@ -1,6 +1,6 @@
 # Eyeleng Handbook
 
-This handbook explains Eyeleng both as JavaScript code and as a reasoning machine. It is written for a computer science student who knows basic programming, data structures, and logic, but may not yet know RDF, SHACL Rules, or forward-chaining reasoners.
+This handbook explains Eyeleng — short for **EYE Logic Engine** — both as JavaScript code and as a reasoning machine. It is written for a computer science student who knows basic programming, data structures, and logic, but may not yet know RDF, SHACL Rules, or forward-chaining reasoners.
 
 The chapters are meant to be read linearly. Each chapter also stands on its own, so you can jump directly to the parser, the evaluator, dependency analysis, imports, or the command-line interface when you need that part.
 
@@ -41,7 +41,7 @@ The chapters are meant to be read linearly. Each chapter also stands on its own,
 
 ## 1. What Eyeleng Is
 
-Eyeleng is a compact JavaScript implementation of the Shape Rules Language, or SRL, from the SHACL 1.2 Rules draft.
+Eyeleng stands for **EYE Logic Engine**. It is a compact JavaScript implementation of SHACL 1.2 Rules, including the Shape Rules Language, or SRL, and RDF Rules syntax front-ends.
 
 A tiny Eyeleng program looks like this:
 
