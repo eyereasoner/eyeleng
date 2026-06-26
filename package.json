@@ -1,6 +1,6 @@
 {
   "name": "eyeleng",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "The EYE Logic Engine: a JavaScript implementation of SHACL Rules, including SRL and RDF Rules syntax front-ends.",
   "keywords": [
     "SRL",
