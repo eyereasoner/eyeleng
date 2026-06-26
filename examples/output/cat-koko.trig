@@ -1,0 +1,3 @@
+_:bsh a :BritishShortHair .
+_:cat a :Cat .
+:test :is true .
