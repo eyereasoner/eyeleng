@@ -423,6 +423,38 @@ RULE { :clock :consistent true ; :snapshot ?t1 } WHERE {
   assert.match(output, /:clock :snapshot "2026-05-15T12:34:56\.000Z"\^\^xsd:dateTime \./);
 });
 
+
+test('strict grammar mode rejects non-grammar extensions and loose tokens', () => {
+  const options = { strictGrammar: true };
+  assert.throws(() => parse(`
+PREFIX : <http://example/>
+RULE { :s :p ?x } WHERE { :s :q ?y BIND(?y AS ?x) }
+`, options), /BIND is not part of the SHACL 1.2 Rules grammar/);
+  assert.throws(() => parse(`
+PREFIX : <http://example/>
+RULE { :s :p "bad\\q" } WHERE { :s :q ?x }
+`, options), /Invalid escape/);
+  assert.throws(() => parse(`
+PREFIX : <http://example/>
+RULE { :bad%ZZ :p ?x } WHERE { :s :q ?x }
+`, options), /Invalid prefixed name/);
+  assert.throws(() => parse(`
+VERSION "2.0"
+PREFIX : <http://example/>
+RULE { :s :p ?x } WHERE { :s :q ?x }
+`, options), /VERSION must be the SHACL Rules version label/);
+  assert.throws(() => parse(`
+VERSION """1.2"""
+PREFIX : <http://example/>
+RULE { :s :p ?x } WHERE { :s :q ?x }
+`, options), /VERSION must use a short string literal/);
+  assert.doesNotThrow(() => parse(`
+VERSION "1.2"
+PREFIX : <http://example/>
+RULE { :s :p ?x } WHERE { :s :q ?x SET(?z := STR(?x)) }
+`, options));
+});
+
 main();
 
 test('RDF Message Logs expose Eyeling-style envelopes and payload triples', () => {

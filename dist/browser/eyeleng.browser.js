@@ -166,7 +166,7 @@
       
       class Parser {
         constructor(source, options = {}) {
-          this.tokens = Array.isArray(source) ? source : tokenize(source, options.filename);
+          this.tokens = Array.isArray(source) ? source : tokenize(source, options);
           this.pos = 0;
           this.options = options;
           this.baseIRI = options.baseIRI || null;
@@ -229,6 +229,7 @@
           let name = nameToken.value;
           if (!name.endsWith(':')) throw this.error('Prefix name must end with :', nameToken);
           name = name.slice(0, -1);
+          if (this.strictGrammar() && !isValidPNPrefix(name)) throw this.error(`Invalid prefix name ${nameToken.value}`, nameToken);
           const iriToken = this.expectType('iri');
           this.prefixes[name] = this.resolveIRI(iriToken.value, iriToken);
           if (wasAtPrefix) this.consumeOptionalDot();
@@ -236,6 +237,10 @@
       
         parseVersion() {
           const token = this.expectType('string');
+          if (this.strictGrammar()) {
+            if (token.long) throw this.error('VERSION must use a short string literal', token);
+            if (token.value !== '1.2') throw this.error('VERSION must be the SHACL Rules version label \"1.2\"', token);
+          }
           this.version = token.value;
         }
       
@@ -631,6 +636,7 @@
             } else if (this.matchWord('SET')) {
               clauses.push(this.parseSetClause());
             } else if (this.matchWord('BIND')) {
+              if (this.strictGrammar()) throw this.error('BIND is not part of the SHACL 1.2 Rules grammar; use SET');
               clauses.push(this.parseBindClause());
             } else if (this.matchWord('NOT')) {
               this.expectValue('{');
@@ -738,8 +744,9 @@
           if (colon < 0) throw this.error(`Expected IRI, prefixed name, literal, blank node, or variable; got ${value}`, token);
           const prefix = value.slice(0, colon);
           const local = value.slice(colon + 1);
+          if (this.strictGrammar()) validatePrefixedName(prefix, local, value, token, (message, errToken) => this.error(message, errToken));
           if (!(prefix in this.prefixes)) throw this.error(`Unknown prefix ${prefix}:`, token);
-          return this.prefixes[prefix] + local;
+          return this.prefixes[prefix] + decodePNLocalEscapes(local);
         }
       
         resolveIRI(value, token = null) {
@@ -898,7 +905,74 @@
         peek() { return this.tokens[this.pos]; }
         peekN(n) { return this.tokens[this.pos + n] || this.tokens[this.tokens.length - 1]; }
         previous() { return this.tokens[this.pos - 1]; }
+        strictGrammar() { return !!this.options.strictGrammar; }
         error(message, token = this.peek()) { return new SyntaxErrorWithLocation(message, token); }
+      }
+      
+      
+      function isPnCharsBase(ch) {
+        if (!ch) return false;
+        return /[A-Za-z]/.test(ch) || ch.codePointAt(0) >= 0x00C0;
+      }
+      
+      function isPnCharsU(ch) {
+        return isPnCharsBase(ch) || ch === '_';
+      }
+      
+      function isPnChars(ch) {
+        return isPnCharsU(ch) || /[0-9-]/.test(ch) || ch === '\u00B7' || /[\u0300-\u036F\u203F-\u2040]/u.test(ch);
+      }
+      
+      function isValidPNPrefix(prefix) {
+        if (prefix === '') return true;
+        const chars = Array.from(prefix);
+        if (!isPnCharsBase(chars[0])) return false;
+        if (chars.length > 1 && chars.at(-1) === '.') return false;
+        return chars.slice(1).every((ch) => isPnChars(ch) || ch === '.');
+      }
+      
+      function plxLength(text, index) {
+        const ch = text[index];
+        if (ch === '%' && /[0-9A-Fa-f]/.test(text[index + 1] || '') && /[0-9A-Fa-f]/.test(text[index + 2] || '')) return 3;
+        if (ch === '\\' && /[_~.!$&'()*+,;=/?#@%-]/.test(text[index + 1] || '')) return 2;
+        return 0;
+      }
+      
+      function isPNLocalStartAt(text, index) {
+        const ch = text[index];
+        return isPnCharsU(ch) || /[0-9:]/.test(ch || '') || plxLength(text, index) > 0;
+      }
+      
+      function isPNLocalBodyAt(text, index) {
+        const ch = text[index];
+        return isPnChars(ch) || ch === '.' || ch === ':' || plxLength(text, index) > 0;
+      }
+      
+      function isPNLocalEndAt(text, index) {
+        const ch = text[index];
+        return isPnChars(ch) || ch === ':' || plxLength(text, index) > 0;
+      }
+      
+      function validatePNLocal(local) {
+        if (local === '') return true;
+        if (!isPNLocalStartAt(local, 0)) return false;
+        let lastStart = 0;
+        for (let i = 0; i < local.length;) {
+          const len = plxLength(local, i) || 1;
+          if (i > 0 && !isPNLocalBodyAt(local, i)) return false;
+          lastStart = i;
+          i += len;
+        }
+        return isPNLocalEndAt(local, lastStart);
+      }
+      
+      function validatePrefixedName(prefix, local, value, token, makeError) {
+        if (!isValidPNPrefix(prefix)) throw makeError(`Invalid prefixed name ${value}: invalid prefix`, token);
+        if (!validatePNLocal(local)) throw makeError(`Invalid prefixed name ${value}: invalid local name`, token);
+      }
+      
+      function decodePNLocalEscapes(local) {
+        return String(local).replace(/\\([_~.!$&'()*+,;=/?#@%-])/g, '$1');
       }
       
       function numericLiteral(value) {
@@ -970,7 +1044,10 @@
         }
       }
       
-      function tokenize(source, filename = '<input>') {
+      function tokenize(source, filenameOrOptions = '<input>') {
+        const options = typeof filenameOrOptions === 'object' && filenameOrOptions !== null ? filenameOrOptions : { filename: filenameOrOptions };
+        const filename = options.filename || '<input>';
+        const strictGrammar = !!options.strictGrammar;
         const tokens = [];
         let i = 0;
         let line = 1;
@@ -985,8 +1062,8 @@
           else column += 1;
           return ch;
         }
-        function token(type, value, startLine, startColumn) {
-          tokens.push({ type, value, line: startLine, column: startColumn, filename });
+        function token(type, value, startLine, startColumn, extra = {}) {
+          tokens.push({ type, value, line: startLine, column: startColumn, filename, ...extra });
         }
         function syntax(message, startLine, startColumn) {
           throw new SyntaxErrorWithLocation(message, { line: startLine, column: startColumn, filename });
@@ -1024,12 +1101,35 @@
             const length = esc === 'u' ? 4 : 8;
             let hex = '';
             for (let j = 0; j < length; j += 1) {
-              if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \${esc} escape`, startLine, startColumn);
+              if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
               hex += advance();
             }
-            return String.fromCodePoint(Number.parseInt(hex, 16));
+            const codePoint = Number.parseInt(hex, 16);
+            try { return String.fromCodePoint(codePoint); }
+            catch { syntax(`Invalid \\${esc} escape`, startLine, startColumn); }
           }
+          if (strictGrammar && !Object.hasOwn(escapeMap, esc)) syntax(`Invalid escape \\${esc}`, startLine, startColumn);
           return escapeValue(esc);
+        }
+      
+        function readIriChar(startLine, startColumn) {
+          if (current() === '\\') {
+            advance();
+            const esc = advance();
+            if (esc !== 'u' && esc !== 'U') syntax(`Invalid IRI escape \\${esc}`, startLine, startColumn);
+            const length = esc === 'u' ? 4 : 8;
+            let hex = '';
+            for (let j = 0; j < length; j += 1) {
+              if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
+              hex += advance();
+            }
+            const codePoint = Number.parseInt(hex, 16);
+            try { return String.fromCodePoint(codePoint); }
+            catch { syntax(`Invalid \\${esc} escape`, startLine, startColumn); }
+          }
+          const c = current();
+          if (strictGrammar && (/[\u0000-\u0020]/.test(c) || /[<>"{}|^`]/.test(c))) syntax(`Invalid character in IRI reference ${JSON.stringify(c)}`, startLine, startColumn);
+          return advance();
         }
       
         while (i < source.length) {
@@ -1077,7 +1177,7 @@
           if (ch === '<' && looksLikeIRI(source, i)) {
             let value = '';
             advance();
-            while (i < source.length && current() !== '>') value += advance();
+            while (i < source.length && current() !== '>') value += readIriChar(startLine, startColumn);
             if (current() !== '>') syntax('Unterminated IRI', startLine, startColumn);
             advance();
             token('iri', value, startLine, startColumn);
@@ -1097,7 +1197,7 @@
             }
             if (!startsWith(quote.repeat(3))) syntax('Unterminated long string literal', startLine, startColumn);
             advance(); advance(); advance();
-            token('string', value, startLine, startColumn);
+            token('string', value, startLine, startColumn, { long: true, quote });
             continue;
           }
       
@@ -1115,7 +1215,7 @@
             }
             if (current() !== quote) syntax('Unterminated string literal', startLine, startColumn);
             advance();
-            token('string', value, startLine, startColumn);
+            token('string', value, startLine, startColumn, { long: false, quote });
             continue;
           }
       
@@ -1161,7 +1261,16 @@
           let value = '';
           while (i < source.length) {
             const c = current();
-            if (/\s/.test(c) || '{}()[].,;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
+            if (c === '\\' && peek() !== undefined) {
+              value += advance();
+              value += advance();
+              continue;
+            }
+            if (/\s/.test(c) || '{}()[],;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
+            if (c === '.') {
+              const n = peek();
+              if (n === undefined || /\s/.test(n) || '{}()[],;|'.includes(n) || '=<>+-*/!^~'.includes(n)) break;
+            }
             if (c === '#') break;
             value += advance();
           }
@@ -1194,9 +1303,10 @@
         return false;
       }
       
+      const escapeMap = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', '"': '"', "'": "'", '\\': '\\' };
+      
       function escapeValue(esc) {
-        const map = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', '"': '"', "'": "'", '\\': '\\' };
-        return map[esc] ?? esc;
+        return escapeMap[esc] ?? esc;
       }
       
       module.exports = { tokenize, SyntaxErrorWithLocation };

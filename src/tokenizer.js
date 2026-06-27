@@ -9,7 +9,10 @@ class SyntaxErrorWithLocation extends Error {
   }
 }
 
-function tokenize(source, filename = '<input>') {
+function tokenize(source, filenameOrOptions = '<input>') {
+  const options = typeof filenameOrOptions === 'object' && filenameOrOptions !== null ? filenameOrOptions : { filename: filenameOrOptions };
+  const filename = options.filename || '<input>';
+  const strictGrammar = !!options.strictGrammar;
   const tokens = [];
   let i = 0;
   let line = 1;
@@ -24,8 +27,8 @@ function tokenize(source, filename = '<input>') {
     else column += 1;
     return ch;
   }
-  function token(type, value, startLine, startColumn) {
-    tokens.push({ type, value, line: startLine, column: startColumn, filename });
+  function token(type, value, startLine, startColumn, extra = {}) {
+    tokens.push({ type, value, line: startLine, column: startColumn, filename, ...extra });
   }
   function syntax(message, startLine, startColumn) {
     throw new SyntaxErrorWithLocation(message, { line: startLine, column: startColumn, filename });
@@ -63,12 +66,35 @@ function tokenize(source, filename = '<input>') {
       const length = esc === 'u' ? 4 : 8;
       let hex = '';
       for (let j = 0; j < length; j += 1) {
-        if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \${esc} escape`, startLine, startColumn);
+        if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
         hex += advance();
       }
-      return String.fromCodePoint(Number.parseInt(hex, 16));
+      const codePoint = Number.parseInt(hex, 16);
+      try { return String.fromCodePoint(codePoint); }
+      catch { syntax(`Invalid \\${esc} escape`, startLine, startColumn); }
     }
+    if (strictGrammar && !Object.hasOwn(escapeMap, esc)) syntax(`Invalid escape \\${esc}`, startLine, startColumn);
     return escapeValue(esc);
+  }
+
+  function readIriChar(startLine, startColumn) {
+    if (current() === '\\') {
+      advance();
+      const esc = advance();
+      if (esc !== 'u' && esc !== 'U') syntax(`Invalid IRI escape \\${esc}`, startLine, startColumn);
+      const length = esc === 'u' ? 4 : 8;
+      let hex = '';
+      for (let j = 0; j < length; j += 1) {
+        if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
+        hex += advance();
+      }
+      const codePoint = Number.parseInt(hex, 16);
+      try { return String.fromCodePoint(codePoint); }
+      catch { syntax(`Invalid \\${esc} escape`, startLine, startColumn); }
+    }
+    const c = current();
+    if (strictGrammar && (/[\u0000-\u0020]/.test(c) || /[<>"{}|^`]/.test(c))) syntax(`Invalid character in IRI reference ${JSON.stringify(c)}`, startLine, startColumn);
+    return advance();
   }
 
   while (i < source.length) {
@@ -116,7 +142,7 @@ function tokenize(source, filename = '<input>') {
     if (ch === '<' && looksLikeIRI(source, i)) {
       let value = '';
       advance();
-      while (i < source.length && current() !== '>') value += advance();
+      while (i < source.length && current() !== '>') value += readIriChar(startLine, startColumn);
       if (current() !== '>') syntax('Unterminated IRI', startLine, startColumn);
       advance();
       token('iri', value, startLine, startColumn);
@@ -136,7 +162,7 @@ function tokenize(source, filename = '<input>') {
       }
       if (!startsWith(quote.repeat(3))) syntax('Unterminated long string literal', startLine, startColumn);
       advance(); advance(); advance();
-      token('string', value, startLine, startColumn);
+      token('string', value, startLine, startColumn, { long: true, quote });
       continue;
     }
 
@@ -154,7 +180,7 @@ function tokenize(source, filename = '<input>') {
       }
       if (current() !== quote) syntax('Unterminated string literal', startLine, startColumn);
       advance();
-      token('string', value, startLine, startColumn);
+      token('string', value, startLine, startColumn, { long: false, quote });
       continue;
     }
 
@@ -200,7 +226,16 @@ function tokenize(source, filename = '<input>') {
     let value = '';
     while (i < source.length) {
       const c = current();
-      if (/\s/.test(c) || '{}()[].,;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
+      if (c === '\\' && peek() !== undefined) {
+        value += advance();
+        value += advance();
+        continue;
+      }
+      if (/\s/.test(c) || '{}()[],;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
+      if (c === '.') {
+        const n = peek();
+        if (n === undefined || /\s/.test(n) || '{}()[],;|'.includes(n) || '=<>+-*/!^~'.includes(n)) break;
+      }
       if (c === '#') break;
       value += advance();
     }
@@ -233,9 +268,10 @@ function looksLikeIRI(source, i) {
   return false;
 }
 
+const escapeMap = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', '"': '"', "'": "'", '\\': '\\' };
+
 function escapeValue(esc) {
-  const map = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', '"': '"', "'": "'", '\\': '\\' };
-  return map[esc] ?? esc;
+  return escapeMap[esc] ?? esc;
 }
 
 module.exports = { tokenize, SyntaxErrorWithLocation };

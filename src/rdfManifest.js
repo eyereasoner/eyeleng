@@ -706,6 +706,17 @@ function rdfManifestsToEarl(result, options = {}) {
   return lines.join('\n');
 }
 
+function defaultRdfReportPath() {
+  return path.join(__dirname, '..', 'reports', 'w3c-rdf-earl.ttl');
+}
+
+function writeRdfEarlReport(result, file = defaultRdfReportPath(), options = {}) {
+  const earl = rdfManifestsToEarl(result, options);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${earl}\n`, 'utf8');
+  return file;
+}
+
 module.exports = {
   defaultW3cRdfManifestUrls,
   parseNQuads,
@@ -721,4 +732,6 @@ module.exports = {
   formatW3cRdfManifestResult,
   formatW3cRdfManifestsResult,
   rdfManifestsToEarl,
+  writeRdfEarlReport,
+  defaultRdfReportPath,
 };

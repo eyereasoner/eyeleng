@@ -38,11 +38,13 @@
     "test": "node test/run.js",
     "preversion": "npm test",
     "postversion": "git push origin HEAD --follow-tags",
-    "w3c:rules": "node test/shacl12-rules.test.js",
-    "w3c:rdf": "node test/w3c-rdf.test.js",
+    "w3c:rules": "node tools/w3c-shacl12-rules.js",
+    "w3c:rdf": "node tools/w3c-rdf.js",
     "w3c:rdf:json": "node tools/w3c-rdf.js --json",
     "w3c:rdf:earl": "node tools/w3c-rdf.js --earl",
-    "w3c:all": "npm run w3c:rules && npm run w3c:rdf"
+    "w3c:all": "npm run w3c:rules && npm run w3c:rdf",
+    "w3c:rules:json": "node tools/w3c-shacl12-rules.js --json",
+    "w3c:rules:earl": "node tools/w3c-shacl12-rules.js --earl"
   },
   "publishConfig": {
     "access": "public"
