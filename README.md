@@ -3,38 +3,146 @@
 [![npm version](https://img.shields.io/npm/v/eyeleng.svg)](https://www.npmjs.com/package/eyeleng)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20342577-blue.svg)](https://doi.org/10.5281/zenodo.20342577)
 
-`eyeleng` stands for **EYE Logic Engine**. Eyeleng is a JavaScript implementation of SHACL 1.2 Rules, including SRL and RDF Rules syntax front-ends.
+`eyeleng` stands for **EYE Logic Engine**. It is a compact JavaScript implementation of SHACL 1.2 Rules with two rule front-ends:
+
+- **SRL** — the Shape Rules Language syntax used by the SHACL 1.2 Rules draft.
+- **RDF Rules** — a Turtle/RDF syntax for rule sets.
+
+Eyeleng is a forward-chaining reasoner over RDF-style triples. It is deliberately small, dependency-free at runtime, readable as ordinary JavaScript, and usable from the CLI, Node.js, and the browser playground.
+
+Eyeleng implements the rules/reasoning surface. It is **not** a SHACL validation engine and does not emit SHACL validation reports.
 
 ## Quick start
 
 ```sh
+npm install
 npm test
 ./eyeleng.js examples/family.srl
-./eyeleng.js examples/spec-2-2-recursion.srl
-./eyeleng.js examples/deep-taxonomy-100.srl
+./eyeleng.js --all examples/family.srl
 ./eyeleng.js examples/basic-ruleset.ttl
-./eyeleng.js --syntax rdf examples/w3c-rule-set-snippet.ttl
 ./eyeleng.js --check --deps examples/stratified-negation.srl
 ```
 
-## Read next
+A minimal SRL program:
 
-Read [Handbook](https://eyereasoner.github.io/eyeleng/HANDBOOK) for the full explanation of Eyeleng as code and as a reasoning machine.
+```srl
+PREFIX : <http://example/>
 
-Open [Playground](https://eyereasoner.github.io/eyeleng/playground) for a self-contained browser playground with URL loading, autosave, share links, diagnostics, queries, and SRL/RDF Rules syntax selection.
+DATA {
+  :Socrates a :Man .
+}
 
-`npm run build` writes the command-line bundle to `eyeleng.js` and the browser API bundle to `dist/browser/eyeleng.browser.js`. In a browser, the bundle exposes the API as `window.eyeleng`.
+RULE { ?x a :Mortal } WHERE { ?x a :Man }
+```
 
-The examples live in [examples/](./examples/) at one level. Draft SRL examples are named `spec-*.srl`, RDF Rules syntax examples use `.ttl`, and deep taxonomy benchmarks are named `deep-taxonomy-*.srl`.
+It derives:
 
-Status: Eyeleng runs a growing implementation of the SHACL 1.2 Rules draft surface. It does not implement SHACL validation.
+```srl
+:Socrates a :Mortal .
+```
 
-The official Eyeleng EARL 1.0 test report for the W3C SHACL 1.2 Rules manifest is in [reports/w3c-shacl12-rules-earl.ttl](./reports/w3c-shacl12-rules-earl.ttl). It records 88/88 passing tests for `https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl`.
+Open the [Playground](https://eyereasoner.github.io/eyeleng/playground) for a self-contained browser UI with URL loading, autosave, share links, diagnostics, queries, and SRL/RDF Rules syntax selection.
 
+## How the reasoner works
 
-## W3C RDF syntax and semantics manifests
+Eyeleng computes the closure of a rule set:
 
-Eyeleng now integrates the grammar-hardened RDF syntax work into its normal `src/rdfSyntax.js` / `src/rdfManifest.js` structure, and adds a small RDF/RDFS entailment runner in `src/rdfEntailment.js`. The W3C RDF checks are therefore part of the same parser/reasoner discipline as the RDF Rules front-end.
+```text
+parse source
+analyze dependencies and strata
+match rule bodies against known triples
+instantiate rule heads
+add new triples
+repeat until stable
+```
+
+A rule has a body and a head:
+
+```srl
+RULE { ?child :childOf ?parent } WHERE { ?parent :parentOf ?child }
+```
+
+If the graph contains:
+
+```srl
+:alice :parentOf :bob .
+```
+
+then the body matches with `?parent = :alice` and `?child = :bob`, and the head derives:
+
+```srl
+:bob :childOf :alice .
+```
+
+Negation is handled by stratified evaluation: rules are grouped into dependency layers, and recursion through negation is rejected so the result stays deterministic.
+
+## Language surface
+
+SRL supports the practical rule features used by the SHACL 1.2 Rules tests and examples:
+
+```srl
+PREFIX : <http://example/>
+
+DATA {
+  :alice :score 7 .
+  :bob :score 3 .
+}
+
+RULE { ?x :grade ?grade } WHERE {
+  ?x :score ?score .
+  FILTER(?score >= 5) .
+  BIND(concat("pass-", str(?score)) AS ?grade)
+}
+
+RULE { ?x :eligible true } WHERE {
+  ?x :grade ?grade .
+  NOT { ?x :blocked true . }
+}
+```
+
+Implemented syntax includes:
+
+- `PREFIX`, `BASE`, `VERSION`, and `IMPORTS`
+- `DATA`, `RULE`, `WHERE`, `FILTER`, `BIND`, `SET`, and `NOT`
+- variables such as `?x`
+- IRIs, prefixed names, blank nodes, literals, RDF collections, and RDF 1.2 triple terms
+- Turtle-style `;`, `,`, `a`, blank-node property lists, lists, annotations, and reifiers where supported
+- property paths in rule bodies
+- language tags, base-direction literals, and common XML Schema datatypes
+- SRL and RDF Rules syntax front-ends
+
+The RDF parsing path is shared with the W3C RDF syntax harness, so SRL `DATA { ... }` uses the same grammar-hardened RDF parser surface as Turtle/TriG input.
+
+## Builtins and expressions
+
+`FILTER`, `BIND`, and `SET` use expression evaluation. Supported operations include comparisons, boolean operators, arithmetic, `IN`, `NOT IN`, datatype/language checks, string functions, numeric functions, and selected date/time helpers.
+
+Common builtins include:
+
+```text
+str, concat, lcase, ucase, replace
+abs, round, floor, ceil
+datatype, lang, iri, uri
+now, year, month, day
+```
+
+The goal is useful SHACL Rules/SRL behavior, not complete SPARQL expression coverage.
+
+## RDF 1.2 features
+
+Eyeleng includes grammar-hardened RDF 1.1/1.2 parsing support in `src/rdfSyntax.js` and W3C manifest runners in `src/rdfManifest.js` / `src/rdfEntailment.js`.
+
+Covered surfaces include:
+
+- N-Triples and N-Quads
+- Turtle and TriG
+- RDF 1.2 triple terms
+- reifiers and annotation blocks
+- language-direction literals
+- graph isomorphism for blank nodes
+- simple, RDF, and RDFS entailment checks for RDF-MT / RDF 1.2 Semantics manifests
+
+W3C checks:
 
 ```sh
 npm run w3c:rules
@@ -44,10 +152,9 @@ npm run w3c:rdf:json
 npm run w3c:rdf:earl
 ```
 
-`npm test` includes both W3C harnesses. When the W3C URLs are reachable, progress is printed test by test. In offline environments, the remote W3C checks are reported as unreachable unless `EYELENG_W3C_REQUIRED=1` is set.
+`npm test` includes the W3C harnesses. When W3C URLs are reachable, progress is printed test by test. In offline environments, remote W3C checks are reported as unreachable unless `EYELENG_W3C_REQUIRED=1` is set.
 
-The RDF harness covers N-Triples, N-Quads, Turtle, and TriG RDF 1.1/1.2 parser syntax/eval manifests, plus the RDF-MT and RDF 1.2 Semantics entailment manifests. Entailment tests are evaluated under their declared `mf:entailmentRegime` (`simple`, `RDF`, or `RDFS`) with their declared recognized datatypes.
-
+The official Eyeleng EARL 1.0 report for the W3C SHACL 1.2 Rules manifest is in [reports/w3c-shacl12-rules-earl.ttl](./reports/w3c-shacl12-rules-earl.ttl).
 
 ## RDF Message Logs
 
@@ -64,7 +171,7 @@ MESSAGE
 _:reading :sensor :s2 .
 ```
 
-Use it directly, import it from SRL, or force message-log parsing from the CLI:
+Use message logs directly, import them from SRL, or force message-log parsing from the CLI:
 
 ```sh
 ./eyeleng.js examples/rdf-messages.srl
@@ -72,4 +179,154 @@ Use it directly, import it from SRL, or force message-log parsing from the CLI:
 ./eyeleng.js --stream-messages --all examples/rdf-messages.trig
 ```
 
-The replay data includes `eymsg:RDFMessageStream`, `eymsg:MessageEnvelope`, offsets, next-envelope links, payload kind, payload graph, and `eymsg:payloadTriple` triple terms. Blank-node labels are scoped per message. For Eyeleng, each payload graph is represented as a closed list of RDF 1.2 triple terms via `log:nameOf`, plus direct `eymsg:payloadTriple` links for convenient SRL rules.
+The replay data includes message streams, envelopes, offsets, next-envelope links, payload kind, payload graph, and `eymsg:payloadTriple` triple terms. Blank-node labels are scoped per message. For Eyeleng, each payload graph is also represented as a closed RDF list of RDF 1.2 triple terms via `log:nameOf`.
+
+## CLI
+
+Common commands:
+
+```sh
+./eyeleng.js examples/family.srl
+./eyeleng.js --all examples/family.srl
+./eyeleng.js --check --deps examples/stratified-negation.srl
+./eyeleng.js --json --trace --stats examples/if-then.srl
+./eyeleng.js --query-file examples/query-body.txt examples/query.srl
+./eyeleng.js --syntax rdf examples/w3c-rule-set-snippet.ttl
+```
+
+Important options:
+
+```text
+--all               print input and inferred triples
+--check             parse and analyze only
+--strict            warnings become fatal
+--deps              print dependency edges and layers
+--trace             show rule firings
+--stats             show iteration and rule counts
+--json              structured output
+--query             run a raw body pattern over the closure
+--query-file FILE   read a query body from a file
+--max-iterations N  recursive-layer fixpoint safety guard
+--no-imports        parse imports but do not load them
+--rdf-messages      parse input as an RDF Message Log
+--stream-messages   replay RDF Message Log envelopes
+```
+
+## Public API
+
+Typical API use:
+
+```js
+const { run, formatTriples } = require('./src/index.js');
+
+const result = run(`
+PREFIX : <http://example/>
+DATA { :Socrates a :Man . }
+RULE { ?x a :Mortal } WHERE { ?x a :Man }
+`);
+
+console.log(formatTriples(result.inferred, result.prefixes));
+```
+
+Query mode:
+
+```js
+const { runQuery, formatBindings } = require('./src/index.js');
+
+const result = runQuery(source, '?x :ancestorOf ?y');
+console.log(formatBindings(result.query.bindings, result.prefixes));
+```
+
+Imports:
+
+```js
+const result = run(source, {
+  baseIRI: 'file:///main.srl',
+  importResolver(target) {
+    return {
+      source: readSomehow(target),
+      options: { baseIRI: target, filename: target }
+    };
+  }
+});
+```
+
+The API returns structured parsed programs, diagnostics, inferred triples, closure triples, traces, stats, and query bindings.
+
+## Project layout
+
+```text
+src/tokenizer.js      source text -> tokens
+src/parser.js         SRL parser -> program object
+src/rdfSyntax.js      RDF 1.1/1.2 N-Triples/N-Quads/Turtle/TriG syntax
+src/rdfManifest.js    W3C RDF manifest runner
+src/rdfEntailment.js  simple/RDF/RDFS entailment checks
+src/rdfMessages.js    RDF Message Log replay support
+src/term.js           terms, keys, equality, formatting
+src/store.js          triple set, predicate index, matching, paths
+src/builtins.js       expression evaluation and built-in functions
+src/analyze.js        diagnostics, dependencies, strata
+src/engine.js         layered forward-chaining evaluator
+src/query.js          external raw-body query operation
+src/format.js         text and JSON output
+src/api.js            public JavaScript API and import merging
+src/cli.js            command-line interface
+tools/bundle.js       self-contained bundle generator
+test/*.test.js        executable regression and conformance tests
+examples/*.srl        runnable SRL examples
+examples/*.ttl        RDF Rules / Turtle examples
+```
+
+A good reading order is `term.js`, `tokenizer.js`, `parser.js`, `rdfSyntax.js`, `store.js`, `builtins.js`, `analyze.js`, `engine.js`, then `api.js` and `cli.js`.
+
+## Tests and build
+
+```sh
+npm test
+npm run build
+```
+
+`npm run build` writes the command-line bundle to `eyeleng.js` and the browser API bundle to `dist/browser/eyeleng.browser.js`. In a browser, the bundle exposes `window.eyeleng`.
+
+The tests are executable documentation. They cover parsing, recursion, filters, negation, assignment, typed/language literals, RDF 1.2 syntax, property paths, stratification, imports, queries, examples, deep taxonomy benchmarks, W3C SHACL Rules, W3C RDF syntax, and RDF/RDFS entailment.
+
+## Examples
+
+Examples live in [examples/](./examples/):
+
+- `family.srl` — small recursive rules
+- `negation.srl` — stratified negation
+- `assignment.srl` — assignment and expressions
+- `property-paths.srl` — path matching in bodies
+- `basic-ruleset.ttl` — RDF Rules syntax
+- `rdf-messages.srl` / `rdf-messages.trig` — RDF Message Log replay
+- `deep-taxonomy-*.srl` — generated benchmark programs
+
+## Known boundaries
+
+Eyeleng intentionally remains a compact reasoner:
+
+- it does not implement SHACL validation or validation reports
+- it does not aim to be a full RDF database
+- RDF Rules syntax support is a front-end for rule execution, not a shapes-validation layer
+- property paths and SPARQL expressions are practical subsets
+- W3C manifests are used as executable alignment tests, but implementation status should be read from the current test reports
+
+## Extending Eyeleng safely
+
+Preserve the pipeline:
+
+```text
+syntax -> AST/program -> analysis -> evaluation -> formatting
+```
+
+Avoid making the evaluator parse strings. Parsing belongs in `parser.js` or `rdfSyntax.js`. Avoid making the parser derive triples. Inference belongs in `engine.js`.
+
+A safe extension usually needs:
+
+1. syntax support
+2. one focused example
+3. parser/API tests
+4. execution tests
+5. README or handbook notes
+6. bundle regeneration
