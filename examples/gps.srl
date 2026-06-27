@@ -1,0 +1,289 @@
+# GPS — generic route-planning over a road graph.
+#
+# Adapted from eyeling/examples/gps.n3:
+# https://raw.githubusercontent.com/eyereasoner/eyeling/refs/heads/main/examples/gps.n3
+#
+# The facts below provide a tiny western-Belgium road map and one route query.
+# The rules are generic: they build simple paths from any gps:Drive graph,
+# compute accumulated duration/cost/belief/comfort metrics, mark dominated
+# completed paths, and recommend each non-dominated completed path.
+
+PREFIX log: <http://www.w3.org/2000/10/swap/log#>
+PREFIX gps: <http://example.org/gps#>
+PREFIX : <http://example.org/gps-demo/>
+PREFIX path: <http://example.org/gps-demo/path/>
+
+DATA {
+  :Gent gps:label "Gent" .
+  :Brugge gps:label "Brugge" .
+  :Kortrijk gps:label "Kortrijk" .
+  :Oostende gps:label "Oostende" .
+
+  :i1 gps:location :Gent .
+
+  :question a gps:RouteQuery ;
+    gps:traveller :i1 ;
+    gps:to :Oostende ;
+    gps:maxLegs 4 ;
+    gps:text "Which route should we take from Gent to Oostende?" .
+
+  :drive_gent_brugge a gps:Drive ;
+    gps:from :Gent ; gps:to :Brugge ;
+    gps:actionLabel "drive_gent_brugge" ;
+    gps:duration 1500.0 ; gps:cost 0.006 ; gps:belief 0.96 ; gps:comfort 0.99 .
+
+  :drive_gent_kortrijk a gps:Drive ;
+    gps:from :Gent ; gps:to :Kortrijk ;
+    gps:actionLabel "drive_gent_kortrijk" ;
+    gps:duration 1600.0 ; gps:cost 0.007 ; gps:belief 0.96 ; gps:comfort 0.99 .
+
+  :drive_kortrijk_brugge a gps:Drive ;
+    gps:from :Kortrijk ; gps:to :Brugge ;
+    gps:actionLabel "drive_kortrijk_brugge" ;
+    gps:duration 1600.0 ; gps:cost 0.007 ; gps:belief 0.96 ; gps:comfort 0.99 .
+
+  :drive_brugge_oostende a gps:Drive ;
+    gps:from :Brugge ; gps:to :Oostende ;
+    gps:actionLabel "drive_brugge_oostende" ;
+    gps:duration 900.0 ; gps:cost 0.004 ; gps:belief 0.98 ; gps:comfort 1.0 .
+}
+
+# Resolve the traveller's current location and human-readable endpoint labels.
+RULE {
+  ?query gps:from ?source ;
+    gps:fromLabel ?sourceLabel ;
+    gps:toLabel ?destinationLabel .
+}
+WHERE {
+  ?query a gps:RouteQuery ;
+    gps:traveller ?traveller ;
+    gps:to ?destination .
+  ?traveller gps:location ?source .
+  ?source gps:label ?sourceLabel .
+  ?destination gps:label ?destinationLabel .
+}
+
+# Seed one-leg candidate paths from the query source.
+RULE {
+  ?path a gps:CandidatePath ;
+    gps:query ?query ;
+    gps:last ?next ;
+    gps:legs 1 ;
+    gps:pathKey ?pathKey ;
+    gps:routeLabel ?routeLabel ;
+    gps:actions ?actions ;
+    gps:pathIRI ?path ;
+    gps:duration ?duration ;
+    gps:cost ?cost ;
+    gps:belief ?belief ;
+    gps:comfort ?comfort .
+}
+WHERE {
+  ?query a gps:RouteQuery ;
+    gps:from ?source .
+  ?drive a gps:Drive ;
+    gps:from ?source ;
+    gps:to ?next ;
+    gps:actionLabel ?action ;
+    gps:duration ?duration ;
+    gps:cost ?cost ;
+    gps:belief ?belief ;
+    gps:comfort ?comfort .
+  FILTER(!sameTerm(?source, ?next))
+  ?source gps:label ?sourceLabel .
+  ?next gps:label ?nextLabel .
+  SET(?pathKey := CONCAT("|", STR(?source), "|", STR(?next), "|"))
+  SET(?routeLabel := CONCAT(?sourceLabel, " → ", ?nextLabel))
+  SET(?actions := ?action)
+  SET(?pathSlug1 := REPLACE(?routeLabel, " → ", "_", "g"))
+  SET(?pathSlug := REPLACE(?pathSlug1, "[^A-Za-z0-9_-]", "_", "g"))
+  SET(?path := IRI(CONCAT("http://example.org/gps-demo/path/", ?pathSlug)))
+}
+
+# Extend candidate paths through the graph while staying within the query's
+# leg bound and avoiding revisiting already-seen locations.
+RULE {
+  ?nextPath a gps:CandidatePath ;
+    gps:query ?query ;
+    gps:last ?next ;
+    gps:legs ?nextLegs ;
+    gps:pathKey ?nextPathKey ;
+    gps:routeLabel ?nextRouteLabel ;
+    gps:actions ?nextActions ;
+    gps:pathIRI ?nextPath ;
+    gps:duration ?nextDuration ;
+    gps:cost ?nextCost ;
+    gps:belief ?nextBelief ;
+    gps:comfort ?nextComfort .
+}
+WHERE {
+  ?path a gps:CandidatePath ;
+    gps:query ?query ;
+    gps:last ?current ;
+    gps:legs ?legs ;
+    gps:pathKey ?pathKey ;
+    gps:routeLabel ?routeLabel ;
+    gps:actions ?actions ;
+    gps:pathIRI ?path ;
+    gps:duration ?duration ;
+    gps:cost ?cost ;
+    gps:belief ?belief ;
+    gps:comfort ?comfort .
+  ?query gps:to ?destination ;
+    gps:maxLegs ?maxLegs .
+  FILTER(!sameTerm(?current, ?destination))
+  FILTER(?legs < ?maxLegs)
+  ?drive a gps:Drive ;
+    gps:from ?current ;
+    gps:to ?next ;
+    gps:actionLabel ?action ;
+    gps:duration ?legDuration ;
+    gps:cost ?legCost ;
+    gps:belief ?legBelief ;
+    gps:comfort ?legComfort .
+  FILTER(!sameTerm(?current, ?next))
+  SET(?needle := CONCAT("|", STR(?next), "|"))
+  FILTER(!CONTAINS(?pathKey, ?needle))
+  ?next gps:label ?nextLabel .
+  SET(?nextLegs := ?legs + 1)
+  SET(?nextPathKey := CONCAT(?pathKey, STR(?next), "|"))
+  SET(?nextRouteLabel := CONCAT(?routeLabel, " → ", ?nextLabel))
+  SET(?nextActions := CONCAT(?actions, ", ", ?action))
+  SET(?nextDuration := ?duration + ?legDuration)
+  SET(?nextCost := ?cost + ?legCost)
+  SET(?nextBelief := ?belief * ?legBelief)
+  SET(?nextComfort := ?comfort * ?legComfort)
+  SET(?nextPathSlug1 := REPLACE(?nextRouteLabel, " → ", "_", "g"))
+  SET(?nextPathSlug := REPLACE(?nextPathSlug1, "[^A-Za-z0-9_-]", "_", "g"))
+  SET(?nextPath := IRI(CONCAT("http://example.org/gps-demo/path/", ?nextPathSlug)))
+}
+
+# A completed path is any candidate that reaches the query destination.
+RULE {
+  ?path a gps:CompletedPath .
+  ?query gps:hasCandidatePath ?path .
+}
+WHERE {
+  ?query a gps:RouteQuery ;
+    gps:to ?destination .
+  ?path a gps:CandidatePath ;
+    gps:query ?query ;
+    gps:last ?destination .
+}
+
+# Generic dominance: another completed path for the same query is better when
+# it is faster, cheaper, more reliable, and at least as comfortable.
+RULE {
+  ?path gps:dominatedBy ?better .
+}
+WHERE {
+  ?path a gps:CompletedPath ;
+    gps:query ?query ;
+    gps:duration ?duration ;
+    gps:cost ?cost ;
+    gps:belief ?belief ;
+    gps:comfort ?comfort .
+  ?better a gps:CompletedPath ;
+    gps:query ?query ;
+    gps:duration ?betterDuration ;
+    gps:cost ?betterCost ;
+    gps:belief ?betterBelief ;
+    gps:comfort ?betterComfort .
+  FILTER(!sameTerm(?path, ?better))
+  FILTER(?betterDuration < ?duration)
+  FILTER(?betterCost < ?cost)
+  FILTER(?betterBelief > ?belief)
+  FILTER(?betterComfort >= ?comfort)
+}
+
+# Recommend every completed path that is not dominated by another completed
+# path. In this data set there is one such path, but the rule itself is not
+# tied to Gent, Brugge, Kortrijk, or Oostende.
+RULE {
+  ?query gps:recommendedPath ?path .
+  ?path gps:recommended true .
+}
+WHERE {
+  ?path a gps:CompletedPath ;
+    gps:query ?query .
+  NOT { ?path gps:dominatedBy ?other }
+}
+
+# Present the recommendation as compact, readable facts first. The path-search
+# bookkeeping remains in the inferred graph under path:* resources for users who
+# want to inspect how the answer was found.
+RULE {
+  :answer a gps:RouteRecommendation ;
+    gps:question ?questionText ;
+    gps:route ?bestLabel ;
+    gps:routeActions ?actions ;
+    gps:routeDuration ?duration ;
+    gps:routeCost ?displayCost ;
+    gps:routeBelief ?belief ;
+    gps:routeComfort ?comfort ;
+    gps:alternativeRoute ?alternativeLabel ;
+    gps:alternativeRouteActions ?alternativeActions ;
+    gps:alternativeRouteDuration ?alternativeDuration ;
+    gps:alternativeRouteCost ?alternativeDisplayCost ;
+    gps:alternativeRouteBelief ?alternativeBelief ;
+    gps:alternativeRouteComfort ?alternativeComfort ;
+    gps:reasonWhy ?reasonWhy ;
+    log:outputString ?block .
+}
+WHERE {
+  ?query a gps:RouteQuery ;
+    gps:text ?questionText ;
+    gps:fromLabel ?sourceLabel ;
+    gps:toLabel ?destinationLabel ;
+    gps:recommendedPath ?bestPath .
+  ?bestPath gps:routeLabel ?bestLabel ;
+    gps:actions ?actions ;
+    gps:duration ?duration ;
+    gps:cost ?cost ;
+    gps:belief ?belief ;
+    gps:comfort ?comfort .
+  ?alternative a gps:CompletedPath ;
+    gps:query ?query ;
+    gps:dominatedBy ?bestPath ;
+    gps:routeLabel ?alternativeLabel ;
+    gps:actions ?alternativeActions ;
+    gps:duration ?alternativeDuration ;
+    gps:cost ?alternativeCost ;
+    gps:belief ?alternativeBelief ;
+    gps:comfort ?alternativeComfort .
+  SET(?displayCost := ROUND(?cost * 1000) / 1000)
+  SET(?alternativeDisplayCost := ROUND(?alternativeCost * 1000) / 1000)
+  SET(?outcome := CONCAT("Take ", ?bestLabel, "."))
+  SET(?reasonWhy := CONCAT(
+    "From ", ?sourceLabel, " to ", ?destinationLabel,
+    ", the planner found two routes in this small map. The direct route (", ?bestLabel,
+    ") takes ", STR(?duration), " seconds at cost ", STR(?displayCost),
+    ", with belief ", STR(?belief), " and comfort ", STR(?comfort),
+    ". The alternative (", ?alternativeLabel, ") takes ", STR(?alternativeDuration),
+    " seconds at cost ", STR(?alternativeDisplayCost), ", with belief ", STR(?alternativeBelief),
+    " and comfort ", STR(?alternativeComfort),
+    ". So the direct route is faster, cheaper, more reliable, and slightly more comfortable."
+  ))
+  SET(?block := CONCAT(
+    "GPS — Generic route planning\n\n",
+    "## Question\n", ?questionText, "\n\n",
+    "## Answer\n", ?outcome, "\n\n",
+    "## Recommended Route\n", ?bestLabel, "\n",
+    "Actions: ", ?actions, "\n",
+    "Duration: ", STR(?duration), " seconds\n",
+    "Cost: ", STR(?displayCost), "\n",
+    "Belief: ", STR(?belief), "\n",
+    "Comfort: ", STR(?comfort), "\n\n",
+    "## Alternative Route\n", ?alternativeLabel, "\n",
+    "Actions: ", ?alternativeActions, "\n",
+    "Duration: ", STR(?alternativeDuration), " seconds\n",
+    "Cost: ", STR(?alternativeDisplayCost), "\n",
+    "Belief: ", STR(?alternativeBelief), "\n",
+    "Comfort: ", STR(?alternativeComfort), "\n\n",
+    "## Reason Why\n", ?reasonWhy, "\n\n",
+    "## Check\n",
+    "C1 OK - complete paths are discovered by chaining gps:Drive facts.\n",
+    "C2 OK - cycles are avoided with the generated path key.\n",
+    "C3 OK - dominated complete paths are rejected before recommendation.\n"
+  ))
+}

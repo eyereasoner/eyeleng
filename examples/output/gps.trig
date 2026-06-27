@@ -1,0 +1,86 @@
+:answer a gps:RouteRecommendation .
+:answer gps:alternativeRoute "Gent → Kortrijk → Brugge → Oostende" .
+:answer gps:alternativeRouteActions "drive_gent_kortrijk, drive_kortrijk_brugge, drive_brugge_oostende" .
+:answer gps:alternativeRouteBelief 0.903168 .
+:answer gps:alternativeRouteComfort 0.9801 .
+:answer gps:alternativeRouteCost 0.018 .
+:answer gps:alternativeRouteDuration 4100 .
+:answer gps:question "Which route should we take from Gent to Oostende?" .
+:answer gps:reasonWhy "From Gent to Oostende, the planner found two routes in this small map. The direct route (Gent → Brugge → Oostende) takes 2400 seconds at cost 0.01, with belief 0.9408 and comfort 0.99. The alternative (Gent → Kortrijk → Brugge → Oostende) takes 4100 seconds at cost 0.018, with belief 0.903168 and comfort 0.9801. So the direct route is faster, cheaper, more reliable, and slightly more comfortable." .
+:answer gps:route "Gent → Brugge → Oostende" .
+:answer gps:routeActions "drive_gent_brugge, drive_brugge_oostende" .
+:answer gps:routeBelief 0.9408 .
+:answer gps:routeComfort 0.99 .
+:answer gps:routeCost 0.01 .
+:answer gps:routeDuration 2400 .
+:answer log:outputString "GPS — Generic route planning\n\n## Question\nWhich route should we take from Gent to Oostende?\n\n## Answer\nTake Gent → Brugge → Oostende.\n\n## Recommended Route\nGent → Brugge → Oostende\nActions: drive_gent_brugge, drive_brugge_oostende\nDuration: 2400 seconds\nCost: 0.01\nBelief: 0.9408\nComfort: 0.99\n\n## Alternative Route\nGent → Kortrijk → Brugge → Oostende\nActions: drive_gent_kortrijk, drive_kortrijk_brugge, drive_brugge_oostende\nDuration: 4100 seconds\nCost: 0.018\nBelief: 0.903168\nComfort: 0.9801\n\n## Reason Why\nFrom Gent to Oostende, the planner found two routes in this small map. The direct route (Gent → Brugge → Oostende) takes 2400 seconds at cost 0.01, with belief 0.9408 and comfort 0.99. The alternative (Gent → Kortrijk → Brugge → Oostende) takes 4100 seconds at cost 0.018, with belief 0.903168 and comfort 0.9801. So the direct route is faster, cheaper, more reliable, and slightly more comfortable.\n\n## Check\nC1 OK - complete paths are discovered by chaining gps:Drive facts.\nC2 OK - cycles are avoided with the generated path key.\nC3 OK - dominated complete paths are rejected before recommendation.\n" .
+:question gps:from :Gent .
+:question gps:fromLabel "Gent" .
+:question gps:hasCandidatePath path:Gent_Brugge_Oostende .
+:question gps:hasCandidatePath path:Gent_Kortrijk_Brugge_Oostende .
+:question gps:recommendedPath path:Gent_Brugge_Oostende .
+:question gps:toLabel "Oostende" .
+path:Gent_Brugge a gps:CandidatePath .
+path:Gent_Brugge gps:actions "drive_gent_brugge" .
+path:Gent_Brugge gps:belief 0.96 .
+path:Gent_Brugge gps:comfort 0.99 .
+path:Gent_Brugge gps:cost 0.006 .
+path:Gent_Brugge gps:duration 1500 .
+path:Gent_Brugge gps:last :Brugge .
+path:Gent_Brugge gps:legs 1 .
+path:Gent_Brugge gps:pathIRI path:Gent_Brugge .
+path:Gent_Brugge gps:pathKey "|http://example.org/gps-demo/Gent|http://example.org/gps-demo/Brugge|" .
+path:Gent_Brugge gps:query :question .
+path:Gent_Brugge gps:routeLabel "Gent → Brugge" .
+path:Gent_Brugge_Oostende a gps:CandidatePath .
+path:Gent_Brugge_Oostende a gps:CompletedPath .
+path:Gent_Brugge_Oostende gps:actions "drive_gent_brugge, drive_brugge_oostende" .
+path:Gent_Brugge_Oostende gps:belief 0.9408 .
+path:Gent_Brugge_Oostende gps:comfort 0.99 .
+path:Gent_Brugge_Oostende gps:cost 0.01 .
+path:Gent_Brugge_Oostende gps:duration 2400 .
+path:Gent_Brugge_Oostende gps:last :Oostende .
+path:Gent_Brugge_Oostende gps:legs 2 .
+path:Gent_Brugge_Oostende gps:pathIRI path:Gent_Brugge_Oostende .
+path:Gent_Brugge_Oostende gps:pathKey "|http://example.org/gps-demo/Gent|http://example.org/gps-demo/Brugge|http://example.org/gps-demo/Oostende|" .
+path:Gent_Brugge_Oostende gps:query :question .
+path:Gent_Brugge_Oostende gps:recommended true .
+path:Gent_Brugge_Oostende gps:routeLabel "Gent → Brugge → Oostende" .
+path:Gent_Kortrijk a gps:CandidatePath .
+path:Gent_Kortrijk gps:actions "drive_gent_kortrijk" .
+path:Gent_Kortrijk gps:belief 0.96 .
+path:Gent_Kortrijk gps:comfort 0.99 .
+path:Gent_Kortrijk gps:cost 0.007 .
+path:Gent_Kortrijk gps:duration 1600 .
+path:Gent_Kortrijk gps:last :Kortrijk .
+path:Gent_Kortrijk gps:legs 1 .
+path:Gent_Kortrijk gps:pathIRI path:Gent_Kortrijk .
+path:Gent_Kortrijk gps:pathKey "|http://example.org/gps-demo/Gent|http://example.org/gps-demo/Kortrijk|" .
+path:Gent_Kortrijk gps:query :question .
+path:Gent_Kortrijk gps:routeLabel "Gent → Kortrijk" .
+path:Gent_Kortrijk_Brugge a gps:CandidatePath .
+path:Gent_Kortrijk_Brugge gps:actions "drive_gent_kortrijk, drive_kortrijk_brugge" .
+path:Gent_Kortrijk_Brugge gps:belief 0.9216 .
+path:Gent_Kortrijk_Brugge gps:comfort 0.9801 .
+path:Gent_Kortrijk_Brugge gps:cost 0.014 .
+path:Gent_Kortrijk_Brugge gps:duration 3200 .
+path:Gent_Kortrijk_Brugge gps:last :Brugge .
+path:Gent_Kortrijk_Brugge gps:legs 2 .
+path:Gent_Kortrijk_Brugge gps:pathIRI path:Gent_Kortrijk_Brugge .
+path:Gent_Kortrijk_Brugge gps:pathKey "|http://example.org/gps-demo/Gent|http://example.org/gps-demo/Kortrijk|http://example.org/gps-demo/Brugge|" .
+path:Gent_Kortrijk_Brugge gps:query :question .
+path:Gent_Kortrijk_Brugge gps:routeLabel "Gent → Kortrijk → Brugge" .
+path:Gent_Kortrijk_Brugge_Oostende a gps:CandidatePath .
+path:Gent_Kortrijk_Brugge_Oostende a gps:CompletedPath .
+path:Gent_Kortrijk_Brugge_Oostende gps:actions "drive_gent_kortrijk, drive_kortrijk_brugge, drive_brugge_oostende" .
+path:Gent_Kortrijk_Brugge_Oostende gps:belief 0.903168 .
+path:Gent_Kortrijk_Brugge_Oostende gps:comfort 0.9801 .
+path:Gent_Kortrijk_Brugge_Oostende gps:cost 0.018000000000000002 .
+path:Gent_Kortrijk_Brugge_Oostende gps:dominatedBy path:Gent_Brugge_Oostende .
+path:Gent_Kortrijk_Brugge_Oostende gps:duration 4100 .
+path:Gent_Kortrijk_Brugge_Oostende gps:last :Oostende .
+path:Gent_Kortrijk_Brugge_Oostende gps:legs 3 .
+path:Gent_Kortrijk_Brugge_Oostende gps:pathIRI path:Gent_Kortrijk_Brugge_Oostende .
+path:Gent_Kortrijk_Brugge_Oostende gps:pathKey "|http://example.org/gps-demo/Gent|http://example.org/gps-demo/Kortrijk|http://example.org/gps-demo/Brugge|http://example.org/gps-demo/Oostende|" .
+path:Gent_Kortrijk_Brugge_Oostende gps:query :question .
+path:Gent_Kortrijk_Brugge_Oostende gps:routeLabel "Gent → Kortrijk → Brugge → Oostende" .
