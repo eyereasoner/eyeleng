@@ -2,6 +2,7 @@
 
 const { parse, parseQuery } = require('./parser.js');
 const { parseRdfSyntax, parseRdfDocument, rdfDocumentToProgram, looksLikeRdfRules } = require('./rdfSyntax.js');
+const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js');
 const { evaluate } = require('./engine.js');
 const { analyze } = require('./analyze.js');
 const { formatTriples, sortTriples, toJSON, formatTrace, formatBindings } = require('./format.js');
@@ -10,6 +11,7 @@ const { resultTriples } = require('./output.js');
 
 function parseInput(source, options = {}) {
   if (typeof source !== 'string') return source;
+  if (looksLikeRdfMessageLog(source, options)) return parseRdfMessageLog(source, options);
   return looksLikeRdfRules(source, options) ? parseRdfSyntax(source, options) : parse(source, options);
 }
 
@@ -106,6 +108,8 @@ module.exports = {
   parseInput,
   parseRdfSyntax,
   parseRdfDocument,
+  parseRdfMessageLog,
+  looksLikeRdfMessageLog,
   rdfDocumentToProgram,
   compile,
   resolveImports,

@@ -13,15 +13,47 @@ function msTag(ms) {
 }
 
 function info(msg) {
-  console.log(`${C.y}==${C.n} ${msg}`);
+  console.log(`${C.y}==${C.n} ${C.y}${msg}${C.n}`);
+}
+
+function statusWord(status) {
+  if (status === 'ok' || status === 'pass') return `${C.g}OK${C.n}`;
+  if (status === 'skip') return `${C.y}SKIP${C.n}`;
+  return `${C.r}FAIL${C.n}`;
+}
+
+function coloredMessage(status, msg) {
+  if (status === 'ok' || status === 'pass') return `${C.g}${msg}${C.n}`;
+  if (status === 'skip') return `${C.y}${msg}${C.n}`;
+  return `${C.r}${msg}${C.n}`;
+}
+
+function line(idx, status, msg, ms) {
+  const text = `${C.dim}${idx}${C.n} ${statusWord(status)} ${coloredMessage(status, msg)} ${msTag(ms)}`;
+  if (status === 'fail') console.error(text);
+  else console.log(text);
 }
 
 function okLine(idx, msg, ms) {
-  console.log(`${C.dim}${idx}${C.n} ${C.g}OK${C.n} ${C.g}${msg}${C.n} ${msTag(ms)}`);
+  line(idx, 'ok', msg, ms);
+}
+
+function skipLine(idx, msg, ms) {
+  line(idx, 'skip', msg, ms);
 }
 
 function failLine(idx, msg, ms) {
-  console.error(`${C.dim}${idx}${C.n} ${C.r}FAIL${C.n} ${C.r}${msg}${C.n} ${msTag(ms)}`);
+  line(idx, 'fail', msg, ms);
+}
+
+function summaryLine(status, passed, total, ms, options = {}) {
+  const skipped = options.skipped || 0;
+  const skipPart = skipped ? `, ${C.y}${skipped} skipped${C.n}` : '';
+  const label = options.label ? `${options.label}: ` : '';
+  const timePart = ms === null || ms === undefined ? '' : ` ${msTag(ms)}`;
+  const msg = `${label}${passed}/${total} tests passed${skipPart}${timePart}`;
+  if (status === 'fail') console.error(`${statusWord(status)} ${msg}`);
+  else console.log(`${statusWord(status)} ${msg}`);
 }
 
 function summarizeError(err) {
@@ -70,18 +102,14 @@ function createHarness(section) {
     }
 
     const suiteMs = Date.now() - suiteStart;
-    if (failed === 0) {
-      console.log(`${C.g}OK${C.n} ${passed}/${tests.length} tests passed ${msTag(suiteMs)}`);
-    } else {
-      console.error(`${C.r}FAIL${C.n} ${passed}/${tests.length} tests passed ${msTag(suiteMs)}`);
-    }
+    summaryLine(failed === 0 ? 'ok' : 'fail', passed, tests.length, suiteMs);
     console.log('');
 
     appendSummary({ section, passed, failed, total: tests.length, ms: suiteMs });
     if (failed > 0) process.exitCode = 1;
   }
 
-  return { test, main, colors: C, info, msTag };
+  return { test, main, colors: C, info, msTag, okLine, skipLine, failLine, summaryLine };
 }
 
-module.exports = { createHarness, colors: C, info, msTag };
+module.exports = { createHarness, colors: C, info, msTag, okLine, skipLine, failLine, summaryLine, statusWord };

@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { colors: C, msTag, info } = require('./harness.js');
+const { colors: C, info, summaryLine } = require('./harness.js');
 
 const root = path.join(__dirname, '..');
 const start = Date.now();
@@ -17,6 +17,7 @@ const preferred = [
   'browser-bundle.test.js',
   'examples.test.js',
   'shacl12-rules.test.js',
+  'w3c-rdf.test.js',
 ];
 const files = preferred.filter((name) => fs.existsSync(path.join(__dirname, name)));
 
@@ -38,6 +39,7 @@ for (const file of files) {
 let passed = 0;
 let failed = 0;
 let total = 0;
+let skipped = 0;
 if (fs.existsSync(summaryFile)) {
   const lines = fs.readFileSync(summaryFile, 'utf8').split('\n').filter(Boolean);
   for (const line of lines) {
@@ -46,6 +48,7 @@ if (fs.existsSync(summaryFile)) {
       passed += item.passed || 0;
       failed += item.failed || 0;
       total += item.total || 0;
+      skipped += item.skipped || item.skip || 0;
     } catch {}
   }
   fs.rmSync(summaryFile, { force: true });
@@ -54,8 +57,8 @@ if (fs.existsSync(summaryFile)) {
 const ms = Date.now() - start;
 info('Total');
 if (status === 0 && failed === 0) {
-  console.log(`${C.g}OK${C.n} ${passed}/${total} tests passed ${msTag(ms)}`);
+  summaryLine('ok', passed, total, ms, { skipped });
 } else {
-  console.error(`${C.r}FAIL${C.n} ${passed}/${total} tests passed ${msTag(ms)}`);
+  summaryLine('fail', passed, total, ms, { skipped });
 }
 process.exit(status === 0 && failed === 0 ? 0 : status || 1);

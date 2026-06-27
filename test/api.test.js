@@ -424,3 +424,66 @@ RULE { :clock :consistent true ; :snapshot ?t1 } WHERE {
 });
 
 main();
+
+test('RDF Message Logs expose Eyeling-style envelopes and payload triples', () => {
+  const messages = `VERSION "1.2-messages"
+PREFIX : <http://example/messages#>
+
+_:reading :sensor :s1 ; :value 21 .
+
+MESSAGE
+
+# Empty heartbeat message.
+
+MESSAGE
+
+_:reading :sensor :s2 ; :value 22 .
+`;
+  const rules = `PREFIX : <http://example/messages#>
+PREFIX eymsg: <https://eyereasoner.github.io/eyeling/vocab/message#>
+IMPORTS <urn:messages>
+RULE { ?envelope :mentionsSensor ?sensor } WHERE {
+  ?envelope eymsg:payloadGraph ?payload .
+  ?payload eymsg:payloadTriple <<(?reading :sensor ?sensor)>> .
+}
+RULE { ?envelope :isHeartbeat true } WHERE {
+  ?envelope eymsg:payloadKind eymsg:empty .
+}`;
+  const result = run(rules, {
+    importResolver(target) {
+      assert.equal(target, 'urn:messages');
+      return { source: messages, options: { baseIRI: 'urn:messages' } };
+    },
+  });
+  const out = runToString(rules, {
+    importResolver(target) {
+      assert.equal(target, 'urn:messages');
+      return { source: messages, options: { baseIRI: 'urn:messages' } };
+    },
+  });
+  assert.equal(result.prefixes.eymsg, 'https://eyereasoner.github.io/eyeling/vocab/message#');
+  assert.match(out, /:mentionsSensor :s1 \./);
+  assert.match(out, /:mentionsSensor :s2 \./);
+  assert.match(out, /:isHeartbeat true \./);
+});
+
+
+test('DATA blocks use the shared RDF parser surface', () => {
+  const output = runToString(`
+PREFIX : <http://example/>
+DATA {
+  :msg :text "bonjour"@fr--ltr .
+  :root :nested ( 1 [ :p :q ] ) .
+  :s :p :o {| :source :witness |} .
+}
+RULE { :msg :dir ?dir } WHERE { :msg :text ?text . SET(?dir := LANGDIR(?text)) }
+RULE { :root :first ?first } WHERE { :root :nested/rdf:first ?first }
+RULE { :test :annotation ?source } WHERE {
+  ?statement rdf:reifies <<(:s :p :o)>> .
+  ?statement :source ?source .
+}
+`);
+  assert.match(output, /:msg :dir "ltr" \./);
+  assert.match(output, /:root :first 1 \./);
+  assert.match(output, /:test :annotation :witness \./);
+});

@@ -1,6 +1,6 @@
 {
   "name": "eyeleng",
-  "version": "1.0.5",
+  "version": "1.0.6-eyereasoner.2",
   "description": "The EYE Logic Engine: a JavaScript implementation of SHACL Rules, including SRL and RDF Rules syntax front-ends.",
   "keywords": [
     "SRL",
@@ -37,7 +37,12 @@
     "pretest": "node tools/bundle.js",
     "test": "node test/run.js",
     "preversion": "npm test",
-    "postversion": "git push origin HEAD --follow-tags"
+    "postversion": "git push origin HEAD --follow-tags",
+    "w3c:rules": "node test/shacl12-rules.test.js",
+    "w3c:rdf": "node test/w3c-rdf.test.js",
+    "w3c:rdf:json": "node tools/w3c-rdf.js --json",
+    "w3c:rdf:earl": "node tools/w3c-rdf.js --earl",
+    "w3c:all": "npm run w3c:rules && npm run w3c:rdf"
   },
   "publishConfig": {
     "access": "public"

@@ -1,6 +1,7 @@
 'use strict';
 
 const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
+const { parseN3 } = require('./rdfSyntax.js');
 const { isBuiltinName } = require('./builtins.js');
 const { ruleNeedsRunOnce } = require('./assignments.js');
 const {
@@ -14,6 +15,7 @@ const {
   RDF_REST,
   RDF_NIL,
   RDF_REIFIES,
+  XSD_STRING,
   XSD_BOOLEAN,
   XSD_INTEGER,
   XSD_DECIMAL,
@@ -52,7 +54,7 @@ class Parser {
         this.parseImports();
       } else if (this.matchWord('DATA')) {
         this.expectValue('{');
-        data.push(...this.parseTriplesBlock({ allowPath: false, context: 'data' }));
+        data.push(...this.parseDataBlockWithRdfSyntax());
       } else if (this.matchWord('RULE')) {
         rules.push(this.parseRule());
       } else if (this.matchWord('IF')) {
@@ -194,6 +196,98 @@ class Parser {
       this.consumeOptionalDot();
     }
     return triples;
+  }
+
+  parseDataBlockWithRdfSyntax() {
+    const blockSource = this.collectBalancedDataBlockSource();
+    const program = parseN3(blockSource, {
+      profile: 'trig',
+      base: this.baseIRI || '',
+      prefixes: this.prefixes,
+    });
+    return (program.facts || []).map((triple) => this.convertRdfSyntaxTriple(triple));
+  }
+
+  collectBalancedDataBlockSource() {
+    const tokens = [];
+    let depth = 1;
+    while (!this.is('eof')) {
+      const token = this.advance();
+      if (token.value === '{') {
+        depth += 1;
+        tokens.push(token);
+      } else if (token.value === '}') {
+        depth -= 1;
+        if (depth === 0) return this.tokensToRdfSource(tokens);
+        tokens.push(token);
+      } else {
+        tokens.push(token);
+      }
+    }
+    throw this.error('Unterminated DATA block');
+  }
+
+  tokensToRdfSource(tokens) {
+    const parts = [];
+    for (let i = 0; i < tokens.length; i += 1) {
+      const token = tokens[i];
+      if (token.type === 'eof') continue;
+      if ((token.value === '+' || token.value === '-') && tokens[i + 1] && tokens[i + 1].type === 'number') {
+        parts.push(`${token.value}${this.tokenToRdfSource(tokens[i + 1])}`);
+        i += 1;
+      } else {
+        parts.push(this.tokenToRdfSource(token));
+      }
+    }
+    return parts.join(' ');
+  }
+
+  tokenToRdfSource(token) {
+    if (token.type === 'iri') return `<${String(token.value).replace(/>/g, '\\>')}>`;
+    if (token.type === 'string') return JSON.stringify(token.value);
+    if (token.type === 'variable') return `?${token.value}`;
+    if (token.type === 'number') return String(token.value);
+    return String(token.value);
+  }
+
+  convertRdfSyntaxTriple(triple) {
+    const out = {
+      s: this.convertRdfSyntaxTerm(triple.s),
+      p: this.convertRdfSyntaxTerm(triple.p),
+      o: this.convertRdfSyntaxTerm(triple.o),
+    };
+    if (out.s.type === 'var' || out.p.type === 'var' || out.o.type === 'var') {
+      throw this.error('DATA blocks may not contain variables');
+    }
+    if (out.p.type !== 'iri') {
+      throw this.error('DATA predicates must be IRIs');
+    }
+    if (triple.graph) out.graph = this.convertRdfSyntaxTerm(triple.graph);
+    return out;
+  }
+
+  convertRdfSyntaxTerm(term) {
+    if (!term) return null;
+    if (term.type) return term;
+    if (term.kind === 'iri') return iri(term.value);
+    if (term.kind === 'blank') return blankNode(term.value);
+    if (term.kind === 'var') return variable(term.name || term.value);
+    if (term.kind === 'literal') {
+      return literal(
+        coerceLexicalLiteral(term.value, term.datatype),
+        term.datatype === XSD_STRING ? null : (term.datatype || null),
+        term.language || null,
+        term.langDir || null,
+      );
+    }
+    if (term.kind === 'triple') {
+      return tripleTerm(
+        this.convertRdfSyntaxTerm(term.s),
+        this.convertRdfSyntaxTerm(term.p),
+        this.convertRdfSyntaxTerm(term.o),
+      );
+    }
+    throw this.error(`Unsupported RDF term kind ${term.kind || typeof term}`);
   }
 
   parseTripleStatement(options = {}) {

@@ -52,6 +52,8 @@ function parseArgs(argv) {
     imports: true,
     syntax: 'auto',
     ruleSet: null,
+    rdfMessages: false,
+    includeMessageFacts: false,
   };
   const files = [];
   for (let i = 0; i < argv.length; i += 1) {
@@ -64,6 +66,8 @@ function parseArgs(argv) {
     else if (arg === '--strict') options.strict = true;
     else if (arg === '--deps') options.deps = true;
     else if (arg === '--no-imports') options.imports = false;
+    else if (arg === '--rdf-messages' || arg === '--stream-messages') options.rdfMessages = true;
+    else if (arg === '--include-message-facts') options.includeMessageFacts = true;
     else if (arg === '--syntax') {
       i += 1;
       if (i >= argv.length) throw new Error('--syntax requires srl, rdf, or auto');
@@ -173,6 +177,8 @@ function main(argv = process.argv.slice(2), io = process) {
       importResolver: options.imports ? createFileImportResolver() : null,
       syntax: options.syntax === 'auto' ? undefined : options.syntax,
       ruleSet: options.ruleSet,
+      rdfMessages: options.rdfMessages,
+      includeMessageFacts: options.includeMessageFacts,
     });
     const fatal = hasFatalDiagnostics(compiled.analysis, options.strict);
 

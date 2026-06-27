@@ -560,3 +560,958 @@ module.exports = {
     SRL_RULE,
   },
 };
+
+
+// ---- Grammar-hardened RDF 1.1 / RDF 1.2 syntax helpers ----
+// These functions are used by the W3C RDF manifest harness and are kept in
+// rdfSyntax.js beside the existing Turtle/RDF-Rules front-end instead of in a
+// separate monolithic test file.  They intentionally keep an internal test
+// graph representation because the W3C manifests exercise syntax, datasets,
+// triple terms, and RDF 1.2 annotation isomorphism independently from the SRL
+// rule engine representation.
+const rdfW3cSyntax = (() => {
+// Grammar-hardened RDF syntax code shared by the RDF Rules front-end and W3C manifest harness.
+function iri(value) {
+  if (!value) throw new Error('iri(value) requires a non-empty value');
+  return Object.freeze({ kind: 'iri', value: String(value) });
+}
+function literal(value, datatype = null, language = null, langDir = null) {
+  return Object.freeze({ kind: 'literal', value: String(value), datatype, language, langDir });
+}
+function blank(value) {
+  const clean = String(value || '').replace(/^_:/, '');
+  if (!clean) throw new Error('blank(value) requires a name');
+  return Object.freeze({ kind: 'blank', value: clean });
+}
+function tripleTerm(s, p, o) { return Object.freeze({ kind: 'triple', s, p, o }); }
+function variable(name) {
+  const clean = String(name || '').replace(/^\?/, '');
+  if (!clean) throw new Error('variable(name) requires a name');
+  return Object.freeze({ kind: 'var', name: clean });
+}
+function triple(s, p, o, graph = null) { return Object.freeze({ s, p, o, graph }); }
+function termKey(term) {
+  if (!term) return 'default';
+  switch (term.kind) {
+    case 'iri': return `I:${term.value}`;
+    case 'literal': return `L:${JSON.stringify(term.value)}^^${term.datatype || ''}@${term.language || ''}`;
+    case 'blank': return `B:${term.value}`;
+    case 'var': return `V:${term.name}`;
+    case 'triple': return `T:${termKey(term.s)} ${termKey(term.p)} ${termKey(term.o)}`;
+    default: throw new Error(`Unsupported term kind: ${term.kind}`);
+  }
+}
+function tripleKey(t) { return `${termKey(t.s)} ${termKey(t.p)} ${termKey(t.o)} ${termKey(t.graph)}`; }
+class Rule { constructor({ id, body = [], head = [], profile = 'n3-rules-subset-v0' } = {}) { this.id = id; this.body = body; this.head = head; this.profile = profile; } }
+
+const RDF_NS = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+const RDF_TYPE = `${RDF_NS}type`;
+const RDF_FIRST = `${RDF_NS}first`;
+const RDF_REST = `${RDF_NS}rest`;
+const RDF_NIL = `${RDF_NS}nil`;
+const RDF_REIFIES = `${RDF_NS}reifies`;
+const RDF_LANG_STRING = `${RDF_NS}langString`;
+const RDF_DIR_LANG_STRING = `${RDF_NS}dirLangString`;
+const XSD_BOOLEAN = 'http://www.w3.org/2001/XMLSchema#boolean';
+const XSD_INTEGER = 'http://www.w3.org/2001/XMLSchema#integer';
+const XSD_DECIMAL = 'http://www.w3.org/2001/XMLSchema#decimal';
+const XSD_DOUBLE = 'http://www.w3.org/2001/XMLSchema#double';
+const XSD_STRING = 'http://www.w3.org/2001/XMLSchema#string';
+
+// ---- N-Triples / N-Quads parser ----
+const { parseNQuads, termToNQuads, tripleToNQuads, triplesToNQuads } = (() => {
+
+function isWs(ch) { return ch === ' ' || ch === '\t'; }
+function isLineEnd(ch) { return ch === '\n' || ch === '\r'; }
+function isHex(text) { return /^[0-9A-Fa-f]+$/.test(text); }
+
+function decodeCodePoint(hex, token) {
+  const code = Number.parseInt(hex, 16);
+  if (!Number.isFinite(code) || code < 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) {
+    throw new Error(`Invalid Unicode escape in ${token}`);
+  }
+  return String.fromCodePoint(code);
+}
+
+function decodeIriEscapes(value, token = 'IRI') {
+  let out = '';
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
+    if (ch !== '\\') {
+      if (/[<>"{}|^`\u0000-\u0020]/.test(ch)) throw new Error(`Invalid character in ${token}`);
+      out += ch;
+      continue;
+    }
+    const esc = value[++i];
+    if (esc === 'u') {
+      const hex = value.slice(i + 1, i + 5);
+      if (hex.length !== 4 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${token}`);
+      out += decodeCodePoint(hex, token);
+      i += 4;
+    } else if (esc === 'U') {
+      const hex = value.slice(i + 1, i + 9);
+      if (hex.length !== 8 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${token}`);
+      out += decodeCodePoint(hex, token);
+      i += 8;
+    } else {
+      throw new Error(`Invalid IRI escape \\${esc} in ${token}`);
+    }
+  }
+  return out;
+}
+
+function decodeLiteralEscapes(value, token = 'literal') {
+  let out = '';
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
+    if (ch !== '\\') {
+      if (ch === '\n' || ch === '\r') throw new Error(`Raw line break in ${token}`);
+      out += ch;
+      continue;
+    }
+    const esc = value[++i];
+    if (!esc) throw new Error(`Trailing escape in ${token}`);
+    if (esc === 't') out += '\t';
+    else if (esc === 'b') out += '\b';
+    else if (esc === 'n') out += '\n';
+    else if (esc === 'r') out += '\r';
+    else if (esc === 'f') out += '\f';
+    else if (esc === '"') out += '"';
+    else if (esc === "'") out += "'";
+    else if (esc === '\\') out += '\\';
+    else if (esc === 'u') {
+      const hex = value.slice(i + 1, i + 5);
+      if (hex.length !== 4 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${token}`);
+      out += decodeCodePoint(hex, token);
+      i += 4;
+    } else if (esc === 'U') {
+      const hex = value.slice(i + 1, i + 9);
+      if (hex.length !== 8 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${token}`);
+      out += decodeCodePoint(hex, token);
+      i += 8;
+    } else {
+      throw new Error(`Invalid escape \\${esc} in ${token}`);
+    }
+  }
+  return out;
+}
+
+function stripNqComment(line) {
+  let inString = false;
+  let inIri = false;
+  let escaped = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (escaped) { escaped = false; continue; }
+    if (ch === '\\') { escaped = true; continue; }
+    if (!inIri && ch === '"') { inString = !inString; continue; }
+    if (!inString && ch === '<' && line[i + 1] !== '<') { inIri = true; continue; }
+    if (!inString && inIri && ch === '>') { inIri = false; continue; }
+    if (!inString && !inIri && ch === '#') return line.slice(0, i);
+  }
+  return line;
+}
+
+function validateAbsoluteIri(value, position) {
+  if (!/^[A-Za-z][A-Za-z0-9+.-]*:/.test(value)) throw new Error(`${position} must be absolute`);
+  return value;
+}
+
+function validateBlankLabel(value) {
+  // RDF blank node labels follow PN_CHARS-style rules. This deliberately accepts
+  // Unicode letters and leading underscores; it still rejects empty labels,
+  // labels ending in '.', and doubled dots because those are common false
+  // positives when a compact statement terminator is adjacent to a blank node.
+  if (!value || value.endsWith('.') || value.includes('..')) throw new Error(`Invalid blank node label _: ${value}`);
+  if (!/^[\p{L}\p{N}_](?:[\p{L}\p{N}._\-\u00B7\u0300-\u036F\u203F-\u2040]*[\p{L}\p{N}_\-\u00B7\u0300-\u036F\u203F-\u2040])?$/u.test(value)) {
+    throw new Error(`Invalid blank node label _: ${value}`);
+  }
+  return value;
+}
+
+function validateLang(value) {
+  // LANG_DIR uses BCP47-style language tags. Keep this intentionally strict enough
+  // for the W3C syntax tests: each subtag is 1..8 alphanumeric chars, starting alpha.
+  if (!value || value.includes('--') || !/^[A-Za-z]{1,8}(?:-[A-Za-z0-9]{1,8})*$/.test(value)) throw new Error(`Invalid language tag @${value}`);
+  return value;
+}
+
+class LineReader {
+  constructor(line, lineNumber) {
+    this.line = line;
+    this.lineNumber = lineNumber;
+    this.i = 0;
+  }
+
+  eof() { return this.i >= this.line.length; }
+  peek(offset = 0) { return this.line[this.i + offset]; }
+  startsWith(value) { return this.line.startsWith(value, this.i); }
+  skipWs() { while (isWs(this.peek())) this.i += 1; }
+
+  expect(value) {
+    if (!this.startsWith(value)) throw new Error(`Expected ${value} on line ${this.lineNumber}, got ${this.line.slice(this.i, this.i + 20) || 'end of line'}`);
+    this.i += value.length;
+  }
+
+  readIri(position = 'IRI') {
+    this.expect('<');
+    let raw = '';
+    while (!this.eof()) {
+      const ch = this.peek();
+      if (ch === '>') { this.i += 1; return validateAbsoluteIri(decodeIriEscapes(raw, position), position); }
+      raw += ch;
+      this.i += 1;
+    }
+    throw new Error(`Unterminated ${position} on line ${this.lineNumber}`);
+  }
+
+  readBlank() {
+    this.expect('_:');
+    const start = this.i;
+    while (!this.eof()) {
+      const ch = this.peek();
+      if (!/[\p{L}\p{N}._\-\u00B7\u0300-\u036F\u203F-\u2040]/u.test(ch)) break;
+      if (ch === '.') {
+        const next = this.peek(1);
+        if (!next || isWs(next) || next === '<' || next === '_' || next === '"' || next === '#') break;
+      }
+      this.i += 1;
+    }
+    return blank(validateBlankLabel(this.line.slice(start, this.i)));
+  }
+
+  readLiteral() {
+    this.expect('"');
+    let raw = '';
+    let escaped = false;
+    while (!this.eof()) {
+      const ch = this.peek();
+      this.i += 1;
+      if (escaped) { raw += `\\${ch}`; escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === '"') {
+        const value = decodeLiteralEscapes(raw, 'literal');
+        let language = null;
+        let datatype = XSD_STRING;
+        if (this.peek() === '@') {
+          this.i += 1;
+          const start = this.i;
+          while (!this.eof() && /[A-Za-z0-9-]/.test(this.peek())) this.i += 1;
+          let rawLang = this.line.slice(start, this.i);
+          if (!rawLang) throw new Error('Invalid language tag: missing');
+          if (rawLang.endsWith('--ltr') || rawLang.endsWith('--rtl')) rawLang = rawLang.slice(0, -5);
+          language = validateLang(rawLang);
+          datatype = null;
+        } else if (this.startsWith('^^')) {
+          this.i += 2;
+          this.skipWs();
+          datatype = this.readIri('datatype IRI');
+          if (datatype === RDF_LANG_STRING || datatype === RDF_DIR_LANG_STRING) {
+            throw new Error(`Datatype ${datatype} requires LANG_DIR syntax, not ^^`);
+          }
+        }
+        // RDF 1.2 base direction suffix, e.g. --ltr / --rtl. The core term model does not preserve it yet;
+        // accepting it is enough for syntax tests and keeps eval comparison conservative for now.
+        if (this.startsWith('--ltr') || this.startsWith('--rtl')) {
+          if (!language) throw new Error('Base direction requires a language tag');
+          this.i += 5;
+        }
+        return literal(value, datatype, language);
+      }
+      raw += ch;
+    }
+    throw new Error(`Unterminated literal on line ${this.lineNumber}`);
+  }
+
+  readTerm(position = 'term') {
+    this.skipWs();
+    if (this.startsWith('<<')) return this.readTripleTerm();
+    if (this.peek() === '<') return iri(this.readIri(position));
+    if (this.startsWith('_:')) return this.readBlank();
+    if (this.peek() === '"') return this.readLiteral();
+    throw new Error(`Expected RDF term for ${position}, got ${this.line.slice(this.i, this.i + 20) || 'end of line'}`);
+  }
+
+  readSubjectOrGraph(position) {
+    const term = this.readTerm(position);
+    if (term.kind === 'literal') throw new Error(`N-Quads ${position} cannot be a literal`);
+    if (term.kind === 'triple' && (position === 'subject' || position === 'graph')) throw new Error(`N-Quads ${position} cannot be a triple term`);
+    return term;
+  }
+
+  readPredicate() {
+    this.skipWs();
+    if (this.peek() !== '<') throw new Error(`N-Quads predicate must be an IRI, got ${this.line.slice(this.i, this.i + 20) || 'end of line'}`);
+    return iri(this.readIri('predicate'));
+  }
+
+  readTripleTerm() {
+    this.expect('<<');
+    this.skipWs();
+    // RDF 1.2 N-Triples/N-Quads triple terms use parenthesized triples: <<( s p o )>>.
+    // The older unparenthesized RDF-star form is a reified-triple syntax form and is not
+    // accepted as a plain subject/object term by the RDF 1.2 syntax manifests.
+    this.expect('(');
+    this.skipWs();
+    const s = this.readSubjectOrGraph('triple-term subject');
+    this.skipWs();
+    const p = this.readPredicate();
+    this.skipWs();
+    const o = this.readTerm('triple-term object');
+    this.skipWs();
+    this.expect(')');
+    this.skipWs();
+    this.expect('>>');
+    return tripleTerm(s, p, o);
+  }
+}
+
+function parseLine(line, lineNumber, format) {
+  const clean = stripNqComment(line).trim();
+  if (!clean) return null;
+  const r = new LineReader(clean, lineNumber);
+  const s = r.readSubjectOrGraph('subject');
+  r.skipWs();
+  const p = r.readPredicate();
+  r.skipWs();
+  const o = r.readTerm('object');
+  r.skipWs();
+  let g = null;
+  if (r.peek() !== '.') {
+    if (format === 'ntriples') throw new Error(`N-Triples line ${lineNumber} has too many terms before .`);
+    g = r.readSubjectOrGraph('graph');
+    r.skipWs();
+  }
+  if (r.peek() !== '.') throw new Error(`N-Quads line ${lineNumber} must end with .`);
+  r.i += 1;
+  r.skipWs();
+  if (!r.eof()) throw new Error(`Unexpected trailing content on N-Quads line ${lineNumber}: ${clean.slice(r.i)}`);
+  return triple(s, p, o, g);
+}
+
+function parseNQuads(source, options = {}) {
+  const facts = [];
+  const prefixes = { ...(options.prefixes || {}) };
+  const format = options.format || (options.profileId === 'ntriples-graph-v0' ? 'ntriples' : 'nquads');
+  const lines = String(source || '').split(/\r\n|\n|\r/);
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const fact = parseLine(lines[lineIndex], lineIndex + 1, format);
+    if (fact) facts.push(fact);
+  }
+  return {
+    profile: options.profileId || (format === 'ntriples' ? 'ntriples-graph-v0' : 'nquads-dataset-v0'),
+    prefixes,
+    base: options.base || '',
+    imports: [],
+    facts,
+    rules: [],
+    queries: [],
+    expectations: [],
+  };
+}
+
+function escapeIri(value) {
+  return String(value).replace(/[\\>\u0000-\u0020]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
+}
+
+function escapeLiteral(value) {
+  return String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t')
+    .replace(/\u0008/g, '\\b')
+    .replace(/\u000c/g, '\\f');
+}
+
+function termToNQuads(term) {
+  if (!term) return '';
+  switch (term.kind) {
+    case 'iri':
+      return `<${escapeIri(term.value)}>`;
+    case 'blank':
+      return `_:${term.value}`;
+    case 'literal': {
+      let out = `"${escapeLiteral(term.value)}"`;
+      if (term.language) out += `@${term.language}`;
+      else if (term.datatype && term.datatype !== XSD_STRING) out += `^^<${escapeIri(term.datatype)}>`;
+      return out;
+    }
+    case 'triple':
+      return `<< ${termToNQuads(term.s)} ${termToNQuads(term.p)} ${termToNQuads(term.o)} >>`;
+    default:
+      throw new Error(`Cannot serialize ${term.kind} as N-Quads`);
+  }
+}
+
+function tripleToNQuads(value) {
+  const terms = [termToNQuads(value.s), termToNQuads(value.p), termToNQuads(value.o)];
+  if (value.graph) terms.push(termToNQuads(value.graph));
+  return `${terms.join(' ')} .`;
+}
+
+function triplesToNQuads(triples) {
+  return Array.from(new Set(Array.from(triples || []).map(tripleToNQuads))).sort().join('\n');
+}
+return { parseNQuads, termToNQuads, tripleToNQuads, triplesToNQuads };
+})();
+
+// ---- Turtle / TriG parser ----
+const { parseN3 } = (() => {
+
+const DEFAULT_PREFIXES = Object.freeze({
+  rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+  xsd: 'http://www.w3.org/2001/XMLSchema#',
+  log: 'http://www.w3.org/2000/10/swap/log#',
+});
+
+
+function isWs(ch) { return /\s/.test(ch || ''); }
+function isPunct(ch) { return '{}.;,()[]|'.includes(ch || ''); }
+function isHex(text) { return /^[0-9A-Fa-f]+$/.test(text); }
+function isAbsoluteIri(value) { return /^[A-Za-z][A-Za-z0-9+.-]*:/.test(value || ''); }
+function resolveIriReference(value, base) {
+  if (isAbsoluteIri(value)) return value;
+  if (!base) return value;
+  try {
+    const url = new URL(value, base);
+    let href = url.href;
+    // The RDF IRI-resolution tests expect bare authority references such as //g
+    // to remain http://g, not to gain the URL API's cosmetic trailing slash.
+    if (/^\/\/[^/?#]+$/.test(value) && href.endsWith('/')) href = href.slice(0, -1);
+    if (/^file:\/\/[^/?#]+$/.test(value) && href.endsWith('/')) href = href.slice(0, -1);
+    return href;
+  } catch { return `${base}${value}`; }
+}
+function validateBlankLabel(value) {
+  const clean = String(value || '').replace(/^_:/, '');
+  if (!clean || clean.endsWith('.') || clean.includes('..')) throw new Error(`Invalid blank node label _: ${clean}`);
+  // BLANK_NODE_LABEL follows the PN_CHARS family; ':' is only for prefixed names, not blank labels.
+  if (/[\s<>"{}|^`\\:]/u.test(clean)) throw new Error(`Invalid blank node label _: ${clean}`);
+  if (/^[\-.]/u.test(clean)) throw new Error(`Invalid blank node label _: ${clean}`);
+  return clean;
+}
+function validateIriReference(value) {
+  if (/[<>\"{}|^`\u0000-\u0020]/.test(value)) throw new Error('Invalid character in IRIREF');
+  return value;
+}
+function validatePrefixedLocal(raw, decoded) {
+  if (!raw) return decoded;
+  if (raw.startsWith('-') || raw.startsWith('\\-') || raw.startsWith('.')) throw new Error(`Invalid prefixed name local ${raw}`);
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw[i];
+    if (ch === '\\') {
+      const esc = raw[i + 1];
+      if (!esc || !'_~.-!$&\'()*+,;=/?#@%'.includes(esc)) throw new Error(`Invalid prefixed name local escape ${raw}`);
+      i += 1;
+      continue;
+    }
+    if (ch === '%') {
+      const hex = raw.slice(i + 1, i + 3);
+      if (hex.length !== 2 || !isHex(hex)) throw new Error(`Invalid percent escape in prefixed name local ${raw}`);
+      i += 2;
+      continue;
+    }
+    if (ch === '~' || ch === '^') throw new Error(`Invalid prefixed name local ${raw}`);
+  }
+  return decoded;
+}
+function decodePrefixedLocal(raw) {
+  let out = '';
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw[i];
+    if (ch === '\\') { out += raw[i + 1] || ''; i += 1; }
+    else out += ch;
+  }
+  return out;
+}
+function codePoint(hex, label) {
+  const n = Number.parseInt(hex, 16);
+  if (!Number.isFinite(n) || n < 0 || n > 0x10ffff || (n >= 0xd800 && n <= 0xdfff)) throw new Error(`Invalid Unicode escape in ${label}`);
+  return String.fromCodePoint(n);
+}
+function decodeEscapes(text, label, iriMode = false) {
+  let out = '';
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch !== '\\') { out += ch; continue; }
+    const esc = text[++i];
+    if (!esc) throw new Error(`Trailing escape in ${label}`);
+    if (esc === 'u') {
+      const hex = text.slice(i + 1, i + 5); if (hex.length !== 4 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${label}`);
+      out += codePoint(hex, label); i += 4;
+    } else if (esc === 'U') {
+      const hex = text.slice(i + 1, i + 9); if (hex.length !== 8 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${label}`);
+      out += codePoint(hex, label); i += 8;
+    } else if (!iriMode && 'tbnrf"\''.includes(esc)) {
+      out += { t: '\t', b: '\b', n: '\n', r: '\r', f: '\f', '"': '"', "'": "'" }[esc] ?? esc;
+    } else if (!iriMode && esc === '\\') out += '\\';
+    else if (iriMode) throw new Error(`Invalid escape \\${esc} in ${label}`);
+    else throw new Error(`Invalid escape \\${esc} in ${label}`);
+  }
+  return out;
+}
+
+class Tokenizer {
+  constructor(source) { this.source = String(source || ''); this.i = 0; this.tokens = []; }
+  eof() { return this.i >= this.source.length; }
+  peek(offset = 0) { return this.source[this.i + offset]; }
+  startsWith(value) { return this.source.startsWith(value, this.i); }
+  push(type, value, extra = {}) { this.tokens.push({ type, value, ...extra }); }
+  skipComment() { while (!this.eof() && this.peek() !== '\n' && this.peek() !== '\r') this.i += 1; }
+  readIri() {
+    this.i += 1;
+    let raw = '';
+    while (!this.eof()) {
+      const ch = this.peek();
+      if (ch === '>') { this.i += 1; this.push('iri', validateIriReference(decodeEscapes(raw, 'IRI', true))); return; }
+      raw += ch; this.i += 1;
+    }
+    throw new Error('Unterminated IRIREF');
+  }
+  readString() {
+    const quote = this.peek();
+    const long = this.source.startsWith(quote.repeat(3), this.i);
+    this.i += long ? 3 : 1;
+    let raw = '';
+    let escaped = false;
+    while (!this.eof()) {
+      const ch = this.peek();
+      if (!escaped && long && this.source.startsWith(quote.repeat(3), this.i)) { this.i += 3; this.push(long ? 'longString' : 'string', decodeEscapes(raw, 'string'), { long }); return; }
+      if (!escaped && !long && ch === quote) { this.i += 1; this.push('string', decodeEscapes(raw, 'string'), { long: false }); return; }
+      if (!long && (ch === '\n' || ch === '\r')) throw new Error('Raw line break in short string');
+      raw += ch;
+      this.i += 1;
+      escaped = !escaped && ch === '\\';
+      if (ch !== '\\') escaped = false;
+    }
+    throw new Error('Unterminated string');
+  }
+  readBare() {
+    const start = this.i;
+    if (this.startsWith('_:')) {
+      this.i += 2;
+      while (!this.eof()) {
+        const ch = this.peek();
+        // BLANK_NODE_LABEL uses PN_CHARS, including broad Unicode ranges that are
+        // not all JavaScript \p{L}/\p{N}.  Tokenize generously up to a real
+        // Turtle delimiter, then validate the label separately.  Keep ':' as a
+        // boundary so compact forms such as _:s:p tokenize as blank-node _:s
+        // followed by predicate :p.
+        if (isWs(ch) || '<>\"{}|^`\\;,)[]'.includes(ch) || ch === ':' || ch === '#') break;
+        if (ch === '.') {
+          const next = this.source[this.i + 1];
+          if (!next || isWs(next) || '{};,)[]'.includes(next)) break;
+        }
+        this.i += 1;
+      }
+      this.push('bare', this.source.slice(start, this.i));
+      return;
+    }
+    while (!this.eof()) {
+      const ch = this.peek();
+      if (isWs(ch)) break;
+      if (ch === '\\' && this.source[this.i + 1]) { this.i += 2; continue; }
+      if (ch === '<' || ch === '>' || ch === '"' || ch === "'") break;
+      if (ch === '.') {
+        const next = this.source[this.i + 1];
+        if (!next || isWs(next) || '{};,)[]'.includes(next)) break;
+      } else if (isPunct(ch)) break;
+      if (ch === '#') break;
+      if (ch === '^' && this.peek(1) === '^') break;
+      if (ch === '=' && this.peek(1) === '>') break;
+      this.i += 1;
+    }
+    this.push('bare', this.source.slice(start, this.i));
+  }
+  tokenize() {
+    while (!this.eof()) {
+      const ch = this.peek();
+      if (isWs(ch)) { this.i += 1; continue; }
+      if (ch === '#') { this.skipComment(); continue; }
+      if (this.startsWith('@prefix') && (isWs(this.source[this.i + 7]) || this.source[this.i + 7] === ':')) { this.push('bare', '@prefix'); this.i += 7; continue; }
+      if (this.startsWith('@base') && isWs(this.source[this.i + 5])) { this.push('bare', '@base'); this.i += 5; continue; }
+      if (this.startsWith('@version') && isWs(this.source[this.i + 8])) { this.push('bare', '@version'); this.i += 8; continue; }
+      if (this.startsWith('=>')) { this.push('=>', '=>'); this.i += 2; continue; }
+      if (this.startsWith('^^')) { this.push('^^', '^^'); this.i += 2; continue; }
+      if (this.startsWith('<<')) { this.push('<<', '<<'); this.i += 2; continue; }
+      if (this.startsWith('>>')) { this.push('>>', '>>'); this.i += 2; continue; }
+      if (ch === '<') { this.readIri(); continue; }
+      if (ch === '"' || ch === "'") { this.readString(); continue; }
+      if (ch === '.' && /[0-9]/.test(this.peek(1) || '')) { this.readBare(); continue; }
+      if (ch === '~') { this.readBare(); continue; }
+      if (isPunct(ch)) { this.push(ch, ch); this.i += 1; continue; }
+      this.readBare();
+    }
+    return this.tokens;
+  }
+}
+
+function parseN3(source, options = {}) {
+  const tokens = new Tokenizer(source).tokenize();
+  let i = 0;
+  let base = options.base || '';
+  const prefixes = { ...DEFAULT_PREFIXES, ...(options.prefixes || {}) };
+  const facts = [];
+  const rules = [];
+  let bnodeCounter = 0;
+  const bnodes = new Map();
+  const syntaxProfile = String(options.profile || options.profileId || '').toLowerCase();
+  const rdf12Surface = syntaxProfile === 'turtle' || syntaxProfile === 'trig';
+  const implicitStatementNodes = new Set();
+
+  function freshBlank() { bnodeCounter += 1; return blank(`b${bnodeCounter}`); }
+  function peek(offset = 0) { return tokens[i + offset]; }
+  function next() { return tokens[i++]; }
+  function eof() { return i >= tokens.length; }
+  function accept(value) { if (peek()?.value === value || peek()?.type === value) { i += 1; return true; } return false; }
+  function expect(value) { const t = next(); if (!t || (t.value !== value && t.type !== value)) throw new Error(`Expected ${value}, got ${t?.value || 'end of input'}`); return t; }
+  function error(msg) { throw new Error(msg); }
+
+  function parseIriValueFromBare(token) {
+    if (token === 'a') return RDF_TYPE;
+    if (token.startsWith('_:')) error(`Blank node label ${token} cannot be used as IRI`);
+    const split = token.indexOf(':');
+    if (split >= 0) {
+      const prefix = token.slice(0, split);
+      let local = token.slice(split + 1);
+      if (!(prefix in prefixes)) throw new Error(`Unknown prefix ${prefix}:`);
+      // Turtle permits reserved escaped characters in local names.
+      local = validatePrefixedLocal(local, decodePrefixedLocal(local));
+      return prefixes[prefix] + local;
+    }
+    throw new Error(`Expected IRI or prefixed name, got ${token}`);
+  }
+
+  function parseIriLike() {
+    const t = next();
+    if (!t) error('Unexpected end of input while reading IRI');
+    if (t.type === 'iri') return resolveIriReference(t.value, base);
+    if (t.type === 'bare') return parseIriValueFromBare(t.value);
+    throw new Error(`Expected IRI or prefixed name, got ${t.value}`);
+  }
+
+  function parseBlankLabel(label) {
+    const key = validateBlankLabel(label);
+    if (!bnodes.has(key)) bnodes.set(key, blank(key));
+    return bnodes.get(key);
+  }
+
+  function parseNumber(token) {
+    if (/^[+-]?\d+$/.test(token)) return literal(token, XSD_INTEGER);
+    if (/^[+-]?(?:\d+\.\d*|\.\d+)$/.test(token)) return literal(token, XSD_DECIMAL);
+    if (/^[+-]?(?:(?:\d+\.\d*)|(?:\.\d+)|\d+)[eE][+-]?\d+$/.test(token)) return literal(token, XSD_DOUBLE);
+    return null;
+  }
+
+  function parseTerm(out = facts, graph = null, options2 = {}) {
+    const t = peek();
+    if (!t) error('Unexpected end of input while reading Turtle term');
+    if (t.type === '<<') return parseTripleTerm(out, graph, options2);
+    if (t.type === 'iri') { next(); return iri(resolveIriReference(t.value, base)); }
+    if (t.type === 'string' || t.type === 'longString') {
+      if (options2.noLiteral) throw new Error('Literal is not allowed here');
+      return parseLiteral();
+    }
+    if (t.type === '[') {
+      // ANON is a BlankNode and is permitted in rtSubject/ttSubject, even where
+      // blankNodePropertyList is not. Keep [ ... ] rejected in those positions.
+      if (options2.noCompound) {
+        if (peek(1)?.type === ']') { expect('['); expect(']'); return freshBlank(); }
+        throw new Error('Compound blank node expression is not allowed here');
+      }
+      return parseBlankNodePropertyList(out, graph);
+    }
+    if (t.type === '(') {
+      if (options2.noCompound) throw new Error('Collection is not allowed here');
+      return parseCollection(out, graph);
+    }
+    if (t.type === 'bare') {
+      next();
+      if (t.value.startsWith('?')) {
+        if (rdf12Surface) throw new Error(`Variables are not allowed in Turtle/TriG: ${t.value}`);
+        return variable(t.value.slice(1));
+      }
+      if (t.value.startsWith('_:')) return parseBlankLabel(t.value);
+      if (t.value === 'a' && options2.noA) throw new Error('a is only allowed as a predicate');
+      if (t.value === 'true' || t.value === 'false') {
+        if (options2.noLiteral) throw new Error('Literal is not allowed here');
+        return literal(t.value, XSD_BOOLEAN);
+      }
+      const num = parseNumber(t.value);
+      if (num) {
+        if (options2.noLiteral) throw new Error('Literal is not allowed here');
+        return num;
+      }
+      return iri(parseIriValueFromBare(t.value));
+    }
+    throw new Error(`Expected IRI or prefixed name, got ${t.value}`);
+  }
+
+  function parseLiteral() {
+    const t = next(); if (!t || (t.type !== 'string' && t.type !== 'longString')) throw new Error(`Expected string, got ${t?.value || 'end of input'}`);
+    if (peek()?.type === 'bare' && peek().value.startsWith('@')) {
+      let lang = next().value.slice(1);
+      let langDir = null;
+      if (lang.endsWith('--ltr') || lang.endsWith('--rtl')) {
+        langDir = lang.slice(-3);
+        lang = lang.slice(0, -5);
+      }
+      if (!lang || lang.includes('--') || !/^[A-Za-z]+(?:-[A-Za-z0-9]+)*$/.test(lang)) throw new Error(`Invalid language tag @${lang}`);
+      if (peek()?.type === 'bare' && ['--ltr', '--rtl'].includes(peek().value)) langDir = next().value.slice(2);
+      return literal(t.value, null, lang, langDir);
+    }
+    if (accept('^^')) return literal(t.value, parseIriLike());
+    if (peek()?.type === 'bare' && ['--ltr', '--rtl'].includes(peek().value)) throw new Error('Base direction requires a language tag');
+    return literal(t.value, XSD_STRING);
+  }
+
+  function parseReifierToken(out, graph) {
+    const t = peek();
+    if (!t || t.type !== 'bare' || !t.value.startsWith('~')) return null;
+    next();
+    const suffix = t.value.slice(1);
+    if (suffix) {
+      if (suffix.startsWith('_:')) return parseBlankLabel(suffix);
+      return iri(parseIriValueFromBare(suffix));
+    }
+    const n = peek();
+    if (n && (n.type === 'iri' || (n.type === 'bare' && (n.value.startsWith('_:') || n.value.includes(':') || n.value === 'a')))) {
+      const term = parseTerm(out, graph, { noLiteral: true, noCompound: true, noTripleTerm: true });
+      if (term.kind !== 'iri' && term.kind !== 'blank') throw new Error('Reifier must be an IRI or blank node');
+      return term;
+    }
+    return freshBlank();
+  }
+
+  function parseTripleTerm(out, graph, options2 = {}) {
+    expect('<<');
+    const parenthesized = accept('(');
+    if (parenthesized) {
+      if (options2.noTripleTerm) throw new Error('Triple term is not allowed here');
+      const s = parseTerm(out, graph, { noLiteral: true, noCompound: true, noReifiedTriple: true });
+      if (s.kind === 'triple') throw new Error('Triple term subject cannot be a triple term');
+      const p = iri(parseIriLike());
+      const o = parseTerm(out, graph, { noCompound: true, noReifiedTriple: true });
+      if (o.kind !== 'iri' && o.kind !== 'blank' && o.kind !== 'literal' && o.kind !== 'triple') throw new Error('Invalid triple term object');
+      expect(')');
+      expect('>>');
+      return tripleTerm(s, p, o);
+    }
+    if (options2.noReifiedTriple) throw new Error('Reified triple is not allowed here');
+    const s = parseTerm(out, graph, { noLiteral: true, noCompound: true, noTripleTerm: true });
+    if (s.kind !== 'iri' && s.kind !== 'blank') throw new Error('Invalid reified triple subject');
+    const p = iri(parseIriLike());
+    const o = parseTerm(out, graph, { noCompound: true });
+    if (o.kind !== 'iri' && o.kind !== 'blank' && o.kind !== 'literal' && o.kind !== 'triple') throw new Error('Invalid reified triple object');
+    let reifier = null;
+    if (peek()?.type === 'bare' && peek().value.startsWith('~')) reifier = parseReifierToken(out, graph);
+    expect('>>');
+    const node = reifier || freshBlank();
+    out.push(triple(node, iri(RDF_REIFIES), tripleTerm(s, p, o), graph));
+    if (node.kind === 'blank') implicitStatementNodes.add(node.value);
+    return node;
+  }
+
+  function parseCollection(out, graph) {
+    expect('(');
+    if (accept(')')) return iri(RDF_NIL);
+    const head = freshBlank();
+    let current = head;
+    while (true) {
+      const item = parseTerm(out, graph);
+      out.push(triple(current, iri(RDF_FIRST), item, graph));
+      if (accept(')')) {
+        out.push(triple(current, iri(RDF_REST), iri(RDF_NIL), graph));
+        break;
+      }
+      const rest = freshBlank();
+      out.push(triple(current, iri(RDF_REST), rest, graph));
+      current = rest;
+    }
+    return head;
+  }
+
+  function parseBlankNodePropertyList(out, graph) {
+    expect('[');
+    const node = freshBlank();
+    if (accept(']')) return node;
+    parsePredicateObjectList(node, out, graph);
+    expect(']');
+    if (node.kind === 'blank') implicitStatementNodes.add(node.value);
+    return node;
+  }
+
+  function parseAnnotationBlock(reifier, out, graph = null) {
+    expect('{');
+    expect('|');
+    if (peek()?.type === '|') {
+      // Empty annotation blocks are rejected by the RDF 1.2 syntax tests.
+      throw new Error('Empty annotation block');
+    }
+    parsePredicateObjectList(reifier, out, graph);
+    expect('|');
+    expect('}');
+  }
+
+  function ensureReifierForTriple(assertedTriple, out, graph = null) {
+    const reifier = freshBlank();
+    out.push(triple(reifier, iri(RDF_REIFIES), tripleTerm(assertedTriple.s, assertedTriple.p, assertedTriple.o), graph));
+    return reifier;
+  }
+
+  function parseObjectList(subject, predicate, out, graph = null) {
+    while (true) {
+      const object = parseTerm(out, graph, { noA: true });
+      const asserted = triple(subject, predicate, object, graph);
+      out.push(asserted);
+      let pendingReifier = null;
+      while (true) {
+        if (peek()?.type === 'bare' && peek().value.startsWith('~')) {
+          pendingReifier = parseReifierToken(out, graph);
+          out.push(triple(pendingReifier, iri(RDF_REIFIES), tripleTerm(asserted.s, asserted.p, asserted.o), graph));
+          continue;
+        }
+        if (peek()?.type === '{' && peek(1)?.type === '|') {
+          const blockReifier = pendingReifier || ensureReifierForTriple(asserted, out, graph);
+          parseAnnotationBlock(blockReifier, out, graph);
+          pendingReifier = null;
+          continue;
+        }
+        break;
+      }
+      if (!accept(',')) break;
+    }
+  }
+
+  function parsePredicateObjectList(subject, out, graph = null) {
+    while (true) {
+      const predicate = iri(parseIriLike());
+      parseObjectList(subject, predicate, out, graph);
+      if (!accept(';')) break;
+      while (accept(';')) {}
+      if ([']', '.', '}', '|'].includes(peek()?.type)) break;
+    }
+  }
+
+  function parseGraphLabel(out, inheritedGraph = null) {
+    if (peek()?.type === '[' && peek(1)?.type === ']') { expect('['); expect(']'); return freshBlank(); }
+    if (peek()?.type === '(') throw new Error('GRAPH name must be an IRI or blank node');
+    const graph = parseTerm(out, inheritedGraph, { noLiteral: true, noCompound: true, noTripleTerm: true, noReifiedTriple: true, noA: true });
+    if (graph.kind !== 'iri' && graph.kind !== 'blank') throw new Error('GRAPH name must be an IRI or blank node');
+    return graph;
+  }
+
+  function parseGraphBlock(out, inheritedGraph = null) {
+    expect('GRAPH');
+    const graph = parseGraphLabel(out, inheritedGraph);
+    parseFormula(graph, out);
+  }
+
+  function parseTripleStatement(out, graph = null, options3 = {}) {
+    if (String(peek()?.value || '').toUpperCase() === 'GRAPH') {
+      if (syntaxProfile === 'turtle') throw new Error('GRAPH blocks are not Turtle');
+      if (graph) throw new Error('GRAPH blocks cannot be nested inside a graph block');
+      parseGraphBlock(out, graph);
+      if (options3.requireDot) expect('.'); else accept('.');
+      return;
+    }
+    if (peek()?.type === '<<' && peek(1)?.type === '(') throw new Error('Triple term cannot be used as a subject');
+    const subject = parseTerm(out, graph, { noLiteral: true, noA: true });
+    if ((peek()?.type === '.' || peek()?.type === '}' || peek()?.type === undefined) && subject.kind === 'blank' && implicitStatementNodes.has(subject.value)) {
+      if (options3.requireDot) expect('.'); else accept('.');
+      return;
+    }
+    parsePredicateObjectList(subject, out, graph);
+    if (options3.requireDot) expect('.'); else accept('.');
+  }
+
+  function parseFormula(graph = null, target = null) {
+    expect('{');
+    const triples = target || [];
+    while (peek()?.type !== '}') parseTripleStatement(triples, graph);
+    expect('}');
+    return triples;
+  }
+
+  function parseBase() {
+    const directive = next();
+    const iriToken = next();
+    if (iriToken?.type !== 'iri') throw new Error(`Expected base IRI, got ${iriToken?.value}`);
+    base = resolveIriReference(iriToken.value, base);
+    if (String(directive.value || '').startsWith('@')) expect('.');
+  }
+
+  function parsePrefix() {
+    const directive = next();
+    const label = next();
+    if (label?.type !== 'bare' || !label.value.endsWith(':')) throw new Error(`Expected prefix label ending with :, got ${label?.value}`);
+    const prefixLabel = label.value.slice(0, -1);
+    if (prefixLabel.endsWith('.') || prefixLabel.includes('..')) throw new Error(`Invalid prefix label ${prefixLabel}`);
+    const iriToken = next();
+    if (iriToken?.type !== 'iri') throw new Error(`Expected prefix IRI, got ${iriToken?.value}`);
+    prefixes[prefixLabel] = resolveIriReference(iriToken.value, base);
+    if (String(directive.value || '').startsWith('@')) expect('.');
+  }
+
+  function isSimpleGraphLabelStart(t) {
+    return t && (t.type === 'iri' || (t.type === 'bare' && (t.value.startsWith('_:') || t.value.includes(':'))));
+  }
+
+  while (!eof()) {
+    const token = peek();
+    const lowerValue = String(token.value || '').toLowerCase();
+    if (token.value === '@base' || (!String(token.value || '').startsWith('@') && lowerValue === 'base')) parseBase();
+    else if (token.value === '@prefix' || (!String(token.value || '').startsWith('@') && lowerValue === 'prefix')) parsePrefix();
+    else if ((!String(token.value || '').startsWith('@') && String(token.value || '').toUpperCase() === 'VERSION') || token.value === '@version') {
+      const directive = next();
+      const v = next();
+      if (!v || v.type !== 'string') throw new Error('VERSION requires a short quoted string');
+      if (String(directive.value || '').startsWith('@')) expect('.');
+    }
+    else if (token.type === '{') {
+      if (syntaxProfile === 'turtle') throw new Error('Turtle does not allow top-level graph/formula blocks');
+      const body = parseFormula();
+      if (accept('=>')) {
+        const head = parseFormula();
+        accept('.');
+        rules.push(new Rule({ id: `n3${rules.length + 1}`, body, head, profile: 'n3-rules-subset-v0' }));
+      } else {
+        facts.push(...body);
+        accept('.');
+      }
+    } else if (String(token.value || '').toUpperCase() === 'GRAPH') {
+      parseGraphBlock(facts);
+      if (accept('.')) throw new Error('GRAPH block must not be followed by .');
+    } else if (token.type === '[' && peek(1)?.type === ']' && peek(2)?.type === '{') {
+      if (syntaxProfile === 'turtle') throw new Error('Turtle does not allow graph labels');
+      const graph = parseGraphLabel(facts, null);
+      parseFormula(graph, facts);
+      accept('.');
+    } else if (isSimpleGraphLabelStart(token) && peek(1)?.type === '{') {
+      if (syntaxProfile === 'turtle') throw new Error('Turtle does not allow graph labels');
+      const graph = parseGraphLabel(facts, null);
+      parseFormula(graph, facts);
+      accept('.');
+    } else {
+      parseTripleStatement(facts, null, { requireDot: syntaxProfile === 'turtle' });
+    }
+  }
+
+  return { profile: 'n3-rules-subset-v0', prefixes, base, facts, rules };
+}
+return { parseN3 };
+})();
+
+
+return {
+  parseNQuads,
+  termToNQuads,
+  tripleToNQuads,
+  triplesToNQuads,
+  parseN3,
+};
+})();
+
+Object.assign(module.exports, rdfW3cSyntax);

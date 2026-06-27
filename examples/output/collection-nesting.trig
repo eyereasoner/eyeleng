@@ -1,4 +1,4 @@
 :test :first 1 .
-:test :second _:b1 .
+:test :second _:b3 .
 :test :secondProperty :q .
 :test :thirdFirst 2 .
