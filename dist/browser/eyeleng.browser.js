@@ -906,7 +906,7 @@
         peekN(n) { return this.tokens[this.pos + n] || this.tokens[this.tokens.length - 1]; }
         previous() { return this.tokens[this.pos - 1]; }
         strictGrammar() { return !!this.options.strictGrammar; }
-        error(message, token = this.peek()) { return new SyntaxErrorWithLocation(message, token); }
+        error(message, token = this.peek()) { return new SyntaxErrorWithLocation(message, token && token.filename ? token : { ...token, filename: this.options.filename || '<input>' }); }
       }
       
       
@@ -1055,7 +1055,7 @@
       
         function current() { return source[i]; }
         function peek(n = 1) { return source[i + n]; }
-        function startsWith(text) { return source.slice(i, i + text.length) === text; }
+        function startsWith(text) { return source.startsWith(text, i); }
         function advance() {
           const ch = source[i++];
           if (ch === '\n') { line += 1; column = 1; }
@@ -1063,7 +1063,7 @@
           return ch;
         }
         function token(type, value, startLine, startColumn, extra = {}) {
-          tokens.push({ type, value, line: startLine, column: startColumn, filename, ...extra });
+          tokens.push({ type, value, line: startLine, column: startColumn, ...extra });
         }
         function syntax(message, startLine, startColumn) {
           throw new SyntaxErrorWithLocation(message, { line: startLine, column: startColumn, filename });
@@ -1071,19 +1071,21 @@
       
         function readNumericLiteral() {
           let value = '';
-          while (i < source.length && /[0-9]/.test(current())) value += advance();
-          if (current() === '.' && /[0-9]/.test(peek())) {
-            value += advance();
-            while (i < source.length && /[0-9]/.test(current())) value += advance();
+          const start = i;
+          while (i < source.length && isDigitCode(source.charCodeAt(i))) { i += 1; column += 1; }
+          if (source[i] === '.' && isDigitCode(source.charCodeAt(i + 1))) {
+            i += 1; column += 1;
+            while (i < source.length && isDigitCode(source.charCodeAt(i))) { i += 1; column += 1; }
           }
+          value = source.slice(start, i);
           if (current() === 'e' || current() === 'E') {
             const saveI = i;
             const saveLine = line;
             const saveColumn = column;
             let exponent = advance();
             if (current() === '+' || current() === '-') exponent += advance();
-            if (/[0-9]/.test(current())) {
-              while (i < source.length && /[0-9]/.test(current())) exponent += advance();
+            if (isDigitCode(source.charCodeAt(i))) {
+              while (i < source.length && isDigitCode(source.charCodeAt(i))) exponent += advance();
               value += exponent;
             } else {
               i = saveI;
@@ -1101,7 +1103,7 @@
             const length = esc === 'u' ? 4 : 8;
             let hex = '';
             for (let j = 0; j < length; j += 1) {
-              if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
+              if (!isHexCode(source.charCodeAt(i))) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
               hex += advance();
             }
             const codePoint = Number.parseInt(hex, 16);
@@ -1120,7 +1122,7 @@
             const length = esc === 'u' ? 4 : 8;
             let hex = '';
             for (let j = 0; j < length; j += 1) {
-              if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
+              if (!isHexCode(source.charCodeAt(i))) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
               hex += advance();
             }
             const codePoint = Number.parseInt(hex, 16);
@@ -1134,7 +1136,7 @@
       
         while (i < source.length) {
           const ch = current();
-          if (/\s/.test(ch)) { advance(); continue; }
+          if (isWhitespaceCode(source.charCodeAt(i))) { advance(); continue; }
           if (ch === '#') {
             while (i < source.length && current() !== '\n') advance();
             continue;
@@ -1220,18 +1222,21 @@
           }
       
           if (ch === '@') {
-            let value = advance();
-            while (i < source.length && /[A-Za-z0-9-]/.test(current())) value += advance();
+            const wordStart = i;
+            advance();
+            while (i < source.length && isLangTagCode(source.charCodeAt(i))) { i += 1; column += 1; }
+            const value = source.slice(wordStart, i);
             if (!/^@[A-Za-z]+(?:-[A-Za-z0-9]+)*(?:--[A-Za-z]+)?$/.test(value)) syntax(`Invalid language tag ${value}`, startLine, startColumn);
             token('word', value, startLine, startColumn);
             continue;
           }
       
           if (ch === '?' || ch === '$') {
-            let value = advance();
-            while (i < source.length && /[A-Za-z0-9_\-]/.test(current())) value += advance();
-            if (value.length === 1) syntax('Expected variable name', startLine, startColumn);
-            token('variable', value.slice(1), startLine, startColumn);
+            const varStart = i;
+            advance();
+            while (i < source.length && isVarNameCode(source.charCodeAt(i))) { i += 1; column += 1; }
+            if (i - varStart === 1) syntax('Expected variable name', startLine, startColumn);
+            token('variable', source.slice(varStart + 1, i), startLine, startColumn);
             continue;
           }
       
@@ -1258,24 +1263,27 @@
             continue;
           }
       
-          let value = '';
+          const wordStart = i;
           while (i < source.length) {
-            const c = current();
-            if (c === '\\' && peek() !== undefined) {
-              value += advance();
-              value += advance();
+            const c = source[i];
+            if (c === '\\' && source[i + 1] !== undefined) {
+              i += 2;
+              column += 2;
               continue;
             }
-            if (/\s/.test(c) || '{}()[],;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
+            const code = source.charCodeAt(i);
+            if (isWhitespaceCode(code) || '{}()[],;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
             if (c === '.') {
-              const n = peek();
-              if (n === undefined || /\s/.test(n) || '{}()[],;|'.includes(n) || '=<>+-*/!^~'.includes(n)) break;
+              const n = source[i + 1];
+              if (n === undefined || isWhitespaceCode(n.charCodeAt(0)) || '{}()[],;|'.includes(n) || '=<>+-*/!^~'.includes(n)) break;
             }
             if (c === '#') break;
-            value += advance();
+            i += 1;
+            column += 1;
           }
-          if (value.length === 0) syntax(`Unexpected character ${JSON.stringify(ch)}`, startLine, startColumn);
+          if (i === wordStart) syntax(`Unexpected character ${JSON.stringify(ch)}`, startLine, startColumn);
       
+          const value = source.slice(wordStart, i);
           if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token('number', Number(value), startLine, startColumn);
           else token('word', value, startLine, startColumn);
         }
@@ -1284,11 +1292,32 @@
         return tokens;
       }
       
+      
+      function isDigitCode(code) {
+        return code >= 48 && code <= 57;
+      }
+      
+      function isHexCode(code) {
+        return (code >= 48 && code <= 57) || (code >= 65 && code <= 70) || (code >= 97 && code <= 102);
+      }
+      
+      function isWhitespaceCode(code) {
+        return code === 32 || code === 9 || code === 10 || code === 13 || code === 12;
+      }
+      
+      function isLangTagCode(code) {
+        return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 45;
+      }
+      
+      function isVarNameCode(code) {
+        return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 95 || code === 45;
+      }
+      
       function startsNumericLiteral(source, i) {
         const ch = source[i];
         const next = source[i + 1];
-        if (/[0-9]/.test(ch)) return true;
-        if (ch === '.' && /[0-9]/.test(next)) return true;
+        if (isDigitCode(ch.charCodeAt(0))) return true;
+        if (ch === '.' && next !== undefined && isDigitCode(next.charCodeAt(0))) return true;
         return false;
       }
       
@@ -2918,11 +2947,13 @@
       }
       
       function variable(name) {
-        return { type: 'var', value: String(name).replace(/^[?$]/, '') };
+        const value = String(name);
+        return { type: 'var', value: value[0] === '?' || value[0] === '$' ? value.slice(1) : value };
       }
       
       function blankNode(value) {
-        return { type: 'blank', value: String(value).replace(/^_:/, '') };
+        const label = String(value);
+        return { type: 'blank', value: label.startsWith('_:') ? label.slice(2) : label };
       }
       
       function literal(value, datatype = null, lang = null, langDir = null) {
@@ -3177,6 +3208,8 @@
       const RDF_LANGSTRING = `${RDF_NS}langString`;
       const RDF_DIRLANGSTRING = `${RDF_NS}dirLangString`;
       const NUMERIC_DATATYPES = new Set([XSD_INTEGER, XSD_DECIMAL, XSD_DOUBLE]);
+      const MAX_SAFE_INTEGER_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
+      const MIN_SAFE_INTEGER_BIGINT = BigInt(Number.MIN_SAFE_INTEGER);
       
       // This table is intentionally shaped by the SHACL 1.2 Rules grammar production BuiltInCall.
       // Keys are the canonical spellings used by the draft; lookup is case-insensitive so examples
@@ -3336,7 +3369,7 @@
       }
       
       function fromIntegerResult(value) {
-        if (value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)) return Number(value);
+        if (value <= MAX_SAFE_INTEGER_BIGINT && value >= MIN_SAFE_INTEGER_BIGINT) return Number(value);
         return value;
       }
       
@@ -4047,6 +4080,18 @@
           layerIndexes,
           analysis.dependency ? analysis.dependency.edges : [],
         );
+        const baseContext = {
+          ...evalOptions,
+          maxIterations,
+          inputKeys,
+          inferred,
+          trace,
+          perRule,
+          layer: 0,
+          iteration: 0,
+          startingIterations: 0,
+          recursiveLayer: false,
+        };
       
         for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
           const layer = layerIndexes[layerIndex];
@@ -4056,30 +4101,17 @@
           if (runOnce.length > 0) {
             iterations += 1;
             for (const ruleIndex of runOnce) {
-              const added = applyRuleOnce(program, store, ruleIndex, {
-                ...evalOptions,
-                inputKeys,
-                inferred,
-                trace,
-                perRule,
-                layer: layerIndex + 1,
-                iteration: iterations,
-              });
+              baseContext.layer = layerIndex + 1;
+              baseContext.iteration = iterations;
+              const added = applyRuleOnce(program, store, ruleIndex, baseContext);
               ruleApplications += added.applications;
             }
           }
       
-          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, {
-            ...evalOptions,
-            maxIterations,
-            inputKeys,
-            inferred,
-            trace,
-            perRule,
-            layer: layerIndex + 1,
-            startingIterations: iterations,
-            recursiveLayer: recursiveLayerFlags[layerIndex],
-          });
+          baseContext.layer = layerIndex + 1;
+          baseContext.startingIterations = iterations;
+          baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
+          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
           iterations = ordinaryResult.iterations;
           ruleApplications += ordinaryResult.ruleApplications;
         }
@@ -4110,10 +4142,8 @@
           const iteration = context.startingIterations + 1;
           let ruleApplications = 0;
           for (const ruleIndex of ruleIndexes) {
-            const applied = applyRuleOnce(program, store, ruleIndex, {
-              ...context,
-              iteration,
-            });
+            context.iteration = iteration;
+            const applied = applyRuleOnce(program, store, ruleIndex, context);
             ruleApplications += applied.applications;
           }
           return { iterations: iteration, ruleApplications };
@@ -4129,10 +4159,8 @@
           let addedInIteration = 0;
       
           for (const ruleIndex of ruleIndexes) {
-            const applied = applyRuleOnce(program, store, ruleIndex, {
-              ...context,
-              iteration: iterations,
-            });
+            context.iteration = iterations;
+            const applied = applyRuleOnce(program, store, ruleIndex, context);
             addedInIteration += applied.added;
             ruleApplications += applied.applications;
           }
@@ -4161,16 +4189,24 @@
         return flags;
       }
       
+      
       function applyRuleOnce(program, store, ruleIndex, context) {
         const rule = program.rules[ruleIndex];
         let applications = 0;
         let added = 0;
-        const seenBindings = new Set();
+        const dedupeBindings = rule.body.some((clause) => clause.type === 'path');
+        const seenBindings = dedupeBindings ? new Set() : null;
       
-        for (const binding of evaluateBodyStream(rule.body, store, {}, context)) {
-          const key = bindingKey(binding);
-          if (seenBindings.has(key)) continue;
-          seenBindings.add(key);
+        const bodyBindings = rule.body.length === 1 && rule.body[0].type === 'triple'
+          ? store.match(rule.body[0].triple, {})
+          : evaluateBodyStream(rule.body, store, {}, context);
+      
+        for (const binding of bodyBindings) {
+          if (seenBindings) {
+            const key = bindingKey(binding);
+            if (seenBindings.has(key)) continue;
+            seenBindings.add(key);
+          }
           applications += 1;
           context.perRule[ruleIndex].applications += 1;
       
@@ -4289,7 +4325,7 @@
     "src/store.js": function (require, module, exports) {
       'use strict';
       
-      const { tripleKey, termKey, termEquals, cloneTerm } = require('./term.js');
+      const { tripleKey, termKey, termEquals } = require('./term.js');
       
       class TripleStore {
         constructor(triples = []) {
@@ -4398,7 +4434,7 @@
       }
       
       function normalizeTriple(triple) {
-        return { s: cloneTerm(triple.s), p: cloneTerm(triple.p), o: cloneTerm(triple.o) };
+        return { s: triple.s, p: triple.p, o: triple.o };
       }
       
       function bindingKey(binding) {
@@ -4558,9 +4594,7 @@
       
         program.rules.forEach((rule, index) => {
           const name = ruleName(rule, index);
-          const label = displayRuleName(name, program.prefixes || {});
           const bound = boundVariables(rule.body);
-          const positive = positiveVariables(rule.body);
           const head = new Set();
           for (const triple of rule.head) collectTripleVars(triple, head);
       
@@ -4570,7 +4604,7 @@
                 code: 'unsafe-head-variable',
                 severity: 'error',
                 rule: name,
-                message: `${label} has unbound head variable ?${variable}`,
+                message: `${displayRuleName(name, program.prefixes || {})} has unbound head variable ?${variable}`,
               });
             }
           }
@@ -4581,19 +4615,19 @@
                 code: 'invalid-head-predicate',
                 severity: 'error',
                 rule: name,
-                message: `${label} has a non-IRI/non-variable predicate in the head`,
+                message: `${displayRuleName(name, program.prefixes || {})} has a non-IRI/non-variable predicate in the head`,
               });
             }
           }
       
-          diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, label));
+          diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}));
       
           if (rule.runOnce && recursiveIndexes.has(index)) {
             diagnostics.push({
               code: 'recursive-assignment-rule',
               severity: 'warning',
               rule: name,
-              message: `${label} is a run-once rule in a recursive dependency cycle`,
+              message: `${displayRuleName(name, program.prefixes || {})} is a run-once rule in a recursive dependency cycle`,
             });
           }
       
@@ -4949,7 +4983,7 @@
         return components;
       }
       
-      function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, label) {
+      function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, prefixes = {}) {
         const diagnostics = [];
       
         function visit(items, initialBound, scopeLabel) {
@@ -4964,7 +4998,7 @@
                     code: 'unbound-filter-variable',
                     severity: 'error',
                     rule: ruleNameValue,
-                    message: `${label} FILTER uses ?${variable} before it is bound${scopeLabel}`,
+                    message: `${displayRuleName(ruleNameValue, prefixes)} FILTER uses ?${variable} before it is bound${scopeLabel}`,
                   });
                 }
               }
@@ -4974,7 +5008,7 @@
                   code: 'assignment-variable-already-bound',
                   severity: 'error',
                   rule: ruleNameValue,
-                  message: `${label} SET assigns ?${clause.variable}, but that variable is already bound${scopeLabel}`,
+                  message: `${displayRuleName(ruleNameValue, prefixes)} SET assigns ?${clause.variable}, but that variable is already bound${scopeLabel}`,
                 });
               }
               for (const variable of expressionVariables(clause.expr)) {
@@ -4983,7 +5017,7 @@
                     code: 'unbound-assignment-variable',
                     severity: 'error',
                     rule: ruleNameValue,
-                    message: `${label} SET expression uses ?${variable} before it is bound${scopeLabel}`,
+                    message: `${displayRuleName(ruleNameValue, prefixes)} SET expression uses ?${variable} before it is bound${scopeLabel}`,
                   });
                 }
               }

@@ -1,6 +1,6 @@
 'use strict';
 
-const { tripleKey, termKey, termEquals, cloneTerm } = require('./term.js');
+const { tripleKey, termKey, termEquals } = require('./term.js');
 
 class TripleStore {
   constructor(triples = []) {
@@ -109,7 +109,7 @@ function smallerValues(left, right) {
 }
 
 function normalizeTriple(triple) {
-  return { s: cloneTerm(triple.s), p: cloneTerm(triple.p), o: cloneTerm(triple.o) };
+  return { s: triple.s, p: triple.p, o: triple.o };
 }
 
 function bindingKey(binding) {

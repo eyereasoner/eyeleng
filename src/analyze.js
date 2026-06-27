@@ -11,9 +11,7 @@ function analyze(program, options = {}) {
 
   program.rules.forEach((rule, index) => {
     const name = ruleName(rule, index);
-    const label = displayRuleName(name, program.prefixes || {});
     const bound = boundVariables(rule.body);
-    const positive = positiveVariables(rule.body);
     const head = new Set();
     for (const triple of rule.head) collectTripleVars(triple, head);
 
@@ -23,7 +21,7 @@ function analyze(program, options = {}) {
           code: 'unsafe-head-variable',
           severity: 'error',
           rule: name,
-          message: `${label} has unbound head variable ?${variable}`,
+          message: `${displayRuleName(name, program.prefixes || {})} has unbound head variable ?${variable}`,
         });
       }
     }
@@ -34,19 +32,19 @@ function analyze(program, options = {}) {
           code: 'invalid-head-predicate',
           severity: 'error',
           rule: name,
-          message: `${label} has a non-IRI/non-variable predicate in the head`,
+          message: `${displayRuleName(name, program.prefixes || {})} has a non-IRI/non-variable predicate in the head`,
         });
       }
     }
 
-    diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, label));
+    diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}));
 
     if (rule.runOnce && recursiveIndexes.has(index)) {
       diagnostics.push({
         code: 'recursive-assignment-rule',
         severity: 'warning',
         rule: name,
-        message: `${label} is a run-once rule in a recursive dependency cycle`,
+        message: `${displayRuleName(name, program.prefixes || {})} is a run-once rule in a recursive dependency cycle`,
       });
     }
 
@@ -402,7 +400,7 @@ function stronglyConnectedComponents(size, edges) {
   return components;
 }
 
-function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, label) {
+function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, prefixes = {}) {
   const diagnostics = [];
 
   function visit(items, initialBound, scopeLabel) {
@@ -417,7 +415,7 @@ function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, label) {
               code: 'unbound-filter-variable',
               severity: 'error',
               rule: ruleNameValue,
-              message: `${label} FILTER uses ?${variable} before it is bound${scopeLabel}`,
+              message: `${displayRuleName(ruleNameValue, prefixes)} FILTER uses ?${variable} before it is bound${scopeLabel}`,
             });
           }
         }
@@ -427,7 +425,7 @@ function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, label) {
             code: 'assignment-variable-already-bound',
             severity: 'error',
             rule: ruleNameValue,
-            message: `${label} SET assigns ?${clause.variable}, but that variable is already bound${scopeLabel}`,
+            message: `${displayRuleName(ruleNameValue, prefixes)} SET assigns ?${clause.variable}, but that variable is already bound${scopeLabel}`,
           });
         }
         for (const variable of expressionVariables(clause.expr)) {
@@ -436,7 +434,7 @@ function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, label) {
               code: 'unbound-assignment-variable',
               severity: 'error',
               rule: ruleNameValue,
-              message: `${label} SET expression uses ?${variable} before it is bound${scopeLabel}`,
+              message: `${displayRuleName(ruleNameValue, prefixes)} SET expression uses ?${variable} before it is bound${scopeLabel}`,
             });
           }
         }

@@ -17,11 +17,13 @@ function iri(value) {
 }
 
 function variable(name) {
-  return { type: 'var', value: String(name).replace(/^[?$]/, '') };
+  const value = String(name);
+  return { type: 'var', value: value[0] === '?' || value[0] === '$' ? value.slice(1) : value };
 }
 
 function blankNode(value) {
-  return { type: 'blank', value: String(value).replace(/^_:/, '') };
+  const label = String(value);
+  return { type: 'blank', value: label.startsWith('_:') ? label.slice(2) : label };
 }
 
 function literal(value, datatype = null, lang = null, langDir = null) {

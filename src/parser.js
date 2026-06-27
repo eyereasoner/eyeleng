@@ -764,7 +764,7 @@ class Parser {
   peekN(n) { return this.tokens[this.pos + n] || this.tokens[this.tokens.length - 1]; }
   previous() { return this.tokens[this.pos - 1]; }
   strictGrammar() { return !!this.options.strictGrammar; }
-  error(message, token = this.peek()) { return new SyntaxErrorWithLocation(message, token); }
+  error(message, token = this.peek()) { return new SyntaxErrorWithLocation(message, token && token.filename ? token : { ...token, filename: this.options.filename || '<input>' }); }
 }
 
 

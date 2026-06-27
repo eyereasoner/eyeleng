@@ -32,6 +32,18 @@ function evaluate(program, options = {}) {
     layerIndexes,
     analysis.dependency ? analysis.dependency.edges : [],
   );
+  const baseContext = {
+    ...evalOptions,
+    maxIterations,
+    inputKeys,
+    inferred,
+    trace,
+    perRule,
+    layer: 0,
+    iteration: 0,
+    startingIterations: 0,
+    recursiveLayer: false,
+  };
 
   for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
     const layer = layerIndexes[layerIndex];
@@ -41,30 +53,17 @@ function evaluate(program, options = {}) {
     if (runOnce.length > 0) {
       iterations += 1;
       for (const ruleIndex of runOnce) {
-        const added = applyRuleOnce(program, store, ruleIndex, {
-          ...evalOptions,
-          inputKeys,
-          inferred,
-          trace,
-          perRule,
-          layer: layerIndex + 1,
-          iteration: iterations,
-        });
+        baseContext.layer = layerIndex + 1;
+        baseContext.iteration = iterations;
+        const added = applyRuleOnce(program, store, ruleIndex, baseContext);
         ruleApplications += added.applications;
       }
     }
 
-    const ordinaryResult = runRulesToFixpoint(program, store, ordinary, {
-      ...evalOptions,
-      maxIterations,
-      inputKeys,
-      inferred,
-      trace,
-      perRule,
-      layer: layerIndex + 1,
-      startingIterations: iterations,
-      recursiveLayer: recursiveLayerFlags[layerIndex],
-    });
+    baseContext.layer = layerIndex + 1;
+    baseContext.startingIterations = iterations;
+    baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
+    const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
     iterations = ordinaryResult.iterations;
     ruleApplications += ordinaryResult.ruleApplications;
   }
@@ -95,10 +94,8 @@ function runRulesToFixpoint(program, store, ruleIndexes, context) {
     const iteration = context.startingIterations + 1;
     let ruleApplications = 0;
     for (const ruleIndex of ruleIndexes) {
-      const applied = applyRuleOnce(program, store, ruleIndex, {
-        ...context,
-        iteration,
-      });
+      context.iteration = iteration;
+      const applied = applyRuleOnce(program, store, ruleIndex, context);
       ruleApplications += applied.applications;
     }
     return { iterations: iteration, ruleApplications };
@@ -114,10 +111,8 @@ function runRulesToFixpoint(program, store, ruleIndexes, context) {
     let addedInIteration = 0;
 
     for (const ruleIndex of ruleIndexes) {
-      const applied = applyRuleOnce(program, store, ruleIndex, {
-        ...context,
-        iteration: iterations,
-      });
+      context.iteration = iterations;
+      const applied = applyRuleOnce(program, store, ruleIndex, context);
       addedInIteration += applied.added;
       ruleApplications += applied.applications;
     }
@@ -146,16 +141,24 @@ function computeRecursiveLayerFlags(layerIndexes, edges = []) {
   return flags;
 }
 
+
 function applyRuleOnce(program, store, ruleIndex, context) {
   const rule = program.rules[ruleIndex];
   let applications = 0;
   let added = 0;
-  const seenBindings = new Set();
+  const dedupeBindings = rule.body.some((clause) => clause.type === 'path');
+  const seenBindings = dedupeBindings ? new Set() : null;
 
-  for (const binding of evaluateBodyStream(rule.body, store, {}, context)) {
-    const key = bindingKey(binding);
-    if (seenBindings.has(key)) continue;
-    seenBindings.add(key);
+  const bodyBindings = rule.body.length === 1 && rule.body[0].type === 'triple'
+    ? store.match(rule.body[0].triple, {})
+    : evaluateBodyStream(rule.body, store, {}, context);
+
+  for (const binding of bodyBindings) {
+    if (seenBindings) {
+      const key = bindingKey(binding);
+      if (seenBindings.has(key)) continue;
+      seenBindings.add(key);
+    }
     applications += 1;
     context.perRule[ruleIndex].applications += 1;
 

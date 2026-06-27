@@ -20,7 +20,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
 
   function current() { return source[i]; }
   function peek(n = 1) { return source[i + n]; }
-  function startsWith(text) { return source.slice(i, i + text.length) === text; }
+  function startsWith(text) { return source.startsWith(text, i); }
   function advance() {
     const ch = source[i++];
     if (ch === '\n') { line += 1; column = 1; }
@@ -28,7 +28,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
     return ch;
   }
   function token(type, value, startLine, startColumn, extra = {}) {
-    tokens.push({ type, value, line: startLine, column: startColumn, filename, ...extra });
+    tokens.push({ type, value, line: startLine, column: startColumn, ...extra });
   }
   function syntax(message, startLine, startColumn) {
     throw new SyntaxErrorWithLocation(message, { line: startLine, column: startColumn, filename });
@@ -36,19 +36,21 @@ function tokenize(source, filenameOrOptions = '<input>') {
 
   function readNumericLiteral() {
     let value = '';
-    while (i < source.length && /[0-9]/.test(current())) value += advance();
-    if (current() === '.' && /[0-9]/.test(peek())) {
-      value += advance();
-      while (i < source.length && /[0-9]/.test(current())) value += advance();
+    const start = i;
+    while (i < source.length && isDigitCode(source.charCodeAt(i))) { i += 1; column += 1; }
+    if (source[i] === '.' && isDigitCode(source.charCodeAt(i + 1))) {
+      i += 1; column += 1;
+      while (i < source.length && isDigitCode(source.charCodeAt(i))) { i += 1; column += 1; }
     }
+    value = source.slice(start, i);
     if (current() === 'e' || current() === 'E') {
       const saveI = i;
       const saveLine = line;
       const saveColumn = column;
       let exponent = advance();
       if (current() === '+' || current() === '-') exponent += advance();
-      if (/[0-9]/.test(current())) {
-        while (i < source.length && /[0-9]/.test(current())) exponent += advance();
+      if (isDigitCode(source.charCodeAt(i))) {
+        while (i < source.length && isDigitCode(source.charCodeAt(i))) exponent += advance();
         value += exponent;
       } else {
         i = saveI;
@@ -66,7 +68,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
       const length = esc === 'u' ? 4 : 8;
       let hex = '';
       for (let j = 0; j < length; j += 1) {
-        if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
+        if (!isHexCode(source.charCodeAt(i))) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
         hex += advance();
       }
       const codePoint = Number.parseInt(hex, 16);
@@ -85,7 +87,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
       const length = esc === 'u' ? 4 : 8;
       let hex = '';
       for (let j = 0; j < length; j += 1) {
-        if (!/[0-9A-Fa-f]/.test(current() || '')) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
+        if (!isHexCode(source.charCodeAt(i))) syntax(`Invalid \\${esc} escape`, startLine, startColumn);
         hex += advance();
       }
       const codePoint = Number.parseInt(hex, 16);
@@ -99,7 +101,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
 
   while (i < source.length) {
     const ch = current();
-    if (/\s/.test(ch)) { advance(); continue; }
+    if (isWhitespaceCode(source.charCodeAt(i))) { advance(); continue; }
     if (ch === '#') {
       while (i < source.length && current() !== '\n') advance();
       continue;
@@ -185,18 +187,21 @@ function tokenize(source, filenameOrOptions = '<input>') {
     }
 
     if (ch === '@') {
-      let value = advance();
-      while (i < source.length && /[A-Za-z0-9-]/.test(current())) value += advance();
+      const wordStart = i;
+      advance();
+      while (i < source.length && isLangTagCode(source.charCodeAt(i))) { i += 1; column += 1; }
+      const value = source.slice(wordStart, i);
       if (!/^@[A-Za-z]+(?:-[A-Za-z0-9]+)*(?:--[A-Za-z]+)?$/.test(value)) syntax(`Invalid language tag ${value}`, startLine, startColumn);
       token('word', value, startLine, startColumn);
       continue;
     }
 
     if (ch === '?' || ch === '$') {
-      let value = advance();
-      while (i < source.length && /[A-Za-z0-9_\-]/.test(current())) value += advance();
-      if (value.length === 1) syntax('Expected variable name', startLine, startColumn);
-      token('variable', value.slice(1), startLine, startColumn);
+      const varStart = i;
+      advance();
+      while (i < source.length && isVarNameCode(source.charCodeAt(i))) { i += 1; column += 1; }
+      if (i - varStart === 1) syntax('Expected variable name', startLine, startColumn);
+      token('variable', source.slice(varStart + 1, i), startLine, startColumn);
       continue;
     }
 
@@ -223,24 +228,27 @@ function tokenize(source, filenameOrOptions = '<input>') {
       continue;
     }
 
-    let value = '';
+    const wordStart = i;
     while (i < source.length) {
-      const c = current();
-      if (c === '\\' && peek() !== undefined) {
-        value += advance();
-        value += advance();
+      const c = source[i];
+      if (c === '\\' && source[i + 1] !== undefined) {
+        i += 2;
+        column += 2;
         continue;
       }
-      if (/\s/.test(c) || '{}()[],;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
+      const code = source.charCodeAt(i);
+      if (isWhitespaceCode(code) || '{}()[],;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
       if (c === '.') {
-        const n = peek();
-        if (n === undefined || /\s/.test(n) || '{}()[],;|'.includes(n) || '=<>+-*/!^~'.includes(n)) break;
+        const n = source[i + 1];
+        if (n === undefined || isWhitespaceCode(n.charCodeAt(0)) || '{}()[],;|'.includes(n) || '=<>+-*/!^~'.includes(n)) break;
       }
       if (c === '#') break;
-      value += advance();
+      i += 1;
+      column += 1;
     }
-    if (value.length === 0) syntax(`Unexpected character ${JSON.stringify(ch)}`, startLine, startColumn);
+    if (i === wordStart) syntax(`Unexpected character ${JSON.stringify(ch)}`, startLine, startColumn);
 
+    const value = source.slice(wordStart, i);
     if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token('number', Number(value), startLine, startColumn);
     else token('word', value, startLine, startColumn);
   }
@@ -249,11 +257,32 @@ function tokenize(source, filenameOrOptions = '<input>') {
   return tokens;
 }
 
+
+function isDigitCode(code) {
+  return code >= 48 && code <= 57;
+}
+
+function isHexCode(code) {
+  return (code >= 48 && code <= 57) || (code >= 65 && code <= 70) || (code >= 97 && code <= 102);
+}
+
+function isWhitespaceCode(code) {
+  return code === 32 || code === 9 || code === 10 || code === 13 || code === 12;
+}
+
+function isLangTagCode(code) {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 45;
+}
+
+function isVarNameCode(code) {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 95 || code === 45;
+}
+
 function startsNumericLiteral(source, i) {
   const ch = source[i];
   const next = source[i + 1];
-  if (/[0-9]/.test(ch)) return true;
-  if (ch === '.' && /[0-9]/.test(next)) return true;
+  if (isDigitCode(ch.charCodeAt(0))) return true;
+  if (ch === '.' && next !== undefined && isDigitCode(next.charCodeAt(0))) return true;
   return false;
 }
 

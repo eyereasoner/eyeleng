@@ -28,6 +28,8 @@ const XSD_DAYTIME_DURATION = 'http://www.w3.org/2001/XMLSchema#dayTimeDuration';
 const RDF_LANGSTRING = `${RDF_NS}langString`;
 const RDF_DIRLANGSTRING = `${RDF_NS}dirLangString`;
 const NUMERIC_DATATYPES = new Set([XSD_INTEGER, XSD_DECIMAL, XSD_DOUBLE]);
+const MAX_SAFE_INTEGER_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
+const MIN_SAFE_INTEGER_BIGINT = BigInt(Number.MIN_SAFE_INTEGER);
 
 // This table is intentionally shaped by the SHACL 1.2 Rules grammar production BuiltInCall.
 // Keys are the canonical spellings used by the draft; lookup is case-insensitive so examples
@@ -187,7 +189,7 @@ function toBigIntInteger(value) {
 }
 
 function fromIntegerResult(value) {
-  if (value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)) return Number(value);
+  if (value <= MAX_SAFE_INTEGER_BIGINT && value >= MIN_SAFE_INTEGER_BIGINT) return Number(value);
   return value;
 }
 
