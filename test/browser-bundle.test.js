@@ -44,4 +44,12 @@ test('playground inline scripts are syntactically valid', () => {
   assert.ok(checked > 0, 'expected at least one inline playground script');
 });
 
+
+test('playground loads version from package.json at runtime', () => {
+  const html = fs.readFileSync(path.join(root, 'playground.html'), 'utf8');
+  assert.equal(/window\.__EYELENG_VERSION__/.test(html), false, 'playground.html must not hard-code the package version');
+  assert.match(html, /fetch\(new URL\(['"]package\.json['"],\s*window\.location\.href\)/);
+  assert.match(html, /id=["']version-label["'][^>]*>v…<\/span>/);
+});
+
 main();

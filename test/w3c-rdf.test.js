@@ -9,7 +9,6 @@ const {
   defaultW3cRdfManifestUrls,
   runW3cRdfManifests,
   formatW3cRdfProgressLine,
-  writeRdfEarlReport,
 } = require('../src/rdfManifest.js');
 const { parseNQuads, parseN3 } = require('../src/rdfSyntax.js');
 const { evaluateEntailmentTest, entails } = require('../src/rdfEntailment.js');
@@ -186,8 +185,6 @@ test('official W3C RDF manifests run with streaming progress when reachable', as
   }
   assert.equal(result.counts.fail, 0, `${result.counts.fail} W3C RDF failure(s)`);
   assert.ok(result.counts.pass > 0, 'expected at least one W3C RDF parser test to pass');
-  const reportPath = writeRdfEarlReport(result);
-  console.log(`${C.dim}EARL report: ${path.relative(path.join(__dirname, '..'), reportPath)}${C.n}`);
   summaryLine('ok', result.counts.pass, result.counts.total, result.durationMs, {
     skipped: result.counts.skip,
     label: 'W3C RDF manifests',

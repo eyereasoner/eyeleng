@@ -57,22 +57,6 @@ function js(value) {
 }
 
 
-function packageVersion() {
-  const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-  if (!packageJson.version) throw new Error('package.json is missing a version');
-  return packageJson.version;
-}
-
-function syncPlaygroundVersion() {
-  const version = packageVersion();
-  const outPath = path.join(root, playgroundOutput);
-  const html = fs.readFileSync(outPath, 'utf8');
-  const pattern = /(window\.__EYELENG_VERSION__\s*=\s*)["'][^"']*["']\s*;/;
-  if (!pattern.test(html)) throw new Error('Could not find window.__EYELENG_VERSION__ in playground.html');
-  const next = html.replace(pattern, `$1${js(version)};`);
-  fs.writeFileSync(outPath, next, 'utf8');
-  console.log(`wrote ${playgroundOutput} version ${version}`);
-}
 
 function ensureParentDir(filename) {
   fs.mkdirSync(path.dirname(filename), { recursive: true });
@@ -172,4 +156,3 @@ function indent(source, spaces) {
 
 buildCli();
 buildBrowser();
-syncPlaygroundVersion();

@@ -10,7 +10,6 @@ const {
   isW3cRequired,
   runShacl12RulesManifest,
   formatShacl12RulesProgressLine,
-  writeShacl12RulesEarlReport,
 } = require('../src/shacl12RulesManifest.js');
 
 const rootManifestUrl = process.env.EYELENG_SHACL12_RULES_MANIFEST || defaultShacl12RulesManifestUrl;
@@ -46,13 +45,6 @@ async function main() {
     return;
   }
 
-  try {
-    const reportPath = writeShacl12RulesEarlReport(result);
-    console.log(`${C.dim}EARL report: ${path.relative(path.join(__dirname, '..'), reportPath)}${C.n}`);
-  } catch (err) {
-    console.error(`Failed to write SHACL Rules EARL report: ${err.message}`);
-    result.counts.fail += 1;
-  }
 
   for (const section of result.bySection) {
     summaryLine(section.failed === 0 ? 'ok' : 'fail', section.passed, section.total, null, { label: section.section });

@@ -37,6 +37,7 @@
     "pretest": "node tools/bundle.js",
     "test": "node test/run.js",
     "preversion": "npm test",
+    "version": "node tools/bundle.js",
     "postversion": "git push origin HEAD --follow-tags",
     "w3c:rules": "node tools/w3c-shacl12-rules.js",
     "w3c:rdf": "node tools/w3c-rdf.js",
