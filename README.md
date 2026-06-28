@@ -8,7 +8,7 @@
 - **SRL** — the Shape Rules Language syntax used by the SHACL 1.2 Rules draft.
 - **RDF Rules** — a Turtle/RDF syntax for rule sets.
 
-Eyeleng is a forward-chaining reasoner over RDF-style triples. It is deliberately small, dependency-free at runtime, readable as ordinary JavaScript, and usable from the CLI, Node.js, and the browser playground.
+Eyeleng is a compact reasoner over RDF-style triples. It still uses forward chaining for ordinary finite materialization, but the default execution mode now includes conservative auto-hybrid planning: selected function-like predicates can be proved just in time by a tabled backward prover when they are demanded by a query or by another rule body. It is deliberately small, dependency-free at runtime, readable as ordinary JavaScript, and usable from the CLI, Node.js, and the browser playground.
 
 Eyeleng implements the rules/reasoning surface. It is **not** a SHACL validation engine and does not emit SHACL validation reports.
 
@@ -75,6 +75,10 @@ then the body matches with `?parent = :alice` and `?child = :bob`, and the head 
 ```
 
 Negation is handled by stratified evaluation: rules are grouped into dependency layers, and recursion through negation is rejected so the result stays deterministic.
+
+By default, run mode uses **auto-hybrid reasoning**. Ordinary rules are still materialized forward into the closure. Rules that behave like internal functions can instead be proved backward with tabling when their predicates occur as demanded body goals. For example, a Fibonacci helper predicate can be computed just in time for the public `:fib` results, without printing all intermediate helper triples. Use `--no-hybrid` or `{ hybrid: false }` to force pure forward materialization, and use `--hybrid` or `{ hybrid: true }` to force more aggressive backward orientation.
+
+For explicit `--query` / `--query-file` use, the query body is the top-level goal. Each triple pattern in that body is then a sub-goal that may be answered by the backward prover. If pure backward proving is not safe for the demanded predicates, query mode can run a hybrid plan and finally fall back to ordinary forward closure.
 
 Recursive rules that create new terms through `SET`/`BIND` or head blank nodes run in relaxed mode by default. Relaxed mode can derive useful finite closures, but termination is not guaranteed; use `--max-iterations` as a safety valve. `--strict` rejects these recursive term-generating cycles at analysis time. Head blank nodes are deterministically skolemized per rule and solution mapping, so the same firing reuses the same witness node instead of creating a fresh one each pass.
 
@@ -153,7 +157,6 @@ npm run w3c:rules:earl
 npm run w3c:rdf
 npm run w3c:rdf:json
 npm run w3c:rdf:earl
-npm run w3c:all
 ```
 
 `npm test` includes the W3C harnesses. When W3C URLs are reachable, progress is printed test by test. In offline environments, remote W3C checks are reported as unreachable unless `EYELENG_W3C_REQUIRED=1` is set. The `*:earl` scripts also print test progress, but write the EARL Turtle only to `reports/` instead of printing the report to the terminal.
@@ -238,28 +241,30 @@ RULE { ?x a :Mortal } WHERE { ?x a :Man }
 console.log(formatTriples(result.inferred, result.prefixes));
 ```
 
-Query mode:
+Hybrid and query mode:
 
 ```js
-const { runQuery, formatBindings } = require('./src/index.js');
+const { run, runQuery, formatBindings } = require('./src/index.js');
 
+// Normal run mode defaults to conservative auto-hybrid reasoning.
+// Ordinary output rules still materialize forward, while selected
+// function-like helper predicates can be proved backward on demand.
+const resultWithAutoHybrid = run(source);
+
+// Force pure forward closure if you want every derivable helper fact materialized.
+const pureForward = run(source, { hybrid: false });
+
+// For explicit queries, the whole raw body is the top-level goal.
+// Each triple pattern in that body is a sub-goal for the planner.
 const result = runQuery(source, '?x :ancestorOf ?y');
 console.log(formatBindings(result.query.bindings, result.prefixes));
 
-// Query mode defaults to auto. Supported query/rule shapes are proved
-// backward with tabling. If full backward proving is not safe but the
-// ruleset contains function-like derived predicates, auto mode uses a
-// hybrid plan before falling back to plain forward closure.
-const justInTime = runQuery(source, ':alice :computedValue ?value', { queryMode: 'backward' });
+// queryMode defaults to auto: try tabled backward proving for demanded
+// predicates, then hybrid execution, then ordinary forward closure.
+const justInTime = runQuery(source, ':alice :computedValue ?value');
 
-// Run mode uses conservative auto-hybrid planning by default. It keeps
-// ordinary rules materialized, but can prove demanded function-like predicates
-// backward with tabling. Pass { hybrid: false } to force pure forward closure,
-// or { hybrid: true } to force aggressive hybrid orientation.
-const resultWithAutoHybrid = run(source);
-
-// The backward planner is demand-driven: irrelevant unsupported rules do not
-// prevent a query from using tabled backward proving.
+// Force the tabled backward prover for supported query shapes.
+const backwardOnly = runQuery(source, ':alice :computedValue ?value', { queryMode: 'backward' });
 ```
 
 Imports:
@@ -326,6 +331,7 @@ Examples live in [examples/](./examples/):
 - `property-paths.srl` — path matching in bodies
 - `basic-ruleset.ttl` — RDF Rules syntax
 - `rdf-messages.srl` / `rdf-messages.trig` — RDF Message Log replay
+- `fibonacci.srl` — fast-doubling Fibonacci using just-in-time backward helper predicates
 - `deep-taxonomy-*.srl` — generated benchmark programs
 
 ## Known boundaries
