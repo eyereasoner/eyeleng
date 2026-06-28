@@ -8,6 +8,7 @@ class TripleStore {
     this.byPredicate = new Map();
     this.byPredicateSubject = new Map();
     this.byPredicateObject = new Map();
+    this.version = 0;
     for (const triple of triples) this.add(triple);
   }
 
@@ -22,6 +23,7 @@ class TripleStore {
     addIndex(this.byPredicate, predicate, key, normalized);
     addNestedIndex(this.byPredicateSubject, predicate, subject, key, normalized);
     addNestedIndex(this.byPredicateObject, predicate, object, key, normalized);
+    this.version += 1;
     return true;
   }
 

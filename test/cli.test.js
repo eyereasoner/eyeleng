@@ -22,7 +22,7 @@ function readmeCliOptions() {
 test('CLI help documents RDF Message Log flags', () => {
   const text = help();
   assert.match(text, /--rdf-messages\s+Parse input as an RDF Message Log/);
-  assert.match(text, /--stream-messages\s+Replay RDF Message Log envelopes/);
+  assert.doesNotMatch(text, /--stream-messages/);
   assert.match(text, /--include-message-facts\s+Include payload facts while parsing RDF Message Logs/);
 });
 
@@ -34,8 +34,17 @@ test('README CLI options stay in sync with --help', () => {
 
 test('RDF Message Log flags are accepted by parseArgs', () => {
   assert.equal(parseArgs(['--rdf-messages']).options.rdfMessages, true);
-  assert.equal(parseArgs(['--stream-messages']).options.rdfMessages, true);
   assert.equal(parseArgs(['--include-message-facts']).options.includeMessageFacts, true);
+});
+
+test('query mode flag is accepted by parseArgs', () => {
+  assert.equal(parseArgs(['--query-mode', 'auto']).options.queryMode, 'auto');
+  assert.equal(parseArgs(['--query-mode', 'forward']).options.queryMode, 'forward');
+  assert.equal(parseArgs(['--query-mode', 'backward']).options.queryMode, 'backward');
+  assert.equal(parseArgs(['--hybrid']).options.hybrid, true);
+  assert.throws(() => parseArgs(['--query-mode', 'hybrid']), /--query-mode requires auto, forward, or backward/);
+  assert.throws(() => parseArgs(['--query-mode', 'sideways']), /--query-mode requires auto, forward, or backward/);
+  assert.throws(() => parseArgs(['--stream-messages']), /Unknown option --stream-messages/);
 });
 
 main();

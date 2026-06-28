@@ -1,9 +1,10 @@
 'use strict';
 
-const { TripleStore, bindingKey } = require('./store.js');
+const { TripleStore, bindingKey, instantiateTerm } = require('./store.js');
 const { tripleKey, termKey, termEquals, blankNode, tripleTerm } = require('./term.js');
 const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
 const { analyze } = require('./analyze.js');
+const { BackwardProver, preferredBackwardPredicates, ruleIsBackwardOriented } = require('./backward.js');
 
 function evaluate(program, options = {}) {
   const maxIterations = options.maxIterations ?? 10000;
@@ -19,6 +20,7 @@ function evaluate(program, options = {}) {
     applications: 0,
     added: 0,
     runOnce: !!rule.runOnce,
+    backward: false,
   }));
 
   const analysis = options.analysis || analyze(program, options);
@@ -35,6 +37,17 @@ function evaluate(program, options = {}) {
   const relaxedRecursiveRunOnce = options.relaxedRecursion === false
     ? new Set()
     : recursiveTermGenerationRuleIndexes(analysis);
+  const hybridBackwardPredicates = options.hybrid || options.backwardBodyCalls
+    ? preferredBackwardPredicates(program, options)
+    : new Set();
+  const hybridBackwardRules = new Set();
+  if (hybridBackwardPredicates.size > 0) {
+    for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
+      if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
+    }
+  }
+  const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
+  for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
   const baseContext = {
     ...evalOptions,
     maxIterations,
@@ -46,12 +59,16 @@ function evaluate(program, options = {}) {
     iteration: 0,
     startingIterations: 0,
     recursiveLayer: false,
+    hybridBackwardPredicates,
+    hybridBackwardRules,
+    hybridStats,
   };
 
   for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
     const layer = layerIndexes[layerIndex];
-    const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
-    const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
+    const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
+    const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
+    const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
 
     if (runOnce.length > 0) {
       iterations += 1;
@@ -84,6 +101,7 @@ function evaluate(program, options = {}) {
     ruleApplications,
     perRule,
     trace,
+    hybridStats,
   };
 }
 
@@ -153,9 +171,10 @@ function applyRuleOnce(program, store, ruleIndex, context) {
   const seenBindings = dedupeBindings ? new Set() : null;
   const headBlankLabels = collectHeadBlankLabels(rule.head);
 
-  const bodyBindings = rule.body.length === 1 && rule.body[0].type === 'triple'
+  const bodyContext = prepareBodyContext(program, store, context);
+  const bodyBindings = rule.body.length === 1 && rule.body[0].type === 'triple' && !shouldUseBackwardForTriple(rule.body[0].triple, {}, bodyContext)
     ? store.match(rule.body[0].triple, {})
-    : evaluateBodyStream(rule.body, store, {}, context);
+    : evaluateBodyStream(rule.body, store, {}, bodyContext);
 
   for (const binding of bodyBindings) {
     if (seenBindings) {
@@ -188,7 +207,34 @@ function applyRuleOnce(program, store, ruleIndex, context) {
     }
   }
 
+  if (bodyContext.backwardProver && context.hybridStats) mergeBackwardStats(context.hybridStats, bodyContext.backwardProver.stats);
   return { applications, added };
+}
+
+function prepareBodyContext(program, store, context) {
+  if (!context.hybridBackwardPredicates || context.hybridBackwardPredicates.size === 0) return context;
+  return {
+    ...context,
+    backwardProver: new BackwardProver(program, {
+      ...context,
+      store,
+      allowedPredicates: context.hybridBackwardPredicates,
+    }),
+  };
+}
+
+function emptyBackwardStats() {
+  return { mode: 'hybrid', goals: 0, facts: 0, rules: 0, memoHits: 0, memoStores: 0, maxDepth: 0 };
+}
+
+function mergeBackwardStats(total, item) {
+  if (!total || !item) return;
+  total.goals += item.goals || 0;
+  total.facts += item.facts || 0;
+  total.rules += item.rules || 0;
+  total.memoHits += item.memoHits || 0;
+  total.memoStores += item.memoStores || 0;
+  total.maxDepth = Math.max(total.maxDepth || 0, item.maxDepth || 0);
 }
 
 function recursiveTermGenerationRuleIndexes(analysis) {
@@ -299,8 +345,19 @@ function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, 
 
   const clause = clauses[index];
   if (clause.type === 'triple') {
+    const seen = new Set();
     for (const matched of store.match(clause.triple, initialBinding)) {
+      const key = bindingKey(matched);
+      seen.add(key);
       yield* evaluateBodyStream(clauses, store, matched, options, index + 1);
+    }
+    if (shouldUseBackwardForTriple(clause.triple, initialBinding, options)) {
+      for (const matched of options.backwardProver.solveTriple(clause.triple, initialBinding)) {
+        const key = bindingKey(matched);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        yield* evaluateBodyStream(clauses, store, matched, options, index + 1);
+      }
     }
     return;
   }
@@ -345,6 +402,12 @@ function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, 
   }
 
   throw new Error(`Unsupported body clause ${clause.type}`);
+}
+
+function shouldUseBackwardForTriple(pattern, binding, options = {}) {
+  if (!options.backwardProver || !options.hybridBackwardPredicates || options.hybridBackwardPredicates.size === 0) return false;
+  const predicate = instantiateTerm(pattern.p, binding);
+  return !!(predicate && predicate.type === 'iri' && options.hybridBackwardPredicates.has(predicate.value));
 }
 
 function bodyHasAny(clauses, store, initialBinding, options) {

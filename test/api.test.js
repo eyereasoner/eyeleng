@@ -2,7 +2,7 @@
 
 const { test, main } = require('./harness.js').createHarness('API');
 const assert = require('node:assert/strict');
-const { parse, compile, run, runToString } = require('../src/index.js');
+const { parse, compile, run, runToString, runQuery } = require('../src/index.js');
 const { tripleKey } = require('../src/term.js');
 
 test('parse reads prefixes, data, and rules', () => {
@@ -157,6 +157,114 @@ RULE { ?x :ancestorOf ?z } WHERE { ?x :parentOf ?y . ?y :ancestorOf ?z }
   const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
   assert.match(output, /\?d = :bob/);
   assert.match(output, /\?d = :carol/);
+});
+
+
+
+test('backward query mode proves recursive derived predicates with tabling', () => {
+  const { runQuery, formatBindings } = require('../src/index.js');
+  const result = runQuery(`
+PREFIX : <http://example/>
+DATA { :alice :parentOf :bob . :bob :parentOf :carol . }
+RULE { ?x :ancestorOf ?y } WHERE { ?x :parentOf ?y }
+RULE { ?x :ancestorOf ?z } WHERE { ?x :parentOf ?y . ?y :ancestorOf ?z }
+`, ':alice :ancestorOf ?d', { queryMode: 'backward' });
+  assert.equal(result.iterations, 0);
+  assert.equal(result.query.mode, 'backward');
+  assert.ok(result.query.stats.memoStores > 0);
+  const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
+  assert.match(output, /\?d = :bob/);
+  assert.match(output, /\?d = :carol/);
+});
+
+test('backward query mode computes function-like rules just in time', () => {
+  const { runQuery, formatBindings } = require('../src/index.js');
+  const result = runQuery(`
+PREFIX : <http://example/>
+DATA { :alice :score 41 . :bob :score 2 . }
+RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
+`, '?who :nextScore ?score', { queryMode: 'backward' });
+  assert.equal(result.iterations, 0);
+  const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
+  assert.match(output, /\?score = 42; \?who = :alice/);
+  assert.match(output, /\?score = 3; \?who = :bob/);
+});
+
+test('auto query mode uses backward planning for supported rules', () => {
+  const { runQuery } = require('../src/index.js');
+  const result = runQuery(`
+PREFIX : <http://example/>
+DATA { :a :p :b . }
+RULE { ?x :q ?y } WHERE { ?x :p ?y }
+`, ':a :q ?y');
+  assert.equal(result.query.mode, 'backward');
+  assert.equal(result.iterations, 0);
+});
+
+
+
+test('hybrid execution proves function-like body predicates backward without materializing them', () => {
+  const result = run(`
+PREFIX : <http://example/>
+DATA { :alice :score 41 . :bob :score 2 . }
+RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
+RULE { ?x :ready true } WHERE { ?x :nextScore 42 }
+`, { hybrid: true });
+  const keys = result.closure.map(tripleKey).join('\n');
+  assert.match(keys, /ready/);
+  assert.doesNotMatch(keys, /nextScore/);
+  assert.equal(result.perRule[0].applications, 0);
+  assert.equal(result.perRule[0].backward, true);
+  assert.ok(result.hybridStats.goals > 0);
+  assert.ok(result.hybridStats.rules > 0);
+});
+
+test('hybrid query mode runs forward rules with backward body calls', () => {
+  const { runQuery, formatBindings } = require('../src/index.js');
+  const result = runQuery(`
+PREFIX : <http://example/>
+DATA { :alice :score 41 . :bob :score 2 . }
+RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
+RULE { ?x :ready ?score } WHERE { ?x :nextScore ?score . FILTER(?score = 42) }
+`, '?who :ready ?score', { queryMode: 'hybrid' });
+  assert.equal(result.query.mode, 'hybrid');
+  assert.ok(result.hybridStats.goals > 0);
+  const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
+  assert.match(output, /\?score = 42; \?who = :alice/);
+  assert.doesNotMatch(output, /bob/);
+});
+
+test('auto query mode uses pure backward planning when unsupported rules are irrelevant', () => {
+  const { runQuery, formatBindings } = require('../src/index.js');
+  const result = runQuery(`
+PREFIX : <http://example/>
+DATA { :alice :score 41 . :bob :score 2 . :seed :seen :x . }
+RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
+RULE { ?x :ready ?score } WHERE { ?x :nextScore ?score . FILTER(?score = 42) }
+RULE { [] :unrelated :x } WHERE { :seed :seen :x }
+`, '?who :ready ?score');
+  assert.equal(result.query.mode, 'backward');
+  assert.ok(result.query.stats.goals > 0);
+  const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
+  assert.match(output, /\?score = 42; \?who = :alice/);
+  assert.doesNotMatch(output, /bob/);
+});
+
+test('auto query mode falls back to hybrid when a demanded predicate has unsupported rules', () => {
+  const { runQuery, formatBindings } = require('../src/index.js');
+  const result = runQuery(`
+PREFIX : <http://example/>
+DATA { :alice :score 41 . :bob :score 2 . :seed :seen :x . }
+RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
+RULE { ?x :ready ?score } WHERE { ?x :nextScore ?score . FILTER(?score = 42) }
+RULE { [] :ready 999 } WHERE { :seed :seen :x }
+`, '?who :ready ?score');
+  assert.equal(result.query.mode, 'hybrid');
+  assert.ok(result.hybridStats.goals > 0);
+  assert.equal(result.perRule[0].backward, true);
+  assert.doesNotMatch(result.closure.map(tripleKey).join('\n'), /nextScore/);
+  const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
+  assert.match(output, /\?score = 42; \?who = :alice/);
 });
 
 test('parseQuery accepts raw body text and rejects non-SRL QUERY/SELECT syntax', () => {
@@ -597,6 +705,24 @@ test('strict conformance rejects recursive computed assignments', () => {
 PREFIX : <http://example.org/#>
 RULE { ?x :p ?v1 } WHERE { ?x :p ?v . SET(?v1 := ?v + 1) }
 `, { shacl12Conformance: true, strict: true }), /creates terms in a recursive dependency cycle/);
+});
+
+
+test('auto backward query ignores unsupported rules outside the demanded slice', () => {
+  const source = `
+PREFIX : <http://example/>
+DATA { :alice :parent :bob . :bob :parent :carol . :a :q :b . :b :q :c . }
+RULE { ?x :ancestor ?y } WHERE { ?x :parent ?y }
+RULE { ?x :ancestor ?z } WHERE { ?x :parent ?y . ?y :ancestor ?z }
+RULE { ?x :twoStep ?y } WHERE { ?x :q/:q ?y }
+`;
+  const result = runQuery(source, ':alice :ancestor ?who');
+  assert.equal(result.query.mode, 'backward');
+  assert.ok(result.query.stats.goals > 0);
+  assert.deepEqual(
+    result.query.bindings.map((binding) => binding.who.value).sort(),
+    ['http://example/bob', 'http://example/carol'],
+  );
 });
 
 main();

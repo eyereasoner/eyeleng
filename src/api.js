@@ -6,7 +6,7 @@ const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js
 const { evaluate } = require('./engine.js');
 const { analyze } = require('./analyze.js');
 const { formatTriples, sortTriples, toJSON, formatTrace, formatBindings } = require('./format.js');
-const { runQuery, queryResult } = require('./query.js');
+const { runQuery, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require('./query.js');
 const { resultTriples } = require('./output.js');
 
 function parseInput(source, options = {}) {
@@ -120,6 +120,9 @@ module.exports = {
   runToString,
   runQuery,
   queryResult,
+  queryProgram,
+  queryRunOptions,
+  shouldUseHybridForQuery,
   formatTriples,
   formatBindings,
   sortTriples,

@@ -8,6 +8,8 @@ const {
   evaluate,
   parseQuery,
   queryResult,
+  queryProgram,
+  queryRunOptions,
   formatTriples,
   formatTrace,
   formatBindings,
@@ -34,7 +36,7 @@ function readPackageVersion() {
 const VERSION = readPackageVersion();
 
 function help() {
-  return `eyeleng ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --stream-messages     Replay RDF Message Log envelopes\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
+  return `eyeleng ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Orient function-like rules backward during forward execution and queries\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
 }
 
 function parseArgs(argv) {
@@ -48,6 +50,8 @@ function parseArgs(argv) {
     deps: false,
     query: null,
     queryFile: null,
+    queryMode: 'auto',
+    hybrid: false,
     maxIterations: 10000,
     imports: true,
     syntax: 'auto',
@@ -66,7 +70,8 @@ function parseArgs(argv) {
     else if (arg === '--strict') options.strict = true;
     else if (arg === '--deps') options.deps = true;
     else if (arg === '--no-imports') options.imports = false;
-    else if (arg === '--rdf-messages' || arg === '--stream-messages') options.rdfMessages = true;
+    else if (arg === '--hybrid') options.hybrid = true;
+    else if (arg === '--rdf-messages') options.rdfMessages = true;
     else if (arg === '--include-message-facts') options.includeMessageFacts = true;
     else if (arg === '--syntax') {
       i += 1;
@@ -77,8 +82,12 @@ function parseArgs(argv) {
       i += 1;
       if (i >= argv.length) throw new Error('--ruleset requires an RDF term');
       options.ruleSet = argv[i];
-    }
-    else if (arg === '--query') {
+    } else if (arg === '--query-mode') {
+      i += 1;
+      if (i >= argv.length) throw new Error('--query-mode requires auto, forward, or backward');
+      options.queryMode = argv[i];
+      if (!['auto', 'forward', 'backward'].includes(options.queryMode)) throw new Error('--query-mode requires auto, forward, or backward');
+    } else if (arg === '--query') {
       i += 1;
       if (i >= argv.length) throw new Error('--query requires a value');
       options.query = argv[i];
@@ -191,15 +200,42 @@ function main(argv = process.argv.slice(2), io = process) {
     }
     if (fatal) return 1;
 
-    const result = evaluate(compiled.program, { ...options, analysis: compiled.analysis });
-    result.diagnostics = compiled.diagnostics;
-    result.analysis = compiled.analysis;
-
     const queryText = options.queryFile ? fs.readFileSync(options.queryFile, 'utf8') : options.query;
     const querySpec = queryText
       ? parseQuery(queryText, { filename: options.queryFile || '<query>', prefixes: compiled.program.prefixes, baseIRI: compiled.program.baseIRI })
       : null;
-    if (querySpec) result.query = queryResult(result, querySpec, options);
+
+    let result;
+    if (querySpec) {
+      const directQuery = queryProgram(compiled.program, querySpec, options);
+      if (directQuery) {
+        result = {
+          baseIRI: compiled.program.baseIRI,
+          prefixes: compiled.program.prefixes,
+          input: compiled.program.data.slice(),
+          inferred: [],
+          closure: compiled.program.data.slice(),
+          iterations: 0,
+          layers: [],
+          ruleApplications: 0,
+          perRule: [],
+          trace: [],
+          diagnostics: compiled.diagnostics,
+          analysis: compiled.analysis,
+          query: directQuery,
+        };
+      }
+    }
+
+    if (!result) {
+      const runOptions = querySpec
+        ? queryRunOptions(compiled.program, querySpec, options)
+        : { ...options, hybrid: options.hybrid };
+      result = evaluate(compiled.program, { ...runOptions, analysis: compiled.analysis });
+      result.diagnostics = compiled.diagnostics;
+      result.analysis = compiled.analysis;
+      if (querySpec) result.query = queryResult(result, querySpec, runOptions);
+    }
 
     if (options.json) {
       io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, trace: options.trace, analysis: options.deps }), null, 2)}\n`);
@@ -214,7 +250,9 @@ function main(argv = process.argv.slice(2), io = process) {
     }
 
     if (options.stats) {
-      io.stderr.write(`eyeleng: iterations=${result.iterations} layers=${result.layers.length} input=${result.input.length} inferred=${result.inferred.length} closure=${result.closure.length} ruleApplications=${result.ruleApplications}\n`);
+      io.stderr.write(`eyeleng: iterations=${result.iterations} layers=${result.layers.length} input=${result.input.length} inferred=${result.inferred.length} closure=${result.closure.length} ruleApplications=${result.ruleApplications}${result.query && result.query.mode ? ` queryMode=${result.query.mode}` : ''}\n`);
+      if (result.query && result.query.stats) io.stderr.write(`eyeleng: backward goals=${result.query.stats.goals} facts=${result.query.stats.facts} rules=${result.query.stats.rules} memoHits=${result.query.stats.memoHits} memoStores=${result.query.stats.memoStores}\n`);
+      if (result.hybridStats) io.stderr.write(`eyeleng: hybridBackward goals=${result.hybridStats.goals} facts=${result.hybridStats.facts} rules=${result.hybridStats.rules} memoHits=${result.hybridStats.memoHits} memoStores=${result.hybridStats.memoStores}\n`);
       for (const rule of result.perRule) {
         if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyeleng: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
       }

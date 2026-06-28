@@ -148,13 +148,15 @@ W3C checks:
 
 ```sh
 npm run w3c:rules
+npm run w3c:rules:json
+npm run w3c:rules:earl
 npm run w3c:rdf
-npm run w3c:all
 npm run w3c:rdf:json
 npm run w3c:rdf:earl
+npm run w3c:all
 ```
 
-`npm test` includes the W3C harnesses. When W3C URLs are reachable, progress is printed test by test. In offline environments, remote W3C checks are reported as unreachable unless `EYELENG_W3C_REQUIRED=1` is set.
+`npm test` includes the W3C harnesses. When W3C URLs are reachable, progress is printed test by test. In offline environments, remote W3C checks are reported as unreachable unless `EYELENG_W3C_REQUIRED=1` is set. The `*:earl` scripts also print test progress, but write the EARL Turtle only to `reports/` instead of printing the report to the terminal.
 
 The official Eyeleng EARL 1.0 report for the W3C SHACL 1.2 Rules manifest is in [reports/w3c-shacl12-rules-earl.ttl](./reports/w3c-shacl12-rules-earl.ttl).
 
@@ -178,7 +180,6 @@ Use message logs directly, import them from SRL, or force message-log parsing fr
 ```sh
 ./eyeleng.js examples/rdf-messages.srl
 ./eyeleng.js --rdf-messages --all examples/rdf-messages.trig
-./eyeleng.js --stream-messages --all examples/rdf-messages.trig
 ```
 
 The replay data includes message streams, envelopes, offsets, next-envelope links, payload kind, payload graph, and `eymsg:payloadTriple` triple terms. Blank-node labels are scoped per message. For Eyeleng, each payload graph is also represented as a closed RDF list of RDF 1.2 triple terms via `log:nameOf`.
@@ -206,12 +207,13 @@ Important options:
 --check               parse and analyze only; do not run rules
 --strict              treat static warnings as errors, including recursive term generation
 --deps                print rule dependency edges during --check
---query TEXT          run a raw SRL body pattern over the closure
+--query TEXT          run a raw SRL body pattern over the closure or backward planner
 --query-file FILE     read a raw SRL body pattern from a file
+--query-mode MODE     use auto, forward, or backward query planning (default auto)
+--hybrid              orient function-like rules backward during forward execution and queries
 --max-iterations N    stop after N fixpoint iterations within a recursive layer
 --no-imports          parse IMPORTS/owl:imports but do not load imported rule sets
 --rdf-messages        parse input as an RDF Message Log
---stream-messages     replay RDF Message Log envelopes
 --include-message-facts include payload facts while parsing RDF Message Logs
 --syntax MODE         use srl, rdf, or auto syntax detection (default auto)
 --ruleset TERM        in RDF syntax, run only the selected srl:RuleSet
@@ -242,6 +244,20 @@ const { runQuery, formatBindings } = require('./src/index.js');
 
 const result = runQuery(source, '?x :ancestorOf ?y');
 console.log(formatBindings(result.query.bindings, result.prefixes));
+
+// Query mode defaults to auto. Supported query/rule shapes are proved
+// backward with tabling. If full backward proving is not safe but the
+// ruleset contains function-like derived predicates, auto mode uses a
+// hybrid plan before falling back to plain forward closure.
+const justInTime = runQuery(source, ':alice :computedValue ?value', { queryMode: 'backward' });
+
+// Explicit hybrid mode keeps forward materialization for ordinary rules, but
+// orients function-like derived predicates backward and proves them only when
+// a forward rule body or query asks for them.
+const hybrid = run(source, { hybrid: true });
+
+// The backward planner is demand-driven: irrelevant unsupported rules do not
+// prevent a query from using tabled backward proving.
 ```
 
 Imports:
@@ -274,6 +290,7 @@ src/store.js          triple set, predicate index, matching, paths
 src/builtins.js       expression evaluation and built-in functions
 src/analyze.js        diagnostics, dependencies, strata
 src/engine.js         layered forward-chaining evaluator
+src/backward.js       goal-directed backward query prover with tabling
 src/query.js          external raw-body query operation
 src/format.js         text and JSON output
 src/api.js            public JavaScript API and import merging
