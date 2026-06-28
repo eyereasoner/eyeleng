@@ -1,0 +1,306 @@
+# =================
+# Turing machine
+# =================
+# SRL translation of eyeling/examples/turing.n3.
+#
+# The original N3 example defines a small Turing machine interpreter using
+# list:firstRest, list:append, and recursive rules.  This SRL version keeps the
+# same idea as generic data-driven rules: a machine is described by transition
+# facts, and the interpreter derives configurations until it reaches :halt.
+#
+# Source: https://raw.githubusercontent.com/eyereasoner/eyeling/refs/heads/main/examples/turing.n3
+
+PREFIX log: <http://www.w3.org/2000/10/swap/log#>
+PREFIX : <http://example/eyeling/turing/>
+
+DATA {
+  :add1 a :TuringMachine ;
+    :start :scanRight ;
+    :transition :q0_0, :q0_1, :q0_blank, :q1_0, :q1_1, :q1_blank .
+
+  # Move to the right until the first blank, then carry one bit to the left.
+  :q0_0 :from :scanRight ; :read "0" ; :write "0" ; :move :right ; :to :scanRight .
+  :q0_1 :from :scanRight ; :read "1" ; :write "1" ; :move :right ; :to :scanRight .
+  :q0_blank :from :scanRight ; :read "#" ; :write "#" ; :move :left ; :to :carry .
+
+  # Carry one through trailing ones.  A zero, or the leading blank, stops.
+  :q1_0 :from :carry ; :read "0" ; :write "1" ; :move :stop ; :to :halt .
+  :q1_1 :from :carry ; :read "1" ; :write "0" ; :move :left ; :to :carry .
+  :q1_blank :from :carry ; :read "#" ; :write "1" ; :move :stop ; :to :halt .
+
+  :case1 a :Run ; :machine :add1 ; :input "101001" ; :label "101001 + 1" ; :nextCase :case2 .
+  :case2 a :Run ; :machine :add1 ; :input "101111" ; :label "101111 + 1" ; :nextCase :case3 .
+  :case3 a :Run ; :machine :add1 ; :input "111111" ; :label "111111 + 1" ; :nextCase :case4 .
+  :case4 a :Run ; :machine :add1 ; :input "" ; :label "empty tape + 1" ; :nextCase :case5 .
+  :case5 a :Run ; :machine :add1 ; :input "100000000000001" ; :label "100000000000001 + 1" .
+
+  :report a :TuringReport ;
+    :machine :add1 ;
+    :firstCase :case1 ;
+    :title "## Turing Machine" ;
+    :intro "The generic SRL interpreter runs the :add1 Turing machine from transition facts." .
+}
+
+# Start a run with the first input symbol under the head.
+RULE {
+  ?cfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step 0 ;
+    :state ?state ;
+    :left "" ;
+    :cell ?cell ;
+    :right ?right .
+  ?case :hasStep ?cfg .
+}
+WHERE {
+  ?case a :Run ; :machine ?machine ; :input ?input .
+  ?machine :start ?state .
+  SET(?len := STRLEN(?input))
+  FILTER(?len > 0)
+  SET(?cfg := IRI(CONCAT(STR(?case), "/step-0")))
+  SET(?cell := SUBSTR(?input, 1, 1))
+  SET(?right := SUBSTR(?input, 2))
+}
+
+# Empty input starts on a blank cell.
+RULE {
+  ?cfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step 0 ;
+    :state ?state ;
+    :left "" ;
+    :cell "#" ;
+    :right "" .
+  ?case :hasStep ?cfg .
+}
+WHERE {
+  ?case a :Run ; :machine ?machine ; :input "" .
+  ?machine :start ?state .
+  SET(?cfg := IRI(CONCAT(STR(?case), "/step-0")))
+}
+
+# Move right: append the written cell to the left side, then read the first
+# symbol from the right side, or a blank if the right side is empty.
+RULE {
+  ?nextCfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step ?nextStep ;
+    :state ?nextState ;
+    :left ?newLeft ;
+    :cell ?newCell ;
+    :right ?newRight .
+  ?case :hasStep ?nextCfg .
+}
+WHERE {
+  ?cfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step ?step ;
+    :state ?state ;
+    :left ?left ;
+    :cell ?cell ;
+    :right ?right .
+  ?machine :transition ?transition .
+  ?transition :from ?state ; :read ?read ; :write ?write ; :move :right ; :to ?nextState .
+  FILTER(STR(?cell) = STR(?read))
+  SET(?nextStep := ?step + 1)
+  SET(?nextCfg := IRI(CONCAT(STR(?case), "/step-", STR(?nextStep))))
+  SET(?rightLen := STRLEN(?right))
+  SET(?newLeft := CONCAT(?left, ?write))
+  SET(?newCell := IF(?rightLen = 0, "#", SUBSTR(?right, 1, 1)))
+  SET(?newRight := IF(?rightLen = 0, "", SUBSTR(?right, 2)))
+}
+
+# Move left when there is a cell to the left of the head.
+RULE {
+  ?nextCfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step ?nextStep ;
+    :state ?nextState ;
+    :left ?newLeft ;
+    :cell ?newCell ;
+    :right ?newRight .
+  ?case :hasStep ?nextCfg .
+}
+WHERE {
+  ?cfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step ?step ;
+    :state ?state ;
+    :left ?left ;
+    :cell ?cell ;
+    :right ?right .
+  ?machine :transition ?transition .
+  ?transition :from ?state ; :read ?read ; :write ?write ; :move :left ; :to ?nextState .
+  FILTER(STR(?cell) = STR(?read))
+  SET(?leftLen := STRLEN(?left))
+  FILTER(?leftLen > 0)
+  SET(?nextStep := ?step + 1)
+  SET(?nextCfg := IRI(CONCAT(STR(?case), "/step-", STR(?nextStep))))
+  SET(?newLeftLen := ?leftLen - 1)
+  SET(?newLeft := SUBSTR(?left, 1, ?newLeftLen))
+  SET(?newCell := SUBSTR(?left, ?leftLen, 1))
+  SET(?newRight := CONCAT(?write, ?right))
+}
+
+# Move left from the left edge: the new cell is blank.
+RULE {
+  ?nextCfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step ?nextStep ;
+    :state ?nextState ;
+    :left "" ;
+    :cell "#" ;
+    :right ?newRight .
+  ?case :hasStep ?nextCfg .
+}
+WHERE {
+  ?cfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step ?step ;
+    :state ?state ;
+    :left ?left ;
+    :cell ?cell ;
+    :right ?right .
+  FILTER(STRLEN(?left) = 0)
+  ?machine :transition ?transition .
+  ?transition :from ?state ; :read ?read ; :write ?write ; :move :left ; :to ?nextState .
+  FILTER(STR(?cell) = STR(?read))
+  SET(?nextStep := ?step + 1)
+  SET(?nextCfg := IRI(CONCAT(STR(?case), "/step-", STR(?nextStep))))
+  SET(?newRight := CONCAT(?write, ?right))
+}
+
+# Stop: write the current cell and enter :halt without moving the head.
+RULE {
+  ?nextCfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step ?nextStep ;
+    :state ?nextState ;
+    :left ?left ;
+    :cell ?write ;
+    :right ?right .
+  ?case :hasStep ?nextCfg .
+}
+WHERE {
+  ?cfg a :Configuration ;
+    :case ?case ;
+    :machine ?machine ;
+    :step ?step ;
+    :state ?state ;
+    :left ?left ;
+    :cell ?cell ;
+    :right ?right .
+  ?machine :transition ?transition .
+  ?transition :from ?state ; :read ?read ; :write ?write ; :move :stop ; :to ?nextState .
+  FILTER(STR(?cell) = STR(?read))
+  SET(?nextStep := ?step + 1)
+  SET(?nextCfg := IRI(CONCAT(STR(?case), "/step-", STR(?nextStep))))
+}
+
+# Compose the raw tape from the halting configuration.
+RULE {
+  ?case :rawOutput ?raw ;
+    :haltedAtStep ?step .
+}
+WHERE {
+  ?cfg a :Configuration ;
+    :case ?case ;
+    :step ?step ;
+    :state :halt ;
+    :left ?left ;
+    :cell ?cell ;
+    :right ?right .
+  SET(?raw := CONCAT(?left, ?cell, ?right))
+}
+
+# The original list-based N3 machine leaves a trailing blank on these tapes.
+# For the user-facing binary result, trim that final blank symbol.
+RULE { ?case :output ?output }
+WHERE {
+  ?case :rawOutput ?raw .
+  FILTER STRENDS(?raw, "#")
+  SET(?len := STRLEN(?raw) - 1)
+  SET(?output := SUBSTR(?raw, 1, ?len))
+}
+
+RULE { ?case :output ?raw }
+WHERE {
+  ?case :rawOutput ?raw .
+  FILTER(!STRENDS(?raw, "#"))
+}
+
+# Derive a report line for each run.  Adding a new case only requires adding
+# another :Run fact and linking it into the :nextCase chain.
+RULE {
+  ?case :reportLine ?line .
+  ?case log:outputString ?line .
+}
+WHERE {
+  ?case a :Run ; :label ?label ; :output ?output .
+  SET(?line := CONCAT(?label, " = ", ?output))
+}
+
+# Accumulate the report text from the data-driven case chain.
+RULE {
+  ?state a :ReportState ;
+    :report ?report ;
+    :lastCase ?case ;
+    :summary ?summary .
+}
+WHERE {
+  ?report a :TuringReport ;
+    :title ?title ;
+    :intro ?intro ;
+    :firstCase ?case .
+  ?case :reportLine ?line .
+  SET(?state := IRI(CONCAT(STR(?report), "/through/", ENCODE_FOR_URI(STR(?case)))))
+  SET(?summary := CONCAT(?title, "\n", ?intro, "\n", ?line))
+}
+
+RULE {
+  ?nextState a :ReportState ;
+    :report ?report ;
+    :lastCase ?nextCase ;
+    :summary ?nextSummary .
+}
+WHERE {
+  ?state a :ReportState ;
+    :report ?report ;
+    :lastCase ?case ;
+    :summary ?summary .
+  ?case :nextCase ?nextCase .
+  ?nextCase :reportLine ?line .
+  SET(?nextState := IRI(CONCAT(STR(?report), "/through/", ENCODE_FOR_URI(STR(?nextCase)))))
+  SET(?nextSummary := CONCAT(?summary, "\n", ?line))
+}
+
+# Mark the accumulated report state that ends at the last case.  This rule is
+# intentionally SET-free so the stratified negation does not create a run-once
+# rule in the recursive report-building component.
+RULE {
+  ?state a :FinalReportState .
+}
+WHERE {
+  ?state a :ReportState ; :lastCase ?case .
+  NOT { ?case :nextCase ?later . }
+}
+
+RULE {
+  :answer a :TuringRun ;
+    :machine ?machine ;
+    :summary ?summary ;
+    log:outputString ?summary .
+}
+WHERE {
+  ?report a :TuringReport ; :machine ?machine .
+  ?state a :FinalReportState ; :report ?report ; :summary ?summary .
+}
