@@ -8,7 +8,6 @@ const {
   runShacl12RulesManifest,
   formatShacl12RulesProgressLine,
   formatShacl12RulesManifestResult,
-  shacl12RulesManifestToEarl,
   writeShacl12RulesEarlReport,
   defaultReportPath,
 } = require('../src/shacl12RulesManifest.js');
@@ -19,12 +18,18 @@ function argValue(argv, name) {
   return argv[index + 1] || null;
 }
 
+function loggerForMode({ json, earl }) {
+  // Keep stdout machine-readable or empty in output modes. Progress still stays visible.
+  return json || earl ? console.error : console.log;
+}
+
 async function main(argv = process.argv.slice(2)) {
   const json = argv.includes('--json');
   const earl = argv.includes('--earl');
   const noReport = argv.includes('--no-report');
-  const quiet = json || earl || argv.includes('--quiet');
+  const quiet = argv.includes('--quiet');
   const output = argValue(argv, '--output') || defaultReportPath();
+  const log = loggerForMode({ json, earl });
   const manifests = argv.filter((arg, index) => {
     if (arg.startsWith('--')) return false;
     if (argv[index - 1] === '--output') return false;
@@ -32,20 +37,20 @@ async function main(argv = process.argv.slice(2)) {
   });
   const manifest = manifests[0] || process.env.EYELENG_SHACL12_RULES_MANIFEST || defaultShacl12RulesManifestUrl;
 
+  if (!quiet) log(`${C.y}==${C.n} W3C SHACL 1.2 Rules manifest: ${manifest}`);
   const result = await runShacl12RulesManifest(manifest, {
     onProgress(item, index) {
-      if (!quiet) console.log(formatShacl12RulesProgressLine(item, index, { colors: C }));
+      if (!quiet) log(formatShacl12RulesProgressLine(item, index, { colors: C }));
     },
   });
 
   if (!noReport) {
     const reportPath = writeShacl12RulesEarlReport(result, output);
-    if (!quiet) console.log(`${C.dim}EARL report: ${path.relative(path.join(__dirname, '..'), reportPath)}${C.n}`);
+    if (!quiet) log(`${C.dim}EARL report: ${path.relative(path.join(__dirname, '..'), reportPath)}${C.n}`);
   }
 
   if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  else if (earl) process.stdout.write(`${shacl12RulesManifestToEarl(result)}\n`);
-  else process.stdout.write(`${formatShacl12RulesManifestResult(result, { colors: C })}\n`);
+  else if (!earl) process.stdout.write(`${formatShacl12RulesManifestResult(result, { colors: C })}\n`);
   return result.counts.fail === 0 ? 0 : 1;
 }
 

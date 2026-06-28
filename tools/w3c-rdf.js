@@ -8,7 +8,6 @@ const {
   runW3cRdfManifests,
   formatW3cRdfProgressLine,
   formatW3cRdfManifestsResult,
-  rdfManifestsToEarl,
   writeRdfEarlReport,
   defaultRdfReportPath,
 } = require('../src/rdfManifest.js');
@@ -19,12 +18,18 @@ function argValue(argv, name) {
   return argv[index + 1] || null;
 }
 
+function loggerForMode({ json, earl }) {
+  // Keep stdout machine-readable or empty in output modes. Progress still stays visible.
+  return json || earl ? console.error : console.log;
+}
+
 async function main(argv = process.argv.slice(2)) {
   const json = argv.includes('--json');
   const earl = argv.includes('--earl');
   const noReport = argv.includes('--no-report');
-  const quiet = json || earl || argv.includes('--quiet');
+  const quiet = argv.includes('--quiet');
   const output = argValue(argv, '--output') || defaultRdfReportPath();
+  const log = loggerForMode({ json, earl });
   const manifests = argv.filter((arg, index) => {
     if (arg.startsWith('--')) return false;
     if (argv[index - 1] === '--output') return false;
@@ -33,19 +38,18 @@ async function main(argv = process.argv.slice(2)) {
   const resources = manifests.length ? manifests : defaultW3cRdfManifestUrls;
   const result = await runW3cRdfManifests(resources, {
     onManifestStart(resource, index, total) {
-      if (!quiet) console.log(`${C.y}==${C.n} W3C RDF manifest ${index + 1}/${total}: ${resource}`);
+      if (!quiet) log(`${C.y}==${C.n} W3C RDF manifest ${index + 1}/${total}: ${resource}`);
     },
     onProgress(item, index) {
-      if (!quiet) console.log(formatW3cRdfProgressLine(item, index, { colors: C }));
+      if (!quiet) log(formatW3cRdfProgressLine(item, index, { colors: C }));
     },
   });
   if (!noReport) {
     const reportPath = writeRdfEarlReport(result, output, { assertedBy: '<https://github.com/eyereasoner/eyeleng>' });
-    if (!quiet) console.log(`${C.dim}EARL report: ${path.relative(path.join(__dirname, '..'), reportPath)}${C.n}`);
+    if (!quiet) log(`${C.dim}EARL report: ${path.relative(path.join(__dirname, '..'), reportPath)}${C.n}`);
   }
   if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  else if (earl) process.stdout.write(`${rdfManifestsToEarl(result, { assertedBy: '<https://github.com/eyereasoner/eyeleng>' })}\n`);
-  else process.stdout.write(`${formatW3cRdfManifestsResult(result, { colors: C })}\n`);
+  else if (!earl) process.stdout.write(`${formatW3cRdfManifestsResult(result, { colors: C })}\n`);
   return result.counts.fail === 0 ? 0 : 1;
 }
 

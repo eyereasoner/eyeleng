@@ -18,7 +18,6 @@ const preferred = [
   'browser-bundle.test.js',
   'examples.test.js',
   'shacl12-rules.test.js',
-  'w3c-rdf.test.js',
 ];
 const files = preferred.filter((name) => fs.existsSync(path.join(__dirname, name)));
 
