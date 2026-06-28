@@ -42,7 +42,7 @@
       const VERSION = readPackageVersion();
       
       function help() {
-        return `eyeleng ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Orient function-like rules backward during forward execution and queries\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
+        return `eyeleng ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Force aggressive hybrid orientation for function-like rules\n  --no-hybrid           Disable automatic hybrid forward/backward execution\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
       }
       
       function parseArgs(argv) {
@@ -57,7 +57,7 @@
           query: null,
           queryFile: null,
           queryMode: 'auto',
-          hybrid: false,
+          hybrid: 'auto',
           maxIterations: 10000,
           imports: true,
           syntax: 'auto',
@@ -77,6 +77,7 @@
           else if (arg === '--deps') options.deps = true;
           else if (arg === '--no-imports') options.imports = false;
           else if (arg === '--hybrid') options.hybrid = true;
+          else if (arg === '--no-hybrid') options.hybrid = false;
           else if (arg === '--rdf-messages') options.rdfMessages = true;
           else if (arg === '--include-message-facts') options.includeMessageFacts = true;
           else if (arg === '--syntax') {
@@ -4356,7 +4357,8 @@
         const relaxedRecursiveRunOnce = options.relaxedRecursion === false
           ? new Set()
           : recursiveTermGenerationRuleIndexes(analysis);
-        const hybridBackwardPredicates = options.hybrid || options.backwardBodyCalls
+        const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+        const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
           ? preferredBackwardPredicates(program, options)
           : new Set();
         const hybridBackwardRules = new Set();
@@ -5892,10 +5894,7 @@
           const entry = this.memo.get(key);
           if (entry && entry.complete) {
             this.stats.memoHits += 1;
-            for (const answer of entry.answers) {
-              const next = unifyTriples(pattern, answer, binding);
-              if (next) yield next;
-            }
+            yield* this.replayAnswers(pattern, binding, entry.answers);
             return;
           }
           if (this.active.has(key)) return;
@@ -5909,7 +5908,6 @@
               if (!next) continue;
               rememberAnswer(answers, answerKeys, pattern, next);
               this.stats.facts += 1;
-              yield next;
             }
       
             for (const item of this.ruleCandidates(resolvedPattern)) {
@@ -5921,7 +5919,6 @@
               for (const solved of this.solveBody(freshBody, next, depth + 1, 0)) {
                 rememberAnswer(answers, answerKeys, pattern, solved);
                 this.stats.rules += 1;
-                yield solved;
               }
             }
           } finally {
@@ -5930,6 +5927,14 @@
       
           this.memo.set(key, { complete: true, answers });
           this.stats.memoStores += 1;
+          yield* this.replayAnswers(pattern, binding, answers);
+        }
+      
+        *replayAnswers(pattern, binding, answers) {
+          for (const answer of answers) {
+            const next = unifyTriples(pattern, answer, binding);
+            if (next) yield next;
+          }
         }
       
         factCandidates(pattern, binding) {
@@ -6209,13 +6214,55 @@
         if (explicit) return supportedBackwardPredicates(program, { ...options, hybridPredicates: explicit });
         const supported = supportedBackwardPredicates(program, options);
         const preferred = new Set();
+        const force = options.hybrid === true || options.hybridMode === 'force';
+        const demanded = force ? null : demandedBodyPredicates(program);
         for (const rule of program.rules || []) {
           if (!ruleIsFunctionLike(rule)) continue;
+          if (!force && ruleCreatesHeadTerms(rule)) continue;
           for (const head of rule.head || []) {
-            if (head && head.p && head.p.type === 'iri' && supported.has(head.p.value)) preferred.add(head.p.value);
+            if (!head || !head.p || head.p.type !== 'iri' || !supported.has(head.p.value)) continue;
+            if (force || demanded.has(head.p.value)) preferred.add(head.p.value);
           }
         }
         return preferred;
+      }
+      
+      function demandedBodyPredicates(program) {
+        const out = new Set();
+        for (const rule of program.rules || []) {
+          for (const predicate of bodyPredicateDemands(rule.body || [])) if (predicate) out.add(predicate);
+        }
+        return out;
+      }
+      
+      
+      function ruleCreatesHeadTerms(rule) {
+        const headVars = new Set();
+        for (const triple of rule.head || []) {
+          for (const term of [triple.s, triple.p, triple.o]) {
+            if (!term) continue;
+            if (term.type === 'blank') return true;
+            if (term.type === 'var') headVars.add(term.value);
+          }
+        }
+        if (headVars.size === 0) return false;
+        for (const clause of rule.body || []) {
+          if ((clause.type === 'set' || clause.type === 'bind') && headVars.has(clause.variable) && expressionCreatesTerm(clause.expr)) return true;
+        }
+        return false;
+      }
+      
+      function expressionCreatesTerm(expr) {
+        if (!expr) return false;
+        if (expr.type === 'call') {
+          const name = String(expr.name || '').toUpperCase();
+          if (name === 'BNODE' || name === 'IRI' || name === 'URI' || name === 'TRIPLE' || name === 'UUID' || name === 'STRUUID') return true;
+          return (expr.args || []).some(expressionCreatesTerm);
+        }
+        if (expr.type === 'binary') return expressionCreatesTerm(expr.left) || expressionCreatesTerm(expr.right);
+        if (expr.type === 'unary') return expressionCreatesTerm(expr.expr);
+        if (expr.type === 'in') return expressionCreatesTerm(expr.left) || (expr.values || []).some(expressionCreatesTerm);
+        return false;
       }
       
       function ruleIsFunctionLike(rule) {
@@ -6355,7 +6402,7 @@
           prefixes: result.prefixes,
           select,
           bindings: projectBindings(bindings, select),
-          mode: options.queryMode === 'hybrid' || options.hybrid ? 'hybrid' : 'forward',
+          mode: result.hybridStats ? 'hybrid' : 'forward',
         };
       }
       
@@ -6421,13 +6468,16 @@
       }
       
       function queryRunOptions(program, querySpec, options = {}) {
-        if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: true };
+        const mode = options.queryMode || 'auto';
+        if (mode === 'forward') return { ...options, hybrid: false };
+        if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: options.hybrid ?? 'auto' };
         return options;
       }
       
       function shouldUseHybridForQuery(program, querySpec, options = {}) {
         const mode = options.queryMode || 'auto';
-        if (options.hybrid || mode === 'hybrid') return true;
+        if (options.hybrid === false) return false;
+        if (options.hybrid === true) return true;
         if (mode !== 'auto') return false;
         if (!querySpec) return false;
         return preferredBackwardPredicates(program, options).size > 0;

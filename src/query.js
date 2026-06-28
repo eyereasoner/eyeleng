@@ -14,7 +14,7 @@ function queryResult(result, querySpec, options = {}) {
     prefixes: result.prefixes,
     select,
     bindings: projectBindings(bindings, select),
-    mode: options.queryMode === 'hybrid' || options.hybrid ? 'hybrid' : 'forward',
+    mode: result.hybridStats ? 'hybrid' : 'forward',
   };
 }
 
@@ -80,13 +80,16 @@ function runQuery(source, querySource = null, options = {}) {
 }
 
 function queryRunOptions(program, querySpec, options = {}) {
-  if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: true };
+  const mode = options.queryMode || 'auto';
+  if (mode === 'forward') return { ...options, hybrid: false };
+  if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: options.hybrid ?? 'auto' };
   return options;
 }
 
 function shouldUseHybridForQuery(program, querySpec, options = {}) {
   const mode = options.queryMode || 'auto';
-  if (options.hybrid || mode === 'hybrid') return true;
+  if (options.hybrid === false) return false;
+  if (options.hybrid === true) return true;
   if (mode !== 'auto') return false;
   if (!querySpec) return false;
   return preferredBackwardPredicates(program, options).size > 0;

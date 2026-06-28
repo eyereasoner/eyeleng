@@ -4088,7 +4088,8 @@
         const relaxedRecursiveRunOnce = options.relaxedRecursion === false
           ? new Set()
           : recursiveTermGenerationRuleIndexes(analysis);
-        const hybridBackwardPredicates = options.hybrid || options.backwardBodyCalls
+        const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+        const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
           ? preferredBackwardPredicates(program, options)
           : new Set();
         const hybridBackwardRules = new Set();
@@ -5624,10 +5625,7 @@
           const entry = this.memo.get(key);
           if (entry && entry.complete) {
             this.stats.memoHits += 1;
-            for (const answer of entry.answers) {
-              const next = unifyTriples(pattern, answer, binding);
-              if (next) yield next;
-            }
+            yield* this.replayAnswers(pattern, binding, entry.answers);
             return;
           }
           if (this.active.has(key)) return;
@@ -5641,7 +5639,6 @@
               if (!next) continue;
               rememberAnswer(answers, answerKeys, pattern, next);
               this.stats.facts += 1;
-              yield next;
             }
       
             for (const item of this.ruleCandidates(resolvedPattern)) {
@@ -5653,7 +5650,6 @@
               for (const solved of this.solveBody(freshBody, next, depth + 1, 0)) {
                 rememberAnswer(answers, answerKeys, pattern, solved);
                 this.stats.rules += 1;
-                yield solved;
               }
             }
           } finally {
@@ -5662,6 +5658,14 @@
       
           this.memo.set(key, { complete: true, answers });
           this.stats.memoStores += 1;
+          yield* this.replayAnswers(pattern, binding, answers);
+        }
+      
+        *replayAnswers(pattern, binding, answers) {
+          for (const answer of answers) {
+            const next = unifyTriples(pattern, answer, binding);
+            if (next) yield next;
+          }
         }
       
         factCandidates(pattern, binding) {
@@ -5941,13 +5945,55 @@
         if (explicit) return supportedBackwardPredicates(program, { ...options, hybridPredicates: explicit });
         const supported = supportedBackwardPredicates(program, options);
         const preferred = new Set();
+        const force = options.hybrid === true || options.hybridMode === 'force';
+        const demanded = force ? null : demandedBodyPredicates(program);
         for (const rule of program.rules || []) {
           if (!ruleIsFunctionLike(rule)) continue;
+          if (!force && ruleCreatesHeadTerms(rule)) continue;
           for (const head of rule.head || []) {
-            if (head && head.p && head.p.type === 'iri' && supported.has(head.p.value)) preferred.add(head.p.value);
+            if (!head || !head.p || head.p.type !== 'iri' || !supported.has(head.p.value)) continue;
+            if (force || demanded.has(head.p.value)) preferred.add(head.p.value);
           }
         }
         return preferred;
+      }
+      
+      function demandedBodyPredicates(program) {
+        const out = new Set();
+        for (const rule of program.rules || []) {
+          for (const predicate of bodyPredicateDemands(rule.body || [])) if (predicate) out.add(predicate);
+        }
+        return out;
+      }
+      
+      
+      function ruleCreatesHeadTerms(rule) {
+        const headVars = new Set();
+        for (const triple of rule.head || []) {
+          for (const term of [triple.s, triple.p, triple.o]) {
+            if (!term) continue;
+            if (term.type === 'blank') return true;
+            if (term.type === 'var') headVars.add(term.value);
+          }
+        }
+        if (headVars.size === 0) return false;
+        for (const clause of rule.body || []) {
+          if ((clause.type === 'set' || clause.type === 'bind') && headVars.has(clause.variable) && expressionCreatesTerm(clause.expr)) return true;
+        }
+        return false;
+      }
+      
+      function expressionCreatesTerm(expr) {
+        if (!expr) return false;
+        if (expr.type === 'call') {
+          const name = String(expr.name || '').toUpperCase();
+          if (name === 'BNODE' || name === 'IRI' || name === 'URI' || name === 'TRIPLE' || name === 'UUID' || name === 'STRUUID') return true;
+          return (expr.args || []).some(expressionCreatesTerm);
+        }
+        if (expr.type === 'binary') return expressionCreatesTerm(expr.left) || expressionCreatesTerm(expr.right);
+        if (expr.type === 'unary') return expressionCreatesTerm(expr.expr);
+        if (expr.type === 'in') return expressionCreatesTerm(expr.left) || (expr.values || []).some(expressionCreatesTerm);
+        return false;
       }
       
       function ruleIsFunctionLike(rule) {
@@ -6087,7 +6133,7 @@
           prefixes: result.prefixes,
           select,
           bindings: projectBindings(bindings, select),
-          mode: options.queryMode === 'hybrid' || options.hybrid ? 'hybrid' : 'forward',
+          mode: result.hybridStats ? 'hybrid' : 'forward',
         };
       }
       
@@ -6153,13 +6199,16 @@
       }
       
       function queryRunOptions(program, querySpec, options = {}) {
-        if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: true };
+        const mode = options.queryMode || 'auto';
+        if (mode === 'forward') return { ...options, hybrid: false };
+        if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: options.hybrid ?? 'auto' };
         return options;
       }
       
       function shouldUseHybridForQuery(program, querySpec, options = {}) {
         const mode = options.queryMode || 'auto';
-        if (options.hybrid || mode === 'hybrid') return true;
+        if (options.hybrid === false) return false;
+        if (options.hybrid === true) return true;
         if (mode !== 'auto') return false;
         if (!querySpec) return false;
         return preferredBackwardPredicates(program, options).size > 0;

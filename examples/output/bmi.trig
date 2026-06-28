@@ -8,7 +8,5 @@
 :Case :healthyMaxKgRounded 78.9 .
 :Case :healthyMinKg 58.6154 .
 :Case :healthyMinKgRounded 58.6 .
-:Case :heightM 1.78 .
 :Case :heightSquared 3.1684 .
-:Case :weightKg 72 .
 :Decision :category "Normal" .

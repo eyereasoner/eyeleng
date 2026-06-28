@@ -34,16 +34,6 @@ _:http://example/eyeling/hanoi/root-second-second :start 6 .
 _:http://example/eyeling/hanoi/root-second-second :startPeg :left .
 _:http://example/eyeling/hanoi/root-second-second :targetPeg :right .
 _:http://example/eyeling/hanoi/root-second-second a :HanoiProblem .
-:level1 :pow2 2 .
-:level10 :pow2 1024 .
-:level2 :pow2 4 .
-:level3 :pow2 8 .
-:level4 :pow2 16 .
-:level5 :pow2 32 .
-:level6 :pow2 64 .
-:level7 :pow2 128 .
-:level8 :pow2 256 .
-:level9 :pow2 512 .
 :move-1 :disk 1 .
 :move-1 :from :left .
 :move-1 :step 1 .

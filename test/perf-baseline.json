@@ -11,28 +11,28 @@
       "name": "deep-taxonomy-100000.srl",
       "file": "examples/deep-taxonomy-100000.srl",
       "repeat": 1,
-      "baselineMs": 5427.8,
+      "baselineMs": 12316.7,
       "outputBytes": 5068161
     },
     {
       "name": "fibonacci.srl",
       "file": "examples/fibonacci.srl",
       "repeat": 1,
-      "baselineMs": 1409.4,
-      "outputBytes": 10810713
+      "baselineMs": 124.0,
+      "outputBytes": 2405
     },
     {
       "name": "fft32-numeric.srl",
       "file": "examples/fft32-numeric.srl",
-      "repeat": 3,
-      "baselineMs": 182.2,
+      "repeat": 1,
+      "baselineMs": 607.8,
       "outputBytes": 466351
     },
     {
       "name": "path-discovery.srl",
       "file": "examples/path-discovery.srl",
-      "repeat": 5,
-      "baselineMs": 1317.7,
+      "repeat": 1,
+      "baselineMs": 3054.6,
       "outputBytes": 736870
     }
   ]

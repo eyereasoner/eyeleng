@@ -219,6 +219,60 @@ RULE { ?x :ready true } WHERE { ?x :nextScore 42 }
   assert.ok(result.hybridStats.rules > 0);
 });
 
+
+
+test('hybrid backward tabling completes sibling recursive goals before replaying answers', () => {
+  const result = run(`
+PREFIX : <http://example/fib/>
+DATA {
+  :n0 :index 0 ; :fibPairF 0 ; :fibPairG 1 .
+  :n1 :index 1 .
+  :n2 :index 2 .
+  :n5 :index 5 .
+  :n10 a :FibCase ; :index 10 .
+}
+RULE { ?node :fibPairF ?c ; :fibPairG ?d }
+WHERE {
+  ?node :index ?n .
+  FILTER(?n > 0)
+  SET(?half := FLOOR(?n / 2))
+  SET(?halfNode := IRI(CONCAT("http://example/fib/n", STR(?half))))
+  ?halfNode :fibPairF ?a ; :fibPairG ?b .
+  SET(?twob := ?b * 2)
+  SET(?twobminusa := ?twob - ?a)
+  SET(?c := ?a * ?twobminusa)
+  SET(?aa := ?a * ?a)
+  SET(?bb := ?b * ?b)
+  SET(?d := ?aa + ?bb)
+  SET(?parity := ?n - (?half * 2))
+  FILTER(?parity = 0)
+}
+RULE { ?node :fibPairF ?d ; :fibPairG ?next }
+WHERE {
+  ?node :index ?n .
+  FILTER(?n > 0)
+  SET(?half := FLOOR(?n / 2))
+  SET(?halfNode := IRI(CONCAT("http://example/fib/n", STR(?half))))
+  ?halfNode :fibPairF ?a ; :fibPairG ?b .
+  SET(?twob := ?b * 2)
+  SET(?twobminusa := ?twob - ?a)
+  SET(?c := ?a * ?twobminusa)
+  SET(?aa := ?a * ?a)
+  SET(?bb := ?b * ?b)
+  SET(?d := ?aa + ?bb)
+  SET(?parity := ?n - (?half * 2))
+  FILTER(?parity = 1)
+  SET(?next := ?c + ?d)
+}
+RULE { ?node :fib ?value } WHERE { ?node a :FibCase ; :fibPairF ?value }
+`, { hybrid: true });
+  const keys = result.closure.map(tripleKey).join('\n');
+  assert.match(keys, /I:http:\/\/example\/fib\/n10 I:http:\/\/example\/fib\/fib L:55\^\^http:\/\/www\.w3\.org\/2001\/XMLSchema#integer@--/);
+  assert.equal(result.perRule[0].backward, true);
+  assert.equal(result.perRule[1].backward, true);
+  assert.ok(result.hybridStats.memoHits > 0);
+});
+
 test('hybrid query mode runs forward rules with backward body calls', () => {
   const { runQuery, formatBindings } = require('../src/index.js');
   const result = runQuery(`

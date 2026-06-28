@@ -37,7 +37,8 @@ function evaluate(program, options = {}) {
   const relaxedRecursiveRunOnce = options.relaxedRecursion === false
     ? new Set()
     : recursiveTermGenerationRuleIndexes(analysis);
-  const hybridBackwardPredicates = options.hybrid || options.backwardBodyCalls
+  const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+  const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
     ? preferredBackwardPredicates(program, options)
     : new Set();
   const hybridBackwardRules = new Set();

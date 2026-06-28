@@ -210,7 +210,8 @@ Important options:
 --query TEXT          run a raw SRL body pattern over the closure or backward planner
 --query-file FILE     read a raw SRL body pattern from a file
 --query-mode MODE     use auto, forward, or backward query planning (default auto)
---hybrid              orient function-like rules backward during forward execution and queries
+--hybrid              force aggressive hybrid orientation for function-like rules
+--no-hybrid           disable automatic hybrid forward/backward execution
 --max-iterations N    stop after N fixpoint iterations within a recursive layer
 --no-imports          parse IMPORTS/owl:imports but do not load imported rule sets
 --rdf-messages        parse input as an RDF Message Log
@@ -251,10 +252,11 @@ console.log(formatBindings(result.query.bindings, result.prefixes));
 // hybrid plan before falling back to plain forward closure.
 const justInTime = runQuery(source, ':alice :computedValue ?value', { queryMode: 'backward' });
 
-// Explicit hybrid mode keeps forward materialization for ordinary rules, but
-// orients function-like derived predicates backward and proves them only when
-// a forward rule body or query asks for them.
-const hybrid = run(source, { hybrid: true });
+// Run mode uses conservative auto-hybrid planning by default. It keeps
+// ordinary rules materialized, but can prove demanded function-like predicates
+// backward with tabling. Pass { hybrid: false } to force pure forward closure,
+// or { hybrid: true } to force aggressive hybrid orientation.
+const resultWithAutoHybrid = run(source);
 
 // The backward planner is demand-driven: irrelevant unsupported rules do not
 // prevent a query from using tabled backward proving.
