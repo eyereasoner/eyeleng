@@ -13,6 +13,7 @@ const summaryFile = path.join(os.tmpdir(), `eyeleng-test-summary-${process.pid}.
 
 const preferred = [
   'api.test.js',
+  'cli.test.js',
   'builtins.test.js',
   'browser-bundle.test.js',
   'examples.test.js',

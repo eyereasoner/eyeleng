@@ -197,19 +197,24 @@ Common commands:
 Important options:
 
 ```text
---all               print input and inferred triples
---check             parse and analyze only
---strict            warnings become fatal
---deps              print dependency edges and layers
---trace             show rule firings
---stats             show iteration and rule counts
---json              structured output
---query             run a raw body pattern over the closure
---query-file FILE   read a query body from a file
---max-iterations N  recursive-layer fixpoint safety guard
---no-imports        parse imports but do not load them
---rdf-messages      parse input as an RDF Message Log
---stream-messages   replay RDF Message Log envelopes
+--all                 print the full closure, including input facts
+--json                print JSON instead of compact triples/bindings
+--trace               print derivation trace to stderr, or include it in JSON
+--stats               print iteration and triple counts to stderr
+--check               parse and analyze only; do not run rules
+--strict              treat static warnings as errors
+--deps                print rule dependency edges during --check
+--query TEXT          run a raw SRL body pattern over the closure
+--query-file FILE     read a raw SRL body pattern from a file
+--max-iterations N    stop after N fixpoint iterations within a recursive layer
+--no-imports          parse IMPORTS/owl:imports but do not load imported rule sets
+--rdf-messages        parse input as an RDF Message Log
+--stream-messages     replay RDF Message Log envelopes
+--include-message-facts include payload facts while parsing RDF Message Logs
+--syntax MODE         use srl, rdf, or auto syntax detection (default auto)
+--ruleset TERM        in RDF syntax, run only the selected srl:RuleSet
+--version             print version
+-h, --help            print help
 ```
 
 ## Public API

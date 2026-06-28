@@ -32,7 +32,7 @@ DATA {
   :case2 a :Run ; :machine :add1 ; :input "101111" ; :label "101111 + 1" ; :nextCase :case3 .
   :case3 a :Run ; :machine :add1 ; :input "111111" ; :label "111111 + 1" ; :nextCase :case4 .
   :case4 a :Run ; :machine :add1 ; :input "" ; :label "empty tape + 1" ; :nextCase :case5 .
-  :case5 a :Run ; :machine :add1 ; :input "100000000000001" ; :label "100000000000001 + 1" .
+  :case5 a :Run ; :machine :add1 ; :input "100000" ; :label "100000 + 1" .
 
   :report a :TuringReport ;
     :machine :add1 ;
