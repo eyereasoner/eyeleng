@@ -7,6 +7,6 @@ DATA {
 
 RULE { ?x :grade ?grade } WHERE {
   ?x :score ?score .
-  FILTER(?score >= 5) .
+  FILTER(?score >= 5)
   SET(?grade := concat("pass-", str(?score)))
 }

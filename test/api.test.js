@@ -3,6 +3,7 @@
 const { test, main } = require('./harness.js').createHarness('API');
 const assert = require('node:assert/strict');
 const { parse, compile, run, runToString } = require('../src/index.js');
+const { tripleKey } = require('../src/term.js');
 
 test('parse reads prefixes, data, and rules', () => {
   const program = parse(`
@@ -455,7 +456,70 @@ RULE { :s :p ?x } WHERE { :s :q ?x SET(?z := STR(?x)) }
 `, options));
 });
 
-main();
+
+test('relaxed mode permits recursive deterministic assignments with max-iteration safety', () => {
+  const source = `
+PREFIX : <http://example/>
+DATA { :counter :value 0 . :limit :max 3 . }
+RULE { :counter :value ?next } WHERE {
+  :counter :value ?value .
+  :limit :max ?max .
+  FILTER(?value < ?max)
+  SET(?next := ?value + 1)
+}
+`;
+  const compiled = compile(source, { shacl12Conformance: true, throwOnDiagnostics: false });
+  assert.equal(compiled.analysis.warnings[0].code, 'recursive-assignment-rule');
+  assert.throws(() => compile(source, { shacl12Conformance: true, strict: true }), /termination is not guaranteed/);
+  const output = runToString(source, { shacl12Conformance: true, maxIterations: 20 });
+  assert.match(output, /:counter :value 1 \./);
+  assert.match(output, /:counter :value 2 \./);
+  assert.match(output, /:counter :value 3 \./);
+});
+
+test('head blank nodes are deterministically skolemized with all universal bindings', () => {
+  const source = `
+PREFIX : <http://example/>
+DATA { :a :p :o . :b :p :o . }
+RULE { [] :source ?s ; :value :o } WHERE { ?s :p :o }
+`;
+  const first = run(source);
+  const second = run(source);
+  assert.deepEqual(first.inferred.map(tripleKey).sort(), second.inferred.map(tripleKey).sort());
+  const sourcePredicate = 'http://example/source';
+  const witnessSubjects = first.inferred
+    .filter((triple) => triple.p.type === 'iri' && triple.p.value === sourcePredicate)
+    .map((triple) => triple.s.value);
+  assert.equal(witnessSubjects.length, 2);
+  assert.equal(new Set(witnessSubjects).size, 2);
+});
+
+
+test('head blank skolemization is a standard function of all universals', () => {
+  const source = `
+PREFIX : <http://example.org/#>
+DATA { :s1 :p :o . :s2 :p :o . }
+RULE { [] :witnessFor ?s } WHERE { ?s :p :o }
+`;
+  const result = run(source, { maxIterations: 20, throwOnDiagnostics: false });
+  const witnessSubjects = result.inferred
+    .filter((triple) => triple.p.value === 'http://example.org/#witnessFor')
+    .map((triple) => triple.s.value);
+  assert.equal(witnessSubjects.length, 2);
+  assert.equal(new Set(witnessSubjects).size, 2);
+});
+
+test('recursive existential rules may not terminate with all-universal skolemization', () => {
+  const source = `
+PREFIX : <http://example.org/#>
+DATA { :s :p :o . }
+RULE { [] :p :o } WHERE { ?s :p :o }
+`;
+  assert.throws(
+    () => run(source, { maxIterations: 5, throwOnDiagnostics: false }),
+    /Reached maxIterations=5/,
+  );
+});
 
 test('RDF Message Logs expose Eyeling-style envelopes and payload triples', () => {
   const messages = `VERSION "1.2-messages"
@@ -519,3 +583,5 @@ RULE { :test :annotation ?source } WHERE {
   assert.match(output, /:root :first 1 \./);
   assert.match(output, /:test :annotation :witness \./);
 });
+
+main();

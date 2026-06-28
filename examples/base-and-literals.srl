@@ -15,6 +15,6 @@ RULE {
 } WHERE {
   ?person :name ?name ;
           :age ?age .
-  FILTER(datatype(?age) = xsd:integer && ?age >= 18 && lang(?name) = "en") .
+  FILTER(datatype(?age) = xsd:integer && ?age >= 18 && lang(?name) = "en")
   SET(?slug := REPLACE(LCASE(STR(?name)), " ", "-"))
 }

@@ -1,7 +1,7 @@
 'use strict';
 
-const { TripleStore, bindingKey, instantiateTriple } = require('./store.js');
-const { tripleKey, termEquals } = require('./term.js');
+const { TripleStore, bindingKey } = require('./store.js');
+const { tripleKey, termKey, termEquals, blankNode, tripleTerm } = require('./term.js');
 const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
 const { analyze } = require('./analyze.js');
 
@@ -21,7 +21,7 @@ function evaluate(program, options = {}) {
     runOnce: !!rule.runOnce,
   }));
 
-  const analysis = options.analysis || analyze(program);
+  const analysis = options.analysis || analyze(program, options);
   if (analysis.errors && analysis.errors.length > 0 && !options.ignoreAnalysisErrors) {
     throw new Error(`Analysis failed: ${analysis.errors.map((error) => error.message).join('; ')}`);
   }
@@ -32,6 +32,9 @@ function evaluate(program, options = {}) {
     layerIndexes,
     analysis.dependency ? analysis.dependency.edges : [],
   );
+  const relaxedRecursiveRunOnce = options.relaxedRecursion === false
+    ? new Set()
+    : recursiveTermGenerationRuleIndexes(analysis);
   const baseContext = {
     ...evalOptions,
     maxIterations,
@@ -47,8 +50,8 @@ function evaluate(program, options = {}) {
 
   for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
     const layer = layerIndexes[layerIndex];
-    const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
-    const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
+    const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
+    const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
 
     if (runOnce.length > 0) {
       iterations += 1;
@@ -148,6 +151,7 @@ function applyRuleOnce(program, store, ruleIndex, context) {
   let added = 0;
   const dedupeBindings = rule.body.some((clause) => clause.type === 'path');
   const seenBindings = dedupeBindings ? new Set() : null;
+  const headBlankLabels = collectHeadBlankLabels(rule.head);
 
   const bodyBindings = rule.body.length === 1 && rule.body[0].type === 'triple'
     ? store.match(rule.body[0].triple, {})
@@ -162,8 +166,10 @@ function applyRuleOnce(program, store, ruleIndex, context) {
     applications += 1;
     context.perRule[ruleIndex].applications += 1;
 
+    const headBlankMap = headBlankLabels.size > 0 ? new Map() : null;
+    const skolemKey = headBlankMap ? skolemizationKey(ruleIndex, binding) : null;
     for (const head of rule.head) {
-      const triple = instantiateTriple(head, binding);
+      const triple = instantiateHeadTriple(head, binding, headBlankLabels, headBlankMap, skolemKey);
       if (!triple) continue;
       if (store.add(triple)) {
         added += 1;
@@ -184,6 +190,94 @@ function applyRuleOnce(program, store, ruleIndex, context) {
 
   return { applications, added };
 }
+
+function recursiveTermGenerationRuleIndexes(analysis) {
+  const out = new Set();
+  if (!analysis || !analysis.dependency || !analysis.diagnostics) return out;
+  const byName = new Map((analysis.dependency.rules || []).map((rule) => [rule.name, rule.index]));
+  for (const diagnostic of analysis.diagnostics) {
+    if (diagnostic.code !== 'recursive-assignment-rule') continue;
+    if (byName.has(diagnostic.rule)) out.add(byName.get(diagnostic.rule));
+  }
+  return out;
+}
+
+function instantiateHeadTriple(pattern, binding, headBlankLabels, headBlankMap, skolemKey) {
+  const s = instantiateHeadTerm(pattern.s, binding, headBlankLabels, headBlankMap, skolemKey);
+  const p = instantiateHeadTerm(pattern.p, binding, headBlankLabels, headBlankMap, skolemKey);
+  const o = instantiateHeadTerm(pattern.o, binding, headBlankLabels, headBlankMap, skolemKey);
+  if (!s || !p || !o) return null;
+  if (p.type !== 'iri') return null;
+  return { s, p, o };
+}
+
+function instantiateHeadTerm(term, binding, headBlankLabels, headBlankMap, skolemKey) {
+  if (term.type === 'var') return binding[term.value] || null;
+  if (term.type === 'blank' && headBlankLabels.has(term.value)) {
+    let label = headBlankMap.get(term.value);
+    if (!label) {
+      label = `sk_${deterministicSkolemIdFromKey(`${skolemKey}|${term.value}`).replace(/-/g, '_')}`;
+      headBlankMap.set(term.value, label);
+    }
+    return blankNode(label);
+  }
+  if (term.type === 'triple') {
+    const s = instantiateHeadTerm(term.s, binding, headBlankLabels, headBlankMap, skolemKey);
+    const p = instantiateHeadTerm(term.p, binding, headBlankLabels, headBlankMap, skolemKey);
+    const o = instantiateHeadTerm(term.o, binding, headBlankLabels, headBlankMap, skolemKey);
+    if (!s || !p || !o) return null;
+    return tripleTerm(s, p, o);
+  }
+  return term;
+}
+
+function collectHeadBlankLabels(head) {
+  const labels = new Set();
+  for (const triple of head || []) {
+    collectBlankLabelsFromTerm(triple.s, labels);
+    collectBlankLabelsFromTerm(triple.p, labels);
+    collectBlankLabelsFromTerm(triple.o, labels);
+  }
+  return labels;
+}
+
+function collectBlankLabelsFromTerm(term, labels) {
+  if (!term) return;
+  if (term.type === 'blank') {
+    labels.add(term.value);
+    return;
+  }
+  if (term.type === 'triple') {
+    collectBlankLabelsFromTerm(term.s, labels);
+    collectBlankLabelsFromTerm(term.p, labels);
+    collectBlankLabelsFromTerm(term.o, labels);
+  }
+}
+
+function skolemizationKey(ruleIndex, binding) {
+  let out = `rule:${ruleIndex}`;
+  for (const name of Object.keys(binding).sort()) {
+    const value = binding[name];
+    out += `|${name}=${value ? termKey(value) : 'unbound'}`;
+  }
+  return out;
+}
+
+function deterministicSkolemIdFromKey(key) {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x811c9dc5;
+  let h3 = 0x811c9dc5;
+  let h4 = 0x811c9dc5;
+  for (let i = 0; i < key.length; i += 1) {
+    const c = key.charCodeAt(i);
+    h1 ^= c; h1 = Math.imul(h1, 0x01000193) >>> 0;
+    h2 ^= c + 1; h2 = Math.imul(h2, 0x01000193) >>> 0;
+    h3 ^= c + 2; h3 = Math.imul(h3, 0x01000193) >>> 0;
+    h4 ^= c + 3; h4 = Math.imul(h4, 0x01000193) >>> 0;
+  }
+  return [h1, h2, h3, h4].map((h) => h.toString(16).padStart(8, '0')).join('');
+}
+
 
 function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
   const bindings = [];

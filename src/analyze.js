@@ -6,8 +6,8 @@ const { tripleHasBlankNode } = require('./assignments.js');
 function analyze(program, options = {}) {
   const diagnostics = [];
   const dependency = dependencyGraph(program, options);
-  const hasRunOnceRules = program.rules.some((rule) => rule.runOnce);
-  const recursiveIndexes = hasRunOnceRules ? recursiveRuleIndexes(dependency) : new Set();
+  const hasTermGeneratingRules = dependency.rules.some((rule) => rule.hasAssignment || rule.headHasBlankNode || rule.runOnce);
+  const recursiveIndexes = hasTermGeneratingRules ? recursiveRuleIndexes(dependency) : new Set();
 
   program.rules.forEach((rule, index) => {
     const name = ruleName(rule, index);
@@ -39,12 +39,13 @@ function analyze(program, options = {}) {
 
     diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}));
 
-    if (rule.runOnce && recursiveIndexes.has(index)) {
+    const depRule = dependency.rules[index] || {};
+    if ((depRule.hasAssignment || depRule.headHasBlankNode || depRule.runOnce) && recursiveIndexes.has(index)) {
       diagnostics.push({
         code: 'recursive-assignment-rule',
         severity: 'warning',
         rule: name,
-        message: `${displayRuleName(name, program.prefixes || {})} is a run-once rule in a recursive dependency cycle`,
+        message: `${displayRuleName(name, program.prefixes || {})} creates terms in a recursive dependency cycle; relaxed mode allows this but termination is not guaranteed (use --strict to reject it)`,
       });
     }
 
@@ -96,15 +97,26 @@ function dependencyGraph(program, options = {}) {
   });
 
   const edgeMap = new Map();
-  function addEdge(from, to, negative, predicate) {
+  function addEdge(from, to, kind, predicate) {
     const label = predicate || '*';
     const key = `${from.index}->${to.index}:${label}`;
+    const negated = kind === 'negated';
+    const termGeneration = kind === 'term-generation';
     const existing = edgeMap.get(key);
     if (existing) {
-      existing.negative = existing.negative || negative;
+      existing.negated = existing.negated || negated;
+      existing.termGeneration = existing.termGeneration || termGeneration;
+      existing.negative = existing.negated || existing.termGeneration;
       return;
     }
-    edgeMap.set(key, { from: from.index, to: to.index, negative, predicate });
+    edgeMap.set(key, {
+      from: from.index,
+      to: to.index,
+      negative: negated || termGeneration,
+      negated,
+      termGeneration,
+      predicate,
+    });
   }
 
   const headIndex = buildHeadTemplateIndex(rules);
@@ -113,12 +125,12 @@ function dependencyGraph(program, options = {}) {
     const forceClosed = from.hasAssignment || from.headHasBlankNode;
     for (const pattern of from.positivePatterns) {
       for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
-        if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], forceClosed, dependencyPredicateLabel(pattern));
+        if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], forceClosed ? 'term-generation' : 'positive', dependencyPredicateLabel(pattern));
       }
     }
     for (const pattern of from.negativePatterns) {
       for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
-        if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], true, dependencyPredicateLabel(pattern));
+        if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], 'negated', dependencyPredicateLabel(pattern));
       }
     }
   }
@@ -134,7 +146,7 @@ function dependencyGraph(program, options = {}) {
   const unstratifiedCycles = [];
   const seen = new Set();
   for (const edge of edges) {
-    if (!edge.negative) continue;
+    if (!edge.negated) continue;
     if (edge.from === edge.to && rules[edge.from].runOnce && !rules[edge.from].headHasBlankNode) continue;
     if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
     const component = components[componentOf.get(edge.from)];
@@ -157,6 +169,7 @@ function dependencyGraph(program, options = {}) {
       positivePredicates: Array.from(rule.positivePredicates),
       negativePredicates: Array.from(rule.negativePredicates),
       runOnce: rule.runOnce,
+      hasAssignment: rule.hasAssignment,
       headHasBlankNode: rule.headHasBlankNode,
     })),
     edges,
@@ -327,7 +340,14 @@ function componentMin(component) {
 function recursiveRuleIndexes(dependency) {
   const out = new Set();
   const ruleByName = new Map(dependency.rules.map((rule) => [rule.name, rule]));
-  const ruleByIndex = new Map(dependency.rules.map((rule) => [rule.index, rule]));
+  const componentOf = new Map();
+
+  dependency.components.forEach((component, componentIndex) => {
+    for (const name of component) {
+      const rule = ruleByName.get(name);
+      if (rule) componentOf.set(rule.index, componentIndex);
+    }
+  });
 
   for (const component of dependency.components) {
     if (component.length <= 1) continue;
@@ -338,9 +358,9 @@ function recursiveRuleIndexes(dependency) {
   }
 
   for (const edge of dependency.edges) {
-    const rule = ruleByIndex.get(edge.from);
-    if (edge.from === edge.to && edge.negative && rule && rule.runOnce && !rule.headHasBlankNode) continue;
-    out.add(edge.from);
+    const rule = (dependency.rules || []).find((candidate) => candidate.index === edge.from);
+    if (edge.from === edge.to && edge.negated && rule && rule.runOnce && !rule.headHasBlankNode) continue;
+    if (edge.from === edge.to || componentOf.get(edge.from) === componentOf.get(edge.to)) out.add(edge.from);
   }
   return out;
 }
@@ -613,7 +633,7 @@ function substituteAssignedConstant(term, constants) {
 }
 
 function ruleHasAssignment(rule, options = {}) {
-  return !!options.shacl12Conformance && (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
+  return (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
 }
 
 function ruleHeadHasBlankNode(rule) {

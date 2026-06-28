@@ -76,6 +76,8 @@ then the body matches with `?parent = :alice` and `?child = :bob`, and the head 
 
 Negation is handled by stratified evaluation: rules are grouped into dependency layers, and recursion through negation is rejected so the result stays deterministic.
 
+Recursive rules that create new terms through `SET`/`BIND` or head blank nodes run in relaxed mode by default. Relaxed mode can derive useful finite closures, but termination is not guaranteed; use `--max-iterations` as a safety valve. `--strict` rejects these recursive term-generating cycles at analysis time. Head blank nodes are deterministically skolemized per rule and solution mapping, so the same firing reuses the same witness node instead of creating a fresh one each pass.
+
 ## Language surface
 
 SRL supports the practical rule features used by the SHACL 1.2 Rules tests and examples:
@@ -90,7 +92,7 @@ DATA {
 
 RULE { ?x :grade ?grade } WHERE {
   ?x :score ?score .
-  FILTER(?score >= 5) .
+  FILTER(?score >= 5)
   BIND(concat("pass-", str(?score)) AS ?grade)
 }
 
@@ -202,7 +204,7 @@ Important options:
 --trace               print derivation trace to stderr, or include it in JSON
 --stats               print iteration and triple counts to stderr
 --check               parse and analyze only; do not run rules
---strict              treat static warnings as errors
+--strict              treat static warnings as errors, including recursive term generation
 --deps                print rule dependency edges during --check
 --query TEXT          run a raw SRL body pattern over the closure
 --query-file FILE     read a raw SRL body pattern from a file
