@@ -139,6 +139,10 @@ async function runSyntaxOrWellformedTest(test, options = {}) {
     filename: test.actionUrl,
     baseIRI: test.actionUrl,
     shacl12Conformance: true,
+    // The W3C manifest defines the strict, guaranteed-terminating conformance profile.
+    // Eyeleng's relaxed mode remains available through the normal API/CLI, but
+    // negative well-formedness tests for recursive term generation must fail here.
+    strict: true,
   };
 
   if (test.type.includes('Syntax')) {
@@ -176,6 +180,7 @@ async function runEvalTest(test, options = {}) {
     filename: test.rulesetUrl,
     baseIRI: test.rulesetUrl,
     shacl12Conformance: true,
+    strict: true,
   };
   const compiled = eyeleng.compile(rulesSource, compileOptions);
   const program = { ...compiled.program, data: [...compiled.program.data, ...dataTriples] };
