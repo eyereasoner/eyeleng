@@ -584,4 +584,19 @@ RULE { :test :annotation ?source } WHERE {
   assert.match(output, /:test :annotation :witness \./);
 });
 
+
+test('strict conformance allows recursive constant BIND aliases', () => {
+  assert.doesNotThrow(() => compile(`
+PREFIX : <http://example.org/#>
+RULE { ?s ?p ?o } WHERE { ?s :p ?o . BIND(:p AS ?p) }
+`, { shacl12Conformance: true, strict: true }));
+});
+
+test('strict conformance rejects recursive computed assignments', () => {
+  assert.throws(() => compile(`
+PREFIX : <http://example.org/#>
+RULE { ?x :p ?v1 } WHERE { ?x :p ?v . SET(?v1 := ?v + 1) }
+`, { shacl12Conformance: true, strict: true }), /creates terms in a recursive dependency cycle/);
+});
+
 main();

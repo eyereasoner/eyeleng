@@ -4683,7 +4683,7 @@
       function analyze(program, options = {}) {
         const diagnostics = [];
         const dependency = dependencyGraph(program, options);
-        const hasTermGeneratingRules = dependency.rules.some((rule) => rule.hasAssignment || rule.headHasBlankNode || rule.runOnce);
+        const hasTermGeneratingRules = dependency.rules.some((rule) => rule.createsTerms);
         const recursiveIndexes = hasTermGeneratingRules ? recursiveRuleIndexes(dependency) : new Set();
       
         program.rules.forEach((rule, index) => {
@@ -4717,7 +4717,7 @@
           diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}));
       
           const depRule = dependency.rules[index] || {};
-          if ((depRule.hasAssignment || depRule.headHasBlankNode || depRule.runOnce) && recursiveIndexes.has(index)) {
+          if (depRule.createsTerms && recursiveIndexes.has(index)) {
             diagnostics.push({
               code: 'recursive-assignment-rule',
               severity: 'warning',
@@ -4769,7 +4769,9 @@
             negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
             runOnce: !!rule.runOnce,
             hasAssignment: ruleHasAssignment(rule, options),
+            hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
             headHasBlankNode: ruleHeadHasBlankNode(rule),
+            createsTerms: ruleCreatesTerms(rule, options),
           };
         });
       
@@ -4799,7 +4801,7 @@
         const headIndex = buildHeadTemplateIndex(rules);
       
         for (const from of rules) {
-          const forceClosed = from.hasAssignment || from.headHasBlankNode;
+          const forceClosed = from.createsTerms;
           for (const pattern of from.positivePatterns) {
             for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
               if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], forceClosed ? 'term-generation' : 'positive', dependencyPredicateLabel(pattern));
@@ -4847,7 +4849,9 @@
             negativePredicates: Array.from(rule.negativePredicates),
             runOnce: rule.runOnce,
             hasAssignment: rule.hasAssignment,
+            hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
             headHasBlankNode: rule.headHasBlankNode,
+            createsTerms: rule.createsTerms,
           })),
           edges,
           components: components.map((component) => component.map((ruleIndex) => rules[ruleIndex].name)),
@@ -5311,6 +5315,25 @@
       
       function ruleHasAssignment(rule, options = {}) {
         return (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
+      }
+      
+      function ruleHasTermGeneratingAssignment(rule, options = {}) {
+        return (rule.body || []).some((clause) => (clause.type === 'set' || clause.type === 'bind') && assignmentMayCreateNewTerm(clause.expr));
+      }
+      
+      function ruleCreatesTerms(rule, options = {}) {
+        return ruleHeadHasBlankNode(rule) || ruleHasTermGeneratingAssignment(rule, options);
+      }
+      
+      function assignmentMayCreateNewTerm(expr) {
+        // Simple aliases and constants are not term generators: they select from a
+        // fixed term or from already-bound terms.  Expressions that compute values
+        // through operators or functions may create an unbounded sequence when used
+        // recursively, e.g. SET(?v1 := ?v + 1), so they remain part of the strict
+        // recursive-new-terms check.
+        if (!expr) return false;
+        if (expr.type === 'var' || expr.type === 'term' || expr.type === 'literal') return false;
+        return true;
       }
       
       function ruleHeadHasBlankNode(rule) {
