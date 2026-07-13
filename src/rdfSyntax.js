@@ -1160,6 +1160,7 @@ function parseN3(source, options = {}) {
   const syntaxProfile = String(options.profile || options.profileId || '').toLowerCase();
   const rdf12Surface = syntaxProfile === 'turtle' || syntaxProfile === 'trig';
   const implicitStatementNodes = new Set();
+  function implicitStatementNodeKey(term) { return `${term.kind}:${term.value}`; }
 
   function freshBlank() { bnodeCounter += 1; return blank(`b${bnodeCounter}`); }
   function peek(offset = 0) { return tokens[i + offset]; }
@@ -1310,7 +1311,7 @@ function parseN3(source, options = {}) {
     expect('>>');
     const node = reifier || freshBlank();
     out.push(triple(node, iri(RDF_REIFIES), tripleTerm(s, p, o), graph));
-    if (node.kind === 'blank') implicitStatementNodes.add(node.value);
+    implicitStatementNodes.add(implicitStatementNodeKey(node));
     return node;
   }
 
@@ -1339,7 +1340,7 @@ function parseN3(source, options = {}) {
     if (accept(']')) return node;
     parsePredicateObjectList(node, out, graph);
     expect(']');
-    if (node.kind === 'blank') implicitStatementNodes.add(node.value);
+    if (node.kind === 'blank') implicitStatementNodes.add(implicitStatementNodeKey(node));
     return node;
   }
 
@@ -1417,9 +1418,8 @@ function parseN3(source, options = {}) {
       if (options3.requireDot) expect('.'); else accept('.');
       return;
     }
-    if (peek()?.type === '<<' && peek(1)?.type === '(') throw new Error('Triple term cannot be used as a subject');
-    const subject = parseTerm(out, graph, { noLiteral: true, noA: true });
-    if ((peek()?.type === '.' || peek()?.type === '}' || peek()?.type === undefined) && subject.kind === 'blank' && implicitStatementNodes.has(subject.value)) {
+    const subject = parseTerm(out, graph, { noLiteral: !rdf12Surface, noA: true });
+    if ((peek()?.type === '.' || peek()?.type === '}' || peek()?.type === undefined) && implicitStatementNodes.has(implicitStatementNodeKey(subject))) {
       if (options3.requireDot) expect('.'); else accept('.');
       return;
     }

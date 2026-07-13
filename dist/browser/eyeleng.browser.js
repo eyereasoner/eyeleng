@@ -441,7 +441,7 @@
         }
       
         parseTripleStatement(options = {}) {
-          const subjectNode = this.parseGraphNode(options);
+          const subjectNode = this.parseGraphNode({ ...options, position: 'subject' });
           const triples = [...subjectNode.triples];
           triples.push(...this.parsePropertyListForSubject(subjectNode.term, options));
           return triples;
@@ -455,7 +455,7 @@
             if (terminators.some((value) => this.checkValue(value)) || this.checkValue('.')) break;
             const predicate = options.allowPath ? this.parseVerbPathOrSimple(options) : this.parseVerbTerm(options);
             do {
-              const objectNode = this.parseGraphNode(options);
+              const objectNode = this.parseGraphNode({ ...options, position: 'object' });
               triples.push(...objectNode.triples);
               const baseTriple = { s: subject, p: predicate, o: objectNode.term };
               triples.push(baseTriple);
@@ -522,6 +522,7 @@
               currentReifier = this.parseOptionalReifier(options);
               triples.push({ s: currentReifier, p: iri(RDF_REIFIES), o: reified });
             } else if (this.matchValue('{|')) {
+              if (this.checkValue('|}')) throw this.error('Annotation blocks may not be empty');
               const annotationSubject = currentReifier || this.freshGraphNode(options);
               triples.push({ s: annotationSubject, p: iri(RDF_REIFIES), o: reified });
               triples.push(...this.parsePropertyListForSubject(annotationSubject, options, ['|}']));
@@ -571,7 +572,7 @@
         }
       
         parseVerbTerm(options = {}) {
-          const term = this.parseTerm(options);
+          const term = this.parseTerm({ ...options, position: 'predicate' });
           if (term.type !== 'iri' && term.type !== 'var') throw this.error('Expected IRI or variable as predicate');
           return term;
         }
@@ -694,7 +695,10 @@
           if (token.value === '<<(') return this.parseTripleTermAfterOpen(options);
           if (token.value === '<<') throw this.error('Use << s p o >> as a graph node reifier; use <<( s p o )>> for a triple term', token);
           if (token.type === 'word') {
-            if (token.value === 'a') return iri(RDF_TYPE);
+            if (token.value === 'a') {
+              if (options.position !== 'predicate') throw this.error('a is only allowed as a predicate', token);
+              return iri(RDF_TYPE);
+            }
             if (token.value === 'true') return literal(true, XSD_BOOLEAN);
             if (token.value === 'false') return literal(false, XSD_BOOLEAN);
             if (token.value.startsWith('_:')) return blankNode(token.value.slice(2));
@@ -728,7 +732,13 @@
             return literal(coerceLexicalLiteral(token.value, datatype), datatype, null);
           }
           if (this.checkType('word') && /^@[A-Za-z]+(?:-[A-Za-z0-9]+)*(?:--[A-Za-z]+)?$/.test(this.peek().value)) {
-            const tag = this.advance().value.slice(1).toLowerCase();
+            const tagToken = this.advance();
+            const rawTag = tagToken.value.slice(1);
+            const direction = rawTag.includes('--') ? rawTag.slice(rawTag.lastIndexOf('--') + 2) : null;
+            if (direction && direction !== 'ltr' && direction !== 'rtl') {
+              throw this.error(`Invalid base direction --${direction}; expected --ltr or --rtl`, tagToken);
+            }
+            const tag = rawTag.toLowerCase();
             const [lang, langDir = null] = tag.split('--');
             return literal(token.value, null, lang, langDir);
           }
@@ -2507,6 +2517,7 @@
         const syntaxProfile = String(options.profile || options.profileId || '').toLowerCase();
         const rdf12Surface = syntaxProfile === 'turtle' || syntaxProfile === 'trig';
         const implicitStatementNodes = new Set();
+        function implicitStatementNodeKey(term) { return `${term.kind}:${term.value}`; }
       
         function freshBlank() { bnodeCounter += 1; return blank(`b${bnodeCounter}`); }
         function peek(offset = 0) { return tokens[i + offset]; }
@@ -2657,7 +2668,7 @@
           expect('>>');
           const node = reifier || freshBlank();
           out.push(triple(node, iri(RDF_REIFIES), tripleTerm(s, p, o), graph));
-          if (node.kind === 'blank') implicitStatementNodes.add(node.value);
+          implicitStatementNodes.add(implicitStatementNodeKey(node));
           return node;
         }
       
@@ -2686,7 +2697,7 @@
           if (accept(']')) return node;
           parsePredicateObjectList(node, out, graph);
           expect(']');
-          if (node.kind === 'blank') implicitStatementNodes.add(node.value);
+          if (node.kind === 'blank') implicitStatementNodes.add(implicitStatementNodeKey(node));
           return node;
         }
       
@@ -2764,9 +2775,8 @@
             if (options3.requireDot) expect('.'); else accept('.');
             return;
           }
-          if (peek()?.type === '<<' && peek(1)?.type === '(') throw new Error('Triple term cannot be used as a subject');
-          const subject = parseTerm(out, graph, { noLiteral: true, noA: true });
-          if ((peek()?.type === '.' || peek()?.type === '}' || peek()?.type === undefined) && subject.kind === 'blank' && implicitStatementNodes.has(subject.value)) {
+          const subject = parseTerm(out, graph, { noLiteral: !rdf12Surface, noA: true });
+          if ((peek()?.type === '.' || peek()?.type === '}' || peek()?.type === undefined) && implicitStatementNodes.has(implicitStatementNodeKey(subject))) {
             if (options3.requireDot) expect('.'); else accept('.');
             return;
           }

@@ -746,6 +746,41 @@ RULE { :test :annotation ?source } WHERE {
   assert.match(output, /:test :annotation :witness \./);
 });
 
+test('DATA blocks accept RDF 1.2 symmetric and standalone reifier syntax', () => {
+  const symmetric = parse(`
+PREFIX : <http://example/>
+DATA {
+  123 :q 456 .
+  <<( :s :p :o )>> :q <<( :s1 :p1 :o1 )>> .
+}
+`);
+  assert.equal(symmetric.data.length, 2);
+  assert.equal(symmetric.data[0].s.type, 'literal');
+  assert.equal(symmetric.data[1].s.type, 'triple');
+
+  const standalone = parse(`
+PREFIX : <http://example/>
+DATA { << :a :b :c ~:r >> . }
+`);
+  assert.equal(standalone.data.length, 1);
+  assert.equal(standalone.data[0].s.value, 'http://example/r');
+  assert.equal(standalone.data[0].p.value, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies');
+});
+
+test('SRL rejects invalid base directions, subject a, and empty annotations', () => {
+  const invalidPatterns = [
+    'RULE { } WHERE { :s :p "abc"@en--LTR }',
+    'RULE { :s :p "abc"@en--LTR } WHERE { ?a ?b ?c }',
+    'RULE { } WHERE { a :p "abc" }',
+    'RULE { a :p "abc" } WHERE { ?a ?b ?c }',
+    'RULE { } WHERE { :s :p :o ~:r {| |} }',
+    'RULE { :s :p :o ~:r {| |} } WHERE { ?a ?b ?c }',
+  ];
+  for (const pattern of invalidPatterns) {
+    assert.throws(() => parse(`PREFIX : <http://example/>\n${pattern}`), Error, pattern);
+  }
+});
+
 
 test('strict conformance allows recursive constant BIND aliases', () => {
   assert.doesNotThrow(() => compile(`

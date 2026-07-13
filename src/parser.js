@@ -296,7 +296,7 @@ class Parser {
   }
 
   parseTripleStatement(options = {}) {
-    const subjectNode = this.parseGraphNode(options);
+    const subjectNode = this.parseGraphNode({ ...options, position: 'subject' });
     const triples = [...subjectNode.triples];
     triples.push(...this.parsePropertyListForSubject(subjectNode.term, options));
     return triples;
@@ -310,7 +310,7 @@ class Parser {
       if (terminators.some((value) => this.checkValue(value)) || this.checkValue('.')) break;
       const predicate = options.allowPath ? this.parseVerbPathOrSimple(options) : this.parseVerbTerm(options);
       do {
-        const objectNode = this.parseGraphNode(options);
+        const objectNode = this.parseGraphNode({ ...options, position: 'object' });
         triples.push(...objectNode.triples);
         const baseTriple = { s: subject, p: predicate, o: objectNode.term };
         triples.push(baseTriple);
@@ -377,6 +377,7 @@ class Parser {
         currentReifier = this.parseOptionalReifier(options);
         triples.push({ s: currentReifier, p: iri(RDF_REIFIES), o: reified });
       } else if (this.matchValue('{|')) {
+        if (this.checkValue('|}')) throw this.error('Annotation blocks may not be empty');
         const annotationSubject = currentReifier || this.freshGraphNode(options);
         triples.push({ s: annotationSubject, p: iri(RDF_REIFIES), o: reified });
         triples.push(...this.parsePropertyListForSubject(annotationSubject, options, ['|}']));
@@ -426,7 +427,7 @@ class Parser {
   }
 
   parseVerbTerm(options = {}) {
-    const term = this.parseTerm(options);
+    const term = this.parseTerm({ ...options, position: 'predicate' });
     if (term.type !== 'iri' && term.type !== 'var') throw this.error('Expected IRI or variable as predicate');
     return term;
   }
@@ -549,7 +550,10 @@ class Parser {
     if (token.value === '<<(') return this.parseTripleTermAfterOpen(options);
     if (token.value === '<<') throw this.error('Use << s p o >> as a graph node reifier; use <<( s p o )>> for a triple term', token);
     if (token.type === 'word') {
-      if (token.value === 'a') return iri(RDF_TYPE);
+      if (token.value === 'a') {
+        if (options.position !== 'predicate') throw this.error('a is only allowed as a predicate', token);
+        return iri(RDF_TYPE);
+      }
       if (token.value === 'true') return literal(true, XSD_BOOLEAN);
       if (token.value === 'false') return literal(false, XSD_BOOLEAN);
       if (token.value.startsWith('_:')) return blankNode(token.value.slice(2));
@@ -583,7 +587,13 @@ class Parser {
       return literal(coerceLexicalLiteral(token.value, datatype), datatype, null);
     }
     if (this.checkType('word') && /^@[A-Za-z]+(?:-[A-Za-z0-9]+)*(?:--[A-Za-z]+)?$/.test(this.peek().value)) {
-      const tag = this.advance().value.slice(1).toLowerCase();
+      const tagToken = this.advance();
+      const rawTag = tagToken.value.slice(1);
+      const direction = rawTag.includes('--') ? rawTag.slice(rawTag.lastIndexOf('--') + 2) : null;
+      if (direction && direction !== 'ltr' && direction !== 'rtl') {
+        throw this.error(`Invalid base direction --${direction}; expected --ltr or --rtl`, tagToken);
+      }
+      const tag = rawTag.toLowerCase();
       const [lang, langDir = null] = tag.split('--');
       return literal(token.value, null, lang, langDir);
     }
