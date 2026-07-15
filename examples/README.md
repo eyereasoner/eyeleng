@@ -1,5 +1,7 @@
 # W3C SHACL 1.2 Rules draft examples
 
+Eyeleng—where `leng` stands for **Logic Engine Next Generation**—is built for automatic hybrid reasoning, combining forward materialization with tabled backward proving.
+
 This directory contains runnable examples, including files mirrored from the SHACL 1.2 Rules draft.
 It also includes SRL adaptations of selected eyeling N3 examples.
 

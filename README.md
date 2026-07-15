@@ -3,12 +3,14 @@
 [![npm version](https://img.shields.io/npm/v/eyeleng.svg)](https://www.npmjs.com/package/eyeleng)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20342577-blue.svg)](https://doi.org/10.5281/zenodo.20342577)
 
-`eyeleng` stands for **EYE Logic Engine**. It is a compact JavaScript implementation of SHACL 1.2 Rules with two rule front-ends:
+The `leng` in `eyeleng` stands for **Logic Engine Next Generation**. Eyeleng's main purpose is **automatic hybrid reasoning**: it combines forward materialization with tabled backward proving and automatically chooses how rules should be evaluated.
+
+Eyeleng is a compact JavaScript implementation of SHACL 1.2 Rules with two rule front-ends:
 
 - **SRL** — the Shape Rules Language syntax used by the SHACL 1.2 Rules draft.
 - **RDF Rules** — a Turtle/RDF syntax for rule sets.
 
-Eyeleng is a compact reasoner over RDF-style triples. It still uses forward chaining for ordinary finite materialization, but the default execution mode now includes conservative auto-hybrid planning: selected function-like predicates can be proved just in time by a tabled backward prover when they are demanded by a query or by another rule body. It is deliberately small, dependency-free at runtime, readable as ordinary JavaScript, and usable from the CLI, Node.js, and the browser playground.
+Eyeleng is a compact automatic hybrid reasoner over RDF-style triples. It uses forward chaining for ordinary finite materialization while its default execution mode applies conservative hybrid planning: selected function-like predicates can be proved just in time by a tabled backward prover when they are demanded by a query or another rule body. It is deliberately small, dependency-free at runtime, readable as ordinary JavaScript, and usable from the CLI, Node.js, and the browser playground.
 
 Eyeleng implements the rules/reasoning surface. It is **not** a SHACL validation engine and does not emit SHACL validation reports.
 
@@ -43,7 +45,7 @@ It derives:
 
 Open the [Playground](https://eyereasoner.github.io/eyeleng/playground) for a self-contained browser UI with URL loading, autosave, share links, diagnostics, queries, and SRL/RDF Rules syntax selection.
 
-## How the reasoner works
+## How automatic hybrid reasoning works
 
 Eyeleng computes the closure of a rule set:
 
