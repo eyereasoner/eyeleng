@@ -11,8 +11,8 @@
 <#report>
     a earl:TestResult ;
     dct:title "Eyeleng W3C SHACL 1.2 Rules EARL report"@en ;
-    dct:description "Generated Eyeleng EARL 1.0 report for the W3C SHACL 1.2 Rules test manifest. 88/88 tests passed."@en ;
-    dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime ;
+    dct:description "Generated Eyeleng EARL 1.0 report for the W3C SHACL 1.2 Rules test manifest. 166/166 tests passed."@en ;
+    dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime ;
     earl:outcome earl:passed .
 
 <https://github.com/eyereasoner/eyeleng>
@@ -35,7 +35,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_2>
@@ -52,7 +52,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_3>
@@ -69,7 +69,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_4>
@@ -86,7 +86,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_5>
@@ -103,12 +103,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_6>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-06.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-07.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -120,12 +120,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_7>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-07.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-08.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -137,12 +137,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_8>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-08.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-09.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -154,12 +154,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_9>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-09.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-10.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -171,12 +171,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_10>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-10.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-11.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -188,12 +188,29 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_11>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-12.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_11> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_12>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-12.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-13.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -205,12 +222,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_13>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-13.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-14.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -222,12 +239,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_14>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-14.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-15.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -239,12 +256,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_15>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-15.srl"@en ;
+    dct:title "syntax/syntax-rule-terms-16.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -256,12 +273,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_16>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-16.srl"@en ;
+    dct:title "syntax/syntax-rule-paths-01.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -273,12 +290,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_17>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-17.srl"@en ;
+    dct:title "syntax/syntax-rule-paths-02.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -290,12 +307,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_18>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-18.srl"@en ;
+    dct:title "syntax/syntax-rule-paths-03.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -307,12 +324,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_19>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-19.srl"@en ;
+    dct:title "syntax/syntax-rule-elements-filter-01.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -324,12 +341,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_20>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-20.srl"@en ;
+    dct:title "syntax/syntax-rule-elements-filter-02.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -341,12 +358,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_21>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-terms-21.srl"@en ;
+    dct:title "syntax/syntax-rule-elements-filter-03.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -358,12 +375,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_22>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-01.srl"@en ;
+    dct:title "syntax/syntax-rule-elements-not-01.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -375,12 +392,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_23>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-02.srl"@en ;
+    dct:title "syntax/syntax-rule-elements-not-02.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -392,12 +409,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_24>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-03.srl"@en ;
+    dct:title "syntax/syntax-rule-elements-not-03.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -409,12 +426,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_25>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-04.srl"@en ;
+    dct:title "syntax/syntax-rule-elements-not-04.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -426,12 +443,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_26>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-05.srl"@en ;
+    dct:title "syntax/syntax-reification-01.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -443,12 +460,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_27>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-filter-01.srl"@en ;
+    dct:title "syntax/syntax-reification-02.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -460,12 +477,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_28>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-filter-02.srl"@en ;
+    dct:title "syntax/syntax-reification-03.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -477,12 +494,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_29>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-filter-03.srl"@en ;
+    dct:title "syntax/syntax-reification-04.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -494,12 +511,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_30>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-not-01.srl"@en ;
+    dct:title "syntax/syntax-reification-05.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -511,12 +528,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_31>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-head-02.srl"@en ;
+    dct:title "syntax/syntax-reification-06.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -528,12 +545,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_32>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-not-03.srl"@en ;
+    dct:title "syntax/syntax-reification-07.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -545,12 +562,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_33>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-not-04.srl"@en ;
+    dct:title "syntax/syntax-reification-08.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -562,12 +579,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_34>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-elements-not-05.srl"@en ;
+    dct:title "syntax/syntax-data-01.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -579,12 +596,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_35>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-01.srl"@en ;
+    dct:title "syntax/syntax-data-02.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -596,12 +613,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_36>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-02.srl"@en ;
+    dct:title "syntax/syntax-data-03.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -613,12 +630,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_37>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-03.srl"@en ;
+    dct:title "syntax/syntax-data-04.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -630,12 +647,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_38>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-04.srl"@en ;
+    dct:title "syntax/syntax-data-05.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -647,12 +664,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_39>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-05.srl"@en ;
+    dct:title "syntax/syntax-data-06.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -664,12 +681,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_40>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-06.srl"@en ;
+    dct:title "syntax/syntax-data-07.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -681,12 +698,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_41>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-07.srl"@en ;
+    dct:title "syntax/syntax-data-08.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -698,12 +715,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_42>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-08.srl"@en ;
+    dct:title "syntax/syntax-data-09.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -715,12 +732,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_43>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-reification-09.srl"@en ;
+    dct:title "syntax/syntax-data-10.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -732,12 +749,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_44>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-head-01.srl"@en ;
+    dct:title "syntax/syntax-data-11.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -749,12 +766,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_45>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-head-02.srl"@en ;
+    dct:title "syntax/syntax-data-12.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -766,12 +783,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_46>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-head-03.srl"@en ;
+    dct:title "syntax/syntax-data-13.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -783,12 +800,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_47>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-head-04.srl"@en ;
+    dct:title "syntax/syntax-data-14.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -800,12 +817,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_48>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-head-05.srl"@en ;
+    dct:title "syntax/syntax-data-15.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -817,12 +834,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_49>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-head-06.srl"@en ;
+    dct:title "syntax/syntax-data-16.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -834,12 +851,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_50>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-rule-head-07.srl"@en ;
+    dct:title "syntax/syntax-data-17.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -851,12 +868,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_51>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-data-08.srl"@en ;
+    dct:title "syntax/syntax-data-18.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -868,12 +885,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_52>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-data-09.srl"@en ;
+    dct:title "syntax/syntax-data-19.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -885,12 +902,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_53>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-data-10.srl"@en ;
+    dct:title "syntax/syntax-data-20.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -902,12 +919,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_54>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-data-11.srl"@en ;
+    dct:title "syntax/syntax-data-21.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -919,12 +936,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_55>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-data-12.srl"@en ;
+    dct:title "syntax/syntax-template-01.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -936,12 +953,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_56>
     a earl:TestCase, srt:RulesPositiveSyntaxTest ;
-    dct:title "syntax/syntax-data-13.srl"@en ;
+    dct:title "syntax/syntax-template-02.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -953,12 +970,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_57>
-    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
-    dct:title "syntax/syntax-rule-bad-01.srl"@en ;
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-03.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -970,12 +987,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_58>
-    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
-    dct:title "syntax/syntax-rule-bad-02.srl"@en ;
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-04.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -987,12 +1004,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_59>
-    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
-    dct:title "syntax/syntax-rule-bad-03.srl"@en ;
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-05.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -1004,12 +1021,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_60>
-    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
-    dct:title "syntax/syntax-rule-bad-04.srl"@en ;
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-06.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -1021,12 +1038,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_61>
-    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
-    dct:title "syntax/syntax-rule-bad-05.srl"@en ;
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-07.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -1038,12 +1055,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_62>
-    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
-    dct:title "syntax/syntax-rule-bad-06.srl"@en ;
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-08.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -1055,12 +1072,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_63>
-    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
-    dct:title "syntax/syntax-data-bad-01.srl"@en ;
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-09.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -1072,7 +1089,1282 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_64>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-10.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_64> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_65>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-11.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_65> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_66>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-12.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_66> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_67>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-13.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_67> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_68>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-14.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_68> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_69>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-15.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_69> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_70>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-16.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_70> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_71>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-17.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_71> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_72>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-18.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_72> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_73>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-19.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_73> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_74>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-20.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_74> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_75>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-21.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_75> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_76>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-22.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_76> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_77>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-23.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_77> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_78>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-24.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_78> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_79>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-25.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_79> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_80>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-26.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_80> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_81>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-27.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_81> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_82>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_82> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_83>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_83> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_84>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_84> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_85>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_85> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_86>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_86> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_87>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_87> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_88>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-07.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_88> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_89>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-08.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_89> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_90>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-09.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_90> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_91>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-10.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_91> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_92>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-11.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_92> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_93>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-12.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_93> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_94>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-13.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_94> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_95>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-14.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_95> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_96>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-15.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_96> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_97>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-16.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_97> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_98>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-17.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_98> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_99>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-18.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_99> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_100>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-19.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_100> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_101>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-20.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_101> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_102>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-21.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_102> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_103>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-22.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_103> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_104>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-23.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_104> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_105>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-24.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_105> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_106>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-25.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_106> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_107>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-26.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_107> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_108>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-27.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_108> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_109>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_109> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_110>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_110> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_111>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_111> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_112>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_112> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_113>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_113> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_114>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_114> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_115>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_115> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_116>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_116> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_117>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_117> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_118>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_118> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_119>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_119> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_120>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_120> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_121>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_121> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_122>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_122> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_123>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_123> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_124>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-07.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_124> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_125>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-08.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_125> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_126>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-09.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_126> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_127>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-10.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_127> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_128>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-11.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_128> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_129>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_129> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_130>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_130> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_131>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_131> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_132>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_132> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_133>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_133> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_134>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_134> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_135>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-pattern-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_135> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_136>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-pattern-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_136> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_137>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-pattern-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_137> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_138>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-pattern-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_138> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_1>
@@ -1089,7 +2381,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_2>
@@ -1106,7 +2398,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_3>
@@ -1123,7 +2415,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_4>
@@ -1140,7 +2432,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_5>
@@ -1157,7 +2449,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_6>
@@ -1174,7 +2466,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_7>
@@ -1191,7 +2483,24 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_8>
+    a earl:TestCase, srt:RulesNegativeWellFormednessTest ;
+    dct:title "wellformed/wellformed-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_8> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_1>
@@ -1208,7 +2517,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_2>
@@ -1225,7 +2534,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_3>
@@ -1242,7 +2551,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_4>
@@ -1259,12 +2568,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_5>
     a earl:TestCase, srt:RulesPositiveStratificationTest ;
-    dct:title "stratification/stratification-05-new-terms.srl"@en ;
+    dct:title "stratification/stratification-05.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -1276,7 +2585,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_6>
@@ -1293,12 +2602,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_7>
     a earl:TestCase, srt:RulesNegativeStratificationTest ;
-    dct:title "stratification/stratification-bad-02-new-terms.srl"@en ;
+    dct:title "stratification/stratification-bad-02.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -1310,12 +2619,12 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_8>
     a earl:TestCase, srt:RulesNegativeStratificationTest ;
-    dct:title "stratification/stratification-bad-03-new-terms.srl"@en ;
+    dct:title "stratification/stratification-bad-03.srl"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
 
 [] a earl:Assertion ;
@@ -1327,7 +2636,24 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_9>
+    a earl:TestCase, srt:RulesNegativeStratificationTest ;
+    dct:title "stratification/stratification-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_9> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-basic-01>
@@ -1344,7 +2670,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-basic-02>
@@ -1361,7 +2687,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-data-01>
@@ -1378,7 +2704,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-data-02>
@@ -1395,7 +2721,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-neg-01>
@@ -1412,7 +2738,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-subclass-1>
@@ -1429,7 +2755,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-subproperty-1>
@@ -1446,7 +2772,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-domain-1>
@@ -1463,7 +2789,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-domain-2>
@@ -1480,7 +2806,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-range-1>
@@ -1497,7 +2823,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-range-2>
@@ -1514,6 +2840,6 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-06-28T21:04:55.477Z"^^xsd:dateTime
+        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
     ] .
 
