@@ -14,6 +14,38 @@ Eyeleng is a compact automatic hybrid reasoner over RDF-style triples. It uses f
 
 Eyeleng implements the rules/reasoning surface. It is **not** a SHACL validation engine and does not emit SHACL validation reports.
 
+## Why Eyeleng?
+
+Eyeleng is a next-generation path for rule-based RDF reasoning: it combines a language being developed on the W3C standards track with an execution model that automatically uses both forward and backward reasoning.
+
+The central choice is **SHACL 1.2 Rules instead of N3 as the native rule language**. SHACL 1.2 Rules is being developed by the W3C Data Shapes Working Group as a W3C Working Draft on the Recommendation track. It defines both an RDF representation of rule sets and the concise Shape Rules Language (SRL), together with `infer` and `query` operations. By contrast, the current N3 specification is a W3C Community Group Report. Community Group Reports are useful specifications, but they are not on the W3C standards track and are not W3C-endorsed standards.
+
+That standards position does not require giving up the kinds of programs traditionally written in N3. The N3 examples translated to SRL or RDF Rules and tested with Eyeleng so far have retained their intended reasoning behavior. This is practical evidence that existing N3 rule programs can migrate to the SHACL Rules model, although Eyeleng does not parse N3 syntax directly and this is not yet a claim that every possible N3 extension has a translation.
+
+Eyeleng also removes a choice that N3 engines commonly expose to the rule author. In EYE, Eyeling, and Eyeron, `=>` and `<=` explicitly select forward and backward rules. In Eyeleng, rules describe the logical relationship while the engine analyzes dependencies and demand. It materializes ordinary consequences forward and can prove safe, function-like predicates backward with tabling only when they are needed. This avoids exposing internal helper triples merely because they were required during a computation, while preserving forward closure where materialization is appropriate.
+
+The related engines therefore mark stages and implementation choices rather than hard limits on what Eyeleng may replace:
+
+| Project | Native language and runtime | Main reason to choose it |
+| --- | --- | --- |
+| **EYE** | N3 on SWI-Prolog | The mature, extensive N3 implementation and ecosystem |
+| **Eyeling** | N3 implemented in JavaScript | Direct JavaScript and RDF-JS integration with explicit forward and backward N3 rules |
+| **Eyeron** | N3 implemented in Rust, with native and WebAssembly APIs | Rust-native or WebAssembly deployment with N3 proofs and built-ins |
+| **Eyeleng** | SHACL 1.2 SRL and RDF Rules implemented in JavaScript | A W3C Recommendation-track language plus automatic hybrid reasoning |
+
+Choose Eyeleng when you want to:
+
+- build new rule systems on SHACL 1.2 Rules rather than a Community Group language;
+- migrate N3 reasoning workloads to SRL or RDF Rules;
+- let the engine choose between materialization and goal-directed evaluation;
+- use tabling for recursive, function-like computations without publishing their intermediate facts;
+- combine stratified negation, dependency analysis, RDF 1.2 syntax, and rule execution in one compact engine;
+- run the same dependency-free implementation from a CLI, Node.js, or a browser.
+
+In short: **Eyeleng aims to carry the practical reasoning power demonstrated by the EYE family into SHACL 1.2 Rules, with automatic hybrid execution as the default rather than explicit reasoning direction as a language-level choice.**
+
+Standards references: [SHACL 1.2 Rules](https://www.w3.org/TR/shacl12-rules/), [Notation3 Community Group](https://www.w3.org/groups/cg/n3-dev/), and [W3C document types](https://www.w3.org/standards/types/).
+
 ## Quick start
 
 ```sh
