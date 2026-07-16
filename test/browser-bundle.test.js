@@ -73,4 +73,11 @@ test('playground loads version from package.json at runtime', () => {
   assert.match(html, /id=["']version-label["'][^>]*>v…<\/span>/);
 });
 
+test('Pages landing page renders the root README', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /fetch\(['"]README\.md['"]\)/);
+  assert.match(html, /marked\.parse\(markdown\)/);
+  assert.match(html, /class=["']markdown-body["']/);
+});
+
 main();

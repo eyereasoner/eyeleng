@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Eyeleng — the EYE Logic Engine Next Generation">
+  <title>Eyeleng</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.8.1/github-markdown.min.css">
+  <style>
+    body {
+      margin: 0;
+      background: #fff;
+    }
+
+    .markdown-body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 45px;
+    }
+
+    @media (max-width: 767px) {
+      .markdown-body {
+        padding: 24px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="content" class="markdown-body">
+    <p>Loading <a href="README.md">README.md</a>…</p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/marked@16.1.1/lib/marked.umd.min.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const content = document.getElementById('content');
+      fetch('README.md')
+        .then((response) => {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          return response.text();
+        })
+        .then((markdown) => {
+          content.innerHTML = marked.parse(markdown);
+        })
+        .catch((error) => {
+          content.innerHTML = '<h1>Eyeleng</h1><p>Could not render the README: ' +
+            String(error.message || error) + '.</p><p><a href="README.md">Open README.md</a></p>';
+        });
+    })();
+  </script>
+</body>
+</html>
