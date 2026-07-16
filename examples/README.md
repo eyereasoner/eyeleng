@@ -9,3 +9,5 @@ It also includes SRL adaptations of selected eyeling N3 examples.
 - `.ttl` files exercise the RDF Rules syntax front-end.
 
 All `.srl` and `.ttl` files in this directory are run by `test/examples.test.js`; most have golden TriG outputs in `examples/output/*.trig`.
+
+For a minimal starting point, `socrates.srl` derives the classic conclusion that Socrates is mortal from the facts that Socrates is human and every human is mortal.
