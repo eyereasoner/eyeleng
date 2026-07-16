@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/eyereasoner/eyeleng#readme",
   "bin": {
-    "eyeleng": "./eyeleng.js"
+    "eyeleng": "eyeleng.js"
   },
   "files": [
     "LICENSE.md",
