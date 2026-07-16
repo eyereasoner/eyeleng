@@ -438,7 +438,7 @@
           <div class="checks" aria-label="Reasoning options">
             <label class="toggle"><input id="all-output" type="checkbox" /> Print full closure (--all)</label>
             <label class="toggle"><input id="json-output" type="checkbox" /> JSON output (--json)</label>
-            <label class="toggle"><input id="trace-output" type="checkbox" /> Include derivation trace (--trace)</label>
+            <label class="toggle"><input id="trace-output" type="checkbox" /> Include proof explanations (--prove)</label>
             <label class="toggle"><input id="strict-mode" type="checkbox" /> Treat warnings as errors (--strict)</label>
             <label class="toggle"><input id="check-only" type="checkbox" /> Check only, do not run rules</label>
             <label class="toggle"><input id="show-analysis" type="checkbox" /> Include analysis in JSON</label>
@@ -946,7 +946,7 @@
           if (els.json.checked) {
             text = JSON.stringify(eyeleng.toJSON(result, {
               all: els.all.checked,
-              trace: els.trace.checked,
+              proof: els.trace.checked,
               analysis: els.analysis.checked,
             }), null, 2);
           } else if (result.query) {
@@ -955,8 +955,8 @@
             const triples = els.all.checked ? result.closure : result.inferred;
             text = eyeleng.formatTriples(triples, result.prefixes);
             if (els.trace.checked && result.trace.length > 0) {
-              const trace = eyeleng.formatTrace(result.trace, result.prefixes);
-              text = (text ? text + '\n\n' : '') + '# Trace\n' + trace;
+              const proof = eyeleng.formatProof(result.trace, result.prefixes);
+              text = (text ? text + '\n\n' : '') + proof;
             }
           }
           if (!text) text = '(no output)';

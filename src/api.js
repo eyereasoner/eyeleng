@@ -5,7 +5,7 @@ const { parseRdfSyntax, parseRdfDocument, rdfDocumentToProgram, looksLikeRdfRule
 const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js');
 const { evaluate } = require('./engine.js');
 const { analyze } = require('./analyze.js');
-const { formatTriples, sortTriples, toJSON, formatTrace, formatBindings } = require('./format.js');
+const { formatTriples, sortTriples, toJSON, formatTrace, formatProof, formatBindings } = require('./format.js');
 const { runQuery, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require('./query.js');
 const { resultTriples } = require('./output.js');
 
@@ -128,5 +128,6 @@ module.exports = {
   sortTriples,
   toJSON,
   formatTrace,
+  formatProof,
   resultTriples,
 };

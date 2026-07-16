@@ -223,15 +223,23 @@ The replay data includes message streams, envelopes, offsets, next-envelope link
 
 ## CLI
 
+```text
+Usage: eyeleng [options] [file-or-url.n3|- ...]
+```
+
+With no input arguments, Eyeleng prints help. Pass `-` to read from standard input; local files and HTTP(S) URLs can be combined as positional inputs.
+
 Common commands:
 
 ```sh
 ./eyeleng.js examples/family.srl
 ./eyeleng.js --all examples/family.srl
 ./eyeleng.js --check --deps examples/stratified-negation.srl
-./eyeleng.js --json --trace --stats examples/if-then.srl
+./eyeleng.js --json --prove --stats examples/if-then.srl
 ./eyeleng.js --query-file examples/query-body.txt examples/query.srl
 ./eyeleng.js --syntax rdf examples/w3c-rule-set-snippet.ttl
+cat examples/family.srl | ./eyeleng.js -
+./eyeleng.js https://example.org/rules.n3
 ```
 
 Important options:
@@ -239,7 +247,7 @@ Important options:
 ```text
 --all                 print the full closure, including input facts
 --json                print JSON instead of compact triples/bindings
---trace               print derivation trace to stderr, or include it in JSON
+--prove               print proof explanations
 --stats               print iteration and triple counts to stderr
 --check               parse and analyze only; do not run rules
 --strict              treat static warnings as errors, including recursive term generation

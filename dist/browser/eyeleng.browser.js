@@ -15,7 +15,7 @@
       const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js');
       const { evaluate } = require('./engine.js');
       const { analyze } = require('./analyze.js');
-      const { formatTriples, sortTriples, toJSON, formatTrace, formatBindings } = require('./format.js');
+      const { formatTriples, sortTriples, toJSON, formatTrace, formatProof, formatBindings } = require('./format.js');
       const { runQuery, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require('./query.js');
       const { resultTriples } = require('./output.js');
       
@@ -138,6 +138,7 @@
         sortTriples,
         toJSON,
         formatTrace,
+        formatProof,
         resultTriples,
       };
       
@@ -4263,6 +4264,7 @@
                   rule: rule.name || `rule#${ruleIndex + 1}`,
                   triple,
                   binding,
+                  uses: proofUses(rule.body, binding),
                 });
               }
             }
@@ -4271,6 +4273,17 @@
       
         if (bodyContext.backwardProver && context.hybridStats) mergeBackwardStats(context.hybridStats, bodyContext.backwardProver.stats);
         return { applications, added };
+      }
+      
+      function proofUses(body, binding) {
+        return body
+          .filter((clause) => clause.type === 'triple')
+          .map((clause) => ({
+            s: instantiateTerm(clause.triple.s, binding),
+            p: instantiateTerm(clause.triple.p, binding),
+            o: instantiateTerm(clause.triple.o, binding),
+          }))
+          .filter((triple) => ![triple.s, triple.p, triple.o].some((term) => term && term.type === 'var'));
       }
       
       function prepareBodyContext(program, store, context) {
@@ -6063,6 +6076,35 @@
         return trace.map((entry) => `#${entry.iteration} ${entry.rule} => ${formatTriple(entry.triple, prefixes)}`).join('\n');
       }
       
+      function formatProof(trace, prefixes = {}) {
+        if (!trace.length) return '';
+        const lines = ['@prefix pe: <https://eyereasoner.github.io/pe#> .', ''];
+        for (const entry of trace) {
+          const conclusion = formatTriple(entry.triple, prefixes);
+          lines.push(`{ ${conclusion} } pe:why {`);
+          lines.push(`  { ${conclusion} }`);
+          lines.push(`    pe:by [ pe:rule ${quoteString(entry.rule)} ]${proofDetails(entry, prefixes)} .`);
+          lines.push('}.', '');
+        }
+        return lines.join('\n').trimEnd();
+      }
+      
+      function proofDetails(entry, prefixes) {
+        const details = [];
+        const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
+        if (bindings.length > 0) {
+          details.push(`\n    pe:binding ${bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`).join(', ')}`);
+        }
+        if (entry.uses && entry.uses.length > 0) {
+          details.push(`\n    pe:uses ${entry.uses.map((triple) => `{ ${formatTriple(triple, prefixes)} }`).join(', ')}`);
+        }
+        return details.length ? `;${details.join(';')}` : '';
+      }
+      
+      function quoteString(value) {
+        return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`;
+      }
+      
       function formatBindings(bindings, prefixes = {}, select = null) {
         const columns = select && select.length > 0 ? select : inferColumns(bindings);
         return bindings
@@ -6094,7 +6136,7 @@
           prefixes: result.prefixes,
           diagnostics: result.diagnostics || [],
           triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
-          trace: options.trace ? result.trace : undefined,
+          proof: options.proof ? result.trace : undefined,
         };
         if (result.query) json.query = jsonSafeValue(result.query);
         if (result.analysis && options.analysis) json.analysis = result.analysis;
@@ -6123,7 +6165,7 @@
         return value;
       }
       
-      module.exports = { sortTriples, formatTriples, formatTrace, formatBindings, formatBinding, toJSON };
+      module.exports = { sortTriples, formatTriples, formatTrace, formatProof, formatBindings, formatBinding, toJSON };
       
     },
     "src/query.js": function (require, module, exports) {

@@ -17,7 +17,7 @@
         queryProgram,
         queryRunOptions,
         formatTriples,
-        formatTrace,
+        formatProof,
         formatBindings,
         toJSON,
         resultTriples,
@@ -41,15 +41,28 @@
       
       const VERSION = readPackageVersion();
       
-      function help() {
+      function legacyHelp() {
         return `eyeleng ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Force aggressive hybrid orientation for function-like rules\n  --no-hybrid           Disable automatic hybrid forward/backward execution\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
+      }
+      
+      function help() {
+        return legacyHelp().replace(
+          '  --trace               Print derivation trace to stderr, or include it in JSON',
+          '  --prove               Print proof explanations',
+        ).replace(
+          'Usage:\n  eyeleng [options] [file ...]',
+          'Usage: eyeleng [options] [file-or-url.n3|- ...]',
+        ).replace(
+          'With no file arguments, eyeleng reads from stdin.',
+          'With no input arguments, eyeleng prints this help. Use - to read from stdin.',
+        );
       }
       
       function parseArgs(argv) {
         const options = {
           all: false,
           json: false,
-          trace: false,
+          prove: false,
           stats: false,
           check: false,
           strict: false,
@@ -70,7 +83,7 @@
           const arg = argv[i];
           if (arg === '--all') options.all = true;
           else if (arg === '--json') options.json = true;
-          else if (arg === '--trace') options.trace = true;
+          else if (arg === '--prove') options.prove = true;
           else if (arg === '--stats') options.stats = true;
           else if (arg === '--check') options.check = true;
           else if (arg === '--strict') options.strict = true;
@@ -111,6 +124,8 @@
             options.version = true;
           } else if (arg === '-h' || arg === '--help') {
             options.help = true;
+          } else if (arg === '-') {
+            files.push(arg);
           } else if (arg.startsWith('-')) {
             throw new Error(`Unknown option ${arg}`);
           } else {
@@ -121,13 +136,26 @@
         return { options, files };
       }
       
-      function readInput(files) {
-        if (files.length === 0) return { source: fs.readFileSync(0, 'utf8'), filename: '<stdin>', baseIRI: null };
-        if (files.length === 1) {
-          const filename = path.resolve(files[0]);
-          return { source: fs.readFileSync(filename, 'utf8'), filename, baseIRI: pathToFileURL(filename).href };
+      async function readInput(files, fetchImpl = globalThis.fetch) {
+        const inputs = [];
+        let readStdin = false;
+        for (const spec of files) {
+          if (spec === '-') {
+            if (readStdin) throw new Error('Standard input (-) may only be specified once');
+            readStdin = true;
+            inputs.push({ source: fs.readFileSync(0, 'utf8'), filename: '<stdin>', baseIRI: null });
+          } else if (/^https?:\/\//i.test(spec)) {
+            if (typeof fetchImpl !== 'function') throw new Error(`Cannot fetch URL ${spec}: fetch is unavailable`);
+            const response = await fetchImpl(spec);
+            if (!response.ok) throw new Error(`Cannot fetch URL ${spec}: HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`);
+            inputs.push({ source: await response.text(), filename: spec, baseIRI: spec });
+          } else {
+            const filename = path.resolve(spec);
+            inputs.push({ source: fs.readFileSync(filename, 'utf8'), filename, baseIRI: pathToFileURL(filename).href });
+          }
         }
-        return { source: files.map((file) => fs.readFileSync(file, 'utf8')).join('\n'), filename: '<input>', baseIRI: null };
+        if (inputs.length === 1) return inputs[0];
+        return { source: inputs.map((input) => input.source).join('\n'), filename: '<input>', baseIRI: null };
       }
       
       function createFileImportResolver() {
@@ -172,7 +200,7 @@
         return /^https?:/.test(name) ? compactIRI(name, prefixes) : name;
       }
       
-      function main(argv = process.argv.slice(2), io = process) {
+      async function main(argv = process.argv.slice(2), io = process) {
         try {
           const { options, files } = parseArgs(argv);
           if (options.help) {
@@ -183,7 +211,11 @@
             io.stdout.write(`${VERSION}\n`);
             return 0;
           }
-          const input = readInput(files);
+          if (files.length === 0) {
+            io.stdout.write(help());
+            return 0;
+          }
+          const input = await readInput(files);
           const compiled = compile(input.source, {
             filename: input.filename,
             baseIRI: input.baseIRI,
@@ -245,15 +277,18 @@
           }
       
           if (options.json) {
-            io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, trace: options.trace, analysis: options.deps }), null, 2)}\n`);
+            io.stdout.write(`${JSON.stringify(toJSON(result, { all: options.all, proof: options.prove, analysis: options.deps }), null, 2)}\n`);
           } else if (result.query) {
             const out = formatBindings(result.query.bindings, result.prefixes, result.query.select);
             if (out) io.stdout.write(`${out}\n`);
           } else {
-            if (options.trace && result.trace.length > 0) io.stderr.write(`${formatTrace(result.trace, result.prefixes)}\n`);
             const triples = resultTriples(result, compiled.program, options);
             const out = formatTriples(triples, result.prefixes);
             if (out) io.stdout.write(`${out}\n`);
+            if (options.prove) {
+              const proof = formatProof(result.trace, result.prefixes);
+              if (proof) io.stdout.write(`${out ? '\n' : ''}${proof}\n`);
+            }
           }
       
           if (options.stats) {
@@ -271,9 +306,9 @@
         }
       }
       
-      if (require.main === module) process.exitCode = main();
+      if (require.main === module) main().then((code) => { process.exitCode = code; });
       
-      module.exports = { main, parseArgs, help, VERSION, createFileImportResolver };
+      module.exports = { main, parseArgs, readInput, help, VERSION, createFileImportResolver };
       
     },
     "src/api.js": function (require, module, exports) {
@@ -284,7 +319,7 @@
       const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js');
       const { evaluate } = require('./engine.js');
       const { analyze } = require('./analyze.js');
-      const { formatTriples, sortTriples, toJSON, formatTrace, formatBindings } = require('./format.js');
+      const { formatTriples, sortTriples, toJSON, formatTrace, formatProof, formatBindings } = require('./format.js');
       const { runQuery, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require('./query.js');
       const { resultTriples } = require('./output.js');
       
@@ -407,6 +442,7 @@
         sortTriples,
         toJSON,
         formatTrace,
+        formatProof,
         resultTriples,
       };
       
@@ -4532,6 +4568,7 @@
                   rule: rule.name || `rule#${ruleIndex + 1}`,
                   triple,
                   binding,
+                  uses: proofUses(rule.body, binding),
                 });
               }
             }
@@ -4540,6 +4577,17 @@
       
         if (bodyContext.backwardProver && context.hybridStats) mergeBackwardStats(context.hybridStats, bodyContext.backwardProver.stats);
         return { applications, added };
+      }
+      
+      function proofUses(body, binding) {
+        return body
+          .filter((clause) => clause.type === 'triple')
+          .map((clause) => ({
+            s: instantiateTerm(clause.triple.s, binding),
+            p: instantiateTerm(clause.triple.p, binding),
+            o: instantiateTerm(clause.triple.o, binding),
+          }))
+          .filter((triple) => ![triple.s, triple.p, triple.o].some((term) => term && term.type === 'var'));
       }
       
       function prepareBodyContext(program, store, context) {
@@ -6332,6 +6380,35 @@
         return trace.map((entry) => `#${entry.iteration} ${entry.rule} => ${formatTriple(entry.triple, prefixes)}`).join('\n');
       }
       
+      function formatProof(trace, prefixes = {}) {
+        if (!trace.length) return '';
+        const lines = ['@prefix pe: <https://eyereasoner.github.io/pe#> .', ''];
+        for (const entry of trace) {
+          const conclusion = formatTriple(entry.triple, prefixes);
+          lines.push(`{ ${conclusion} } pe:why {`);
+          lines.push(`  { ${conclusion} }`);
+          lines.push(`    pe:by [ pe:rule ${quoteString(entry.rule)} ]${proofDetails(entry, prefixes)} .`);
+          lines.push('}.', '');
+        }
+        return lines.join('\n').trimEnd();
+      }
+      
+      function proofDetails(entry, prefixes) {
+        const details = [];
+        const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
+        if (bindings.length > 0) {
+          details.push(`\n    pe:binding ${bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`).join(', ')}`);
+        }
+        if (entry.uses && entry.uses.length > 0) {
+          details.push(`\n    pe:uses ${entry.uses.map((triple) => `{ ${formatTriple(triple, prefixes)} }`).join(', ')}`);
+        }
+        return details.length ? `;${details.join(';')}` : '';
+      }
+      
+      function quoteString(value) {
+        return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`;
+      }
+      
       function formatBindings(bindings, prefixes = {}, select = null) {
         const columns = select && select.length > 0 ? select : inferColumns(bindings);
         return bindings
@@ -6363,7 +6440,7 @@
           prefixes: result.prefixes,
           diagnostics: result.diagnostics || [],
           triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
-          trace: options.trace ? result.trace : undefined,
+          proof: options.proof ? result.trace : undefined,
         };
         if (result.query) json.query = jsonSafeValue(result.query);
         if (result.analysis && options.analysis) json.analysis = result.analysis;
@@ -6392,7 +6469,7 @@
         return value;
       }
       
-      module.exports = { sortTriples, formatTriples, formatTrace, formatBindings, formatBinding, toJSON };
+      module.exports = { sortTriples, formatTriples, formatTrace, formatProof, formatBindings, formatBinding, toJSON };
       
     },
     "src/query.js": function (require, module, exports) {
@@ -6544,5 +6621,7 @@
     __modules[id](localRequire, module, module.exports);
     return module.exports;
   }
-  process.exitCode = __require("src/cli.js").main(process.argv.slice(2));
+  Promise.resolve(__require("src/cli.js").main(process.argv.slice(2)))
+    .then((code) => { process.exitCode = code; })
+    .catch((error) => { console.error(error); process.exitCode = 1; });
 }());

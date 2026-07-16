@@ -106,7 +106,9 @@ function buildCli() {
   chunks.push('    __modules[id](localRequire, module, module.exports);');
   chunks.push('    return module.exports;');
   chunks.push('  }');
-  chunks.push(`  process.exitCode = __require(${js(cliEntry)}).main(process.argv.slice(2));`);
+  chunks.push(`  Promise.resolve(__require(${js(cliEntry)}).main(process.argv.slice(2)))`);
+  chunks.push('    .then((code) => { process.exitCode = code; })');
+  chunks.push("    .catch((error) => { console.error(error); process.exitCode = 1; });");
   chunks.push('}());');
   chunks.push('');
 

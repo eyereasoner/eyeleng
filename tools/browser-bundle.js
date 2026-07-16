@@ -129,6 +129,7 @@ function buildModuleWrapper() {
     'sortTriples',
     'toJSON',
     'formatTrace',
+    'formatProof',
   ];
 
   const chunks = [];

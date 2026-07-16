@@ -202,6 +202,7 @@ function applyRuleOnce(program, store, ruleIndex, context) {
             rule: rule.name || `rule#${ruleIndex + 1}`,
             triple,
             binding,
+            uses: proofUses(rule.body, binding),
           });
         }
       }
@@ -210,6 +211,17 @@ function applyRuleOnce(program, store, ruleIndex, context) {
 
   if (bodyContext.backwardProver && context.hybridStats) mergeBackwardStats(context.hybridStats, bodyContext.backwardProver.stats);
   return { applications, added };
+}
+
+function proofUses(body, binding) {
+  return body
+    .filter((clause) => clause.type === 'triple')
+    .map((clause) => ({
+      s: instantiateTerm(clause.triple.s, binding),
+      p: instantiateTerm(clause.triple.p, binding),
+      o: instantiateTerm(clause.triple.o, binding),
+    }))
+    .filter((triple) => ![triple.s, triple.p, triple.o].some((term) => term && term.type === 'var'));
 }
 
 function prepareBodyContext(program, store, context) {
