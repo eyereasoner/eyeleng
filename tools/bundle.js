@@ -151,6 +151,41 @@ function buildBrowser() {
   writeFile(browserOutput, chunks);
 }
 
+function updatePlaygroundBundle() {
+  const { modules, mappings } = collectGraph('src/api.js');
+  const fallbackNames = [
+    'family.srl',
+    'socrates.srl',
+    'spec-2-2-recursion.srl',
+    'bmi.srl',
+    'stratified-negation.srl',
+    'spec-builtins.srl',
+    'spec-4-2-rdf-rules-syntax.ttl',
+    'basic-ruleset.ttl',
+  ];
+  const examples = {};
+  for (const name of fallbackNames) {
+    examples[name] = fs.readFileSync(path.join(root, 'examples', name), 'utf8');
+  }
+
+  const filename = path.join(root, playgroundOutput);
+  let html = fs.readFileSync(filename, 'utf8');
+  html = html.replace(
+    /^    window\.__EYELENG_MODULES__ = .*;$/m,
+    () => `    window.__EYELENG_MODULES__ = ${js(Object.fromEntries(modules.entries()))};`,
+  );
+  html = html.replace(
+    /^    window\.__EYELENG_MAPPINGS__ = .*;$/m,
+    () => `    window.__EYELENG_MAPPINGS__ = ${js(Object.fromEntries(mappings.entries()))};`,
+  );
+  html = html.replace(
+    /^    window\.__EYELENG_EXAMPLES__ = .*;$/m,
+    () => `    window.__EYELENG_EXAMPLES__ = ${js(examples)};`,
+  );
+  fs.writeFileSync(filename, html, 'utf8');
+  console.log(`updated ${playgroundOutput}`);
+}
+
 function indent(source, spaces) {
   const prefix = ' '.repeat(spaces);
   return source.split('\n').map((line) => prefix + line).join('\n');
@@ -158,3 +193,4 @@ function indent(source, spaces) {
 
 buildCli();
 buildBrowser();
+updatePlaygroundBundle();
