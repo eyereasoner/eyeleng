@@ -4378,7 +4378,7 @@
         const store = new TripleStore(program.data);
         const inputKeys = new Set(program.data.map(tripleKey));
         const inferred = [];
-        const trace = [];
+        const trace = options.trace || options.prove ? [] : null;
         let iterations = 0;
         let ruleApplications = 0;
         const perRule = program.rules.map((rule, index) => ({
@@ -4467,7 +4467,7 @@
           layers: layerIndexes.map((layer) => layer.map((ruleIndex) => perRule[ruleIndex].name)),
           ruleApplications,
           perRule,
-          trace,
+          trace: trace || [],
           hybridStats,
         };
       }
@@ -4538,7 +4538,10 @@
         const seenBindings = dedupeBindings ? new Set() : null;
         const headBlankLabels = collectHeadBlankLabels(rule.head);
       
-        const bodyContext = prepareBodyContext(program, store, context);
+        const bodyContext = { ...prepareBodyContext(program, store, context) };
+        if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
+          bodyContext.retainedBodyVariables = collectVariables(rule.head);
+        }
         const bodyBindings = rule.body.length === 1 && rule.body[0].type === 'triple' && !shouldUseBackwardForTriple(rule.body[0].triple, {}, bodyContext)
           ? store.match(rule.body[0].triple, {})
           : evaluateBodyStream(rule.body, store, {}, bodyContext);
@@ -4717,33 +4720,132 @@
       }
       
       function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, index = 0) {
-        if (index >= clauses.length) {
+        const plannedClauses = options.trace ? clauses : planBodyClauses(clauses);
+        if (index >= plannedClauses.length) {
           yield initialBinding;
           return;
         }
-      
-        const clause = clauses[index];
+        const stack = [{
+          index,
+          iterator: evaluateBodyClause(plannedClauses[index], store, initialBinding, options),
+        }];
+        const dropAfter = options.retainedBodyVariables
+          ? bodyVariableLastUses(plannedClauses, options.retainedBodyVariables)
+          : null;
+        while (stack.length > 0) {
+          const frame = stack[stack.length - 1];
+          const next = frame.iterator.next();
+          if (next.done) {
+            stack.pop();
+            continue;
+          }
+          const binding = dropAfter ? dropBindingVariables(next.value, dropAfter[frame.index]) : next.value;
+          const nextIndex = frame.index + 1;
+          if (nextIndex >= plannedClauses.length) {
+            yield binding;
+            continue;
+          }
+          stack.push({
+            index: nextIndex,
+            iterator: evaluateBodyClause(plannedClauses[nextIndex], store, binding, options),
+          });
+        }
+      }
+      function planBodyClauses(clauses) {
+        const planned = [];
+        for (let index = 0; index < clauses.length;) {
+          const tuple = listTuplePatternAt(clauses, index);
+          if (tuple) {
+            planned.push({ type: 'listTuple', tuple });
+            index += 7;
+          } else {
+            planned.push(clauses[index]);
+            index += 1;
+          }
+        }
+        return planned;
+      }
+      function listTuplePatternAt(clauses, index) {
+        const group = clauses.slice(index, index + 7);
+        if (group.length !== 7 || group.some((clause) => clause.type !== 'triple')) return null;
+        const triples = group.map((clause) => clause.triple);
+        const [first1, rest1, first2, rest2, first3, rest3, relation] = triples;
+        if (!isPredicate(first1, 'first') || !isPredicate(rest1, 'rest')
+          || !isPredicate(first2, 'first') || !isPredicate(rest2, 'rest')
+          || !isPredicate(first3, 'first') || !isPredicate(rest3, 'rest')) return null;
+        if (!sameVariable(first1.s, rest1.s) || !sameVariable(rest1.o, first2.s)
+          || !sameVariable(first2.s, rest2.s) || !sameVariable(rest2.o, first3.s)
+          || !sameVariable(first3.s, rest3.s) || !sameVariable(first1.s, relation.s)) return null;
+        if (!rest3.o || rest3.o.type !== 'iri' || rest3.o.value !== 'http://www.w3.org/1999/02/22-rdf-syntax-ns#nil') return null;
+        return { s: first1.s, p: relation.p, o: relation.o, items: [first1.o, first2.o, first3.o] };
+      }
+      function isPredicate(triple, localName) {
+        return triple.p && triple.p.type === 'iri'
+          && triple.p.value === `http://www.w3.org/1999/02/22-rdf-syntax-ns#${localName}`;
+      }
+      function sameVariable(left, right) {
+        return left && right && left.type === 'var' && right.type === 'var' && left.value === right.value;
+      }
+      function bodyVariableLastUses(clauses, retainedVariables) {
+        const lastUse = new Map();
+        for (let index = 0; index < clauses.length; index += 1) {
+          for (const name of collectVariables(clauses[index])) lastUse.set(name, index);
+        }
+        const dropAfter = Array.from({ length: clauses.length }, () => []);
+        for (const [name, index] of lastUse) {
+          if (!retainedVariables.has(name)) dropAfter[index].push(name);
+        }
+        return dropAfter;
+      }
+      function collectVariables(value, variables = new Set(), seen = new Set()) {
+        if (!value || typeof value !== 'object' || seen.has(value)) return variables;
+        seen.add(value);
+        if (value.type === 'var' && typeof value.value === 'string') {
+          variables.add(value.value);
+          return variables;
+        }
+        if (Array.isArray(value)) {
+          for (const item of value) collectVariables(item, variables, seen);
+        } else {
+          for (const item of Object.values(value)) collectVariables(item, variables, seen);
+        }
+        return variables;
+      }
+      function dropBindingVariables(binding, names) {
+        if (names.length === 0 || !names.some((name) => Object.hasOwn(binding, name))) return binding;
+        const projected = { ...binding };
+        for (const name of names) delete projected[name];
+        return projected;
+      }
+      function* evaluateBodyClause(clause, store, initialBinding, options) {
+        if (clause.type === 'listTuple') {
+          yield* store.matchListTuple(clause.tuple, initialBinding);
+          return;
+        }
         if (clause.type === 'triple') {
+          const useBackward = shouldUseBackwardForTriple(clause.triple, initialBinding, options);
+          if (!useBackward) {
+            yield* store.match(clause.triple, initialBinding);
+            return;
+          }
           const seen = new Set();
           for (const matched of store.match(clause.triple, initialBinding)) {
             const key = bindingKey(matched);
             seen.add(key);
-            yield* evaluateBodyStream(clauses, store, matched, options, index + 1);
+            yield matched;
           }
-          if (shouldUseBackwardForTriple(clause.triple, initialBinding, options)) {
-            for (const matched of options.backwardProver.solveTriple(clause.triple, initialBinding)) {
-              const key = bindingKey(matched);
-              if (seen.has(key)) continue;
-              seen.add(key);
-              yield* evaluateBodyStream(clauses, store, matched, options, index + 1);
-            }
+          for (const matched of options.backwardProver.solveTriple(clause.triple, initialBinding)) {
+            const key = bindingKey(matched);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            yield matched;
           }
           return;
         }
       
         if (clause.type === 'path') {
           for (const matched of store.matchPath(clause.triple, initialBinding)) {
-            yield* evaluateBodyStream(clauses, store, matched, options, index + 1);
+            yield matched;
           }
           return;
         }
@@ -4751,7 +4853,7 @@
         if (clause.type === 'filter') {
           try {
             if (booleanValue(evalExpression(clause.expr, initialBinding, options))) {
-              yield* evaluateBodyStream(clauses, store, initialBinding, options, index + 1);
+              yield initialBinding;
             }
           } catch (_) {
             // SPARQL-style FILTER errors reject the current solution.
@@ -4763,9 +4865,9 @@
           try {
             const value = asTerm(evalExpression(clause.expr, initialBinding, options));
             if (!initialBinding[clause.variable]) {
-              yield* evaluateBodyStream(clauses, store, { ...initialBinding, [clause.variable]: value }, options, index + 1);
+              yield { ...initialBinding, [clause.variable]: value };
             } else if (termEquals(initialBinding[clause.variable], value)) {
-              yield* evaluateBodyStream(clauses, store, initialBinding, options, index + 1);
+              yield initialBinding;
             }
           } catch (_) {
             // The SRL evaluation sketch drops a solution when assignment evaluation errors.
@@ -4775,7 +4877,7 @@
       
         if (clause.type === 'not') {
           if (!bodyHasAny(clause.body, store, initialBinding, options)) {
-            yield* evaluateBodyStream(clauses, store, initialBinding, options, index + 1);
+            yield initialBinding;
           }
           return;
         }
@@ -4813,7 +4915,7 @@
     "src/store.js": function (require, module, exports) {
       'use strict';
       
-      const { tripleKey, termKey, termEquals } = require('./term.js');
+      const { RDF_FIRST, RDF_REST, RDF_NIL, tripleKey, termKey, termEquals } = require('./term.js');
       
       class TripleStore {
         constructor(triples = []) {
@@ -4821,6 +4923,7 @@
           this.byPredicate = new Map();
           this.byPredicateSubject = new Map();
           this.byPredicateObject = new Map();
+          this.deepIndexes = new Map();
           this.version = 0;
           for (const triple of triples) this.add(triple);
         }
@@ -4837,6 +4940,7 @@
           addNestedIndex(this.byPredicateSubject, predicate, subject, key, normalized);
           addNestedIndex(this.byPredicateObject, predicate, object, key, normalized);
           this.version += 1;
+          this.deepIndexes.clear();
           return true;
         }
       
@@ -4877,6 +4981,61 @@
           }
           return out;
         }
+        matchListTuple(pattern, binding = {}) {
+          const predicate = instantiateTerm(pattern.p, binding);
+          if (!predicate || predicate.type === 'var') return [];
+          const boundPositions = [];
+          const boundKeys = [];
+          for (let index = 0; index < pattern.items.length; index += 1) {
+            const item = instantiateTerm(pattern.items[index], binding);
+            if (item && item.type !== 'var') {
+              boundPositions.push(index);
+              boundKeys.push(termKey(item));
+            }
+          }
+          const predicateKey = termKey(predicate);
+          const indexKey = `${predicateKey}|${boundPositions.join(',')}`;
+          let deepIndex = this.deepIndexes.get(indexKey);
+          if (!deepIndex) {
+            deepIndex = this.buildListTupleIndex(predicateKey, boundPositions, pattern.items.length);
+            this.deepIndexes.set(indexKey, deepIndex);
+          }
+          const candidates = deepIndex.get(boundKeys.join('\u0000')) || [];
+          const out = [];
+          for (const candidate of candidates) {
+            let next = matchTriple({ s: pattern.s, p: pattern.p, o: pattern.o }, candidate.triple, binding);
+            if (!next) continue;
+            for (let index = 0; index < pattern.items.length && next; index += 1) {
+              next = mergeBindingTerm(next, pattern.items[index], candidate.items[index]);
+            }
+            if (next) out.push(next);
+          }
+          return out;
+        }
+        buildListTupleIndex(predicateKey, positions, length) {
+          const out = new Map();
+          const relations = this.byPredicate.get(predicateKey) || new Map();
+          for (const triple of relations.values()) {
+            const items = this.readListItems(triple.s, length);
+            if (!items) continue;
+            const key = positions.map((position) => termKey(items[position])).join('\u0000');
+            if (!out.has(key)) out.set(key, []);
+            out.get(key).push({ triple, items });
+          }
+          return out;
+        }
+        readListItems(head, length) {
+          const items = [];
+          let node = head;
+          for (let index = 0; index < length; index += 1) {
+            const first = singleNestedValue(this.byPredicateSubject, termKey({ type: 'iri', value: RDF_FIRST }), termKey(node));
+            const rest = singleNestedValue(this.byPredicateSubject, termKey({ type: 'iri', value: RDF_REST }), termKey(node));
+            if (!first || !rest) return null;
+            items.push(first.o);
+            node = rest.o;
+          }
+          return node.type === 'iri' && node.value === RDF_NIL ? items : null;
+        }
       
         matchPath(pattern, binding = {}) {
           const prefix = `__path_${pathCallCounter++}_`;
@@ -4913,6 +5072,11 @@
       function nestedLookup(index, outerKey, innerKey) {
         const inner = index.get(outerKey);
         return inner ? inner.get(innerKey) || null : null;
+      }
+      function singleNestedValue(index, outerKey, innerKey) {
+        const values = nestedLookup(index, outerKey, innerKey);
+        if (!values || values.size !== 1) return null;
+        return values.values().next().value;
       }
       
       function smallerValues(left, right) {

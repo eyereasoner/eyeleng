@@ -1,0 +1,2 @@
+:case :lookupResult :passed .
+:case :reason "2000 two-key lookups over 3375 facts" .

@@ -29,6 +29,34 @@ RULE { ?x :ancestorOf ?z } WHERE { ?x :parentOf ?y . ?y :ancestorOf ?z }
   assert.match(output, /:A :ancestorOf :C \./);
 });
 
+test('large rule bodies are evaluated without using the JavaScript call stack', () => {
+  const patterns = Array.from({ length: 2000 }, (_, index) => `  :source :value ?value${index} .`).join('\n');
+  const output = runToString(`
+PREFIX : <http://example/>
+DATA { :source :value :target . }
+RULE { :case :result :passed } WHERE {
+${patterns}
+}
+`);
+  assert.match(output, /:case :result :passed \./);
+});
+
+test('tuple lookups build a demand-driven index for the bound members', () => {
+  const output = runToString(`
+PREFIX : <http://example/>
+DATA {
+  (:a :b1 :c) :relation :v1 .
+  (:a :b2 :d) :relation :v2 .
+  (:z :b3 :c) :relation :v3 .
+}
+RULE { :case :value ?value } WHERE {
+  (:a ?middle :c) :relation ?value .
+}
+`);
+  assert.match(output, /:case :value :v1 \./);
+  assert.doesNotMatch(output, /:case :value :v[23] \./);
+});
+
 test('FILTER, NOT, and SET work together', () => {
   const source = `
 PREFIX : <http://example/>

@@ -1,6 +1,6 @@
 'use strict';
 
-const { tripleKey, termKey, termEquals } = require('./term.js');
+const { RDF_FIRST, RDF_REST, RDF_NIL, tripleKey, termKey, termEquals } = require('./term.js');
 
 class TripleStore {
   constructor(triples = []) {
@@ -8,6 +8,7 @@ class TripleStore {
     this.byPredicate = new Map();
     this.byPredicateSubject = new Map();
     this.byPredicateObject = new Map();
+    this.deepIndexes = new Map();
     this.version = 0;
     for (const triple of triples) this.add(triple);
   }
@@ -24,6 +25,7 @@ class TripleStore {
     addNestedIndex(this.byPredicateSubject, predicate, subject, key, normalized);
     addNestedIndex(this.byPredicateObject, predicate, object, key, normalized);
     this.version += 1;
+    this.deepIndexes.clear();
     return true;
   }
 
@@ -64,6 +66,61 @@ class TripleStore {
     }
     return out;
   }
+  matchListTuple(pattern, binding = {}) {
+    const predicate = instantiateTerm(pattern.p, binding);
+    if (!predicate || predicate.type === 'var') return [];
+    const boundPositions = [];
+    const boundKeys = [];
+    for (let index = 0; index < pattern.items.length; index += 1) {
+      const item = instantiateTerm(pattern.items[index], binding);
+      if (item && item.type !== 'var') {
+        boundPositions.push(index);
+        boundKeys.push(termKey(item));
+      }
+    }
+    const predicateKey = termKey(predicate);
+    const indexKey = `${predicateKey}|${boundPositions.join(',')}`;
+    let deepIndex = this.deepIndexes.get(indexKey);
+    if (!deepIndex) {
+      deepIndex = this.buildListTupleIndex(predicateKey, boundPositions, pattern.items.length);
+      this.deepIndexes.set(indexKey, deepIndex);
+    }
+    const candidates = deepIndex.get(boundKeys.join('\u0000')) || [];
+    const out = [];
+    for (const candidate of candidates) {
+      let next = matchTriple({ s: pattern.s, p: pattern.p, o: pattern.o }, candidate.triple, binding);
+      if (!next) continue;
+      for (let index = 0; index < pattern.items.length && next; index += 1) {
+        next = mergeBindingTerm(next, pattern.items[index], candidate.items[index]);
+      }
+      if (next) out.push(next);
+    }
+    return out;
+  }
+  buildListTupleIndex(predicateKey, positions, length) {
+    const out = new Map();
+    const relations = this.byPredicate.get(predicateKey) || new Map();
+    for (const triple of relations.values()) {
+      const items = this.readListItems(triple.s, length);
+      if (!items) continue;
+      const key = positions.map((position) => termKey(items[position])).join('\u0000');
+      if (!out.has(key)) out.set(key, []);
+      out.get(key).push({ triple, items });
+    }
+    return out;
+  }
+  readListItems(head, length) {
+    const items = [];
+    let node = head;
+    for (let index = 0; index < length; index += 1) {
+      const first = singleNestedValue(this.byPredicateSubject, termKey({ type: 'iri', value: RDF_FIRST }), termKey(node));
+      const rest = singleNestedValue(this.byPredicateSubject, termKey({ type: 'iri', value: RDF_REST }), termKey(node));
+      if (!first || !rest) return null;
+      items.push(first.o);
+      node = rest.o;
+    }
+    return node.type === 'iri' && node.value === RDF_NIL ? items : null;
+  }
 
   matchPath(pattern, binding = {}) {
     const prefix = `__path_${pathCallCounter++}_`;
@@ -100,6 +157,11 @@ function addNestedIndex(index, outerKey, innerKey, tripleKeyValue, triple) {
 function nestedLookup(index, outerKey, innerKey) {
   const inner = index.get(outerKey);
   return inner ? inner.get(innerKey) || null : null;
+}
+function singleNestedValue(index, outerKey, innerKey) {
+  const values = nestedLookup(index, outerKey, innerKey);
+  if (!values || values.size !== 1) return null;
+  return values.values().next().value;
 }
 
 function smallerValues(left, right) {
