@@ -10,6 +10,10 @@ function evaluate(program, options = {}) {
   const maxIterations = options.maxIterations ?? 10000;
   const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
   const store = new TripleStore(program.data);
+  // SHACL 1.2 Rules distinguishes the immutable ground-data graph (base graph
+  // plus DATA blocks) from the growing evaluation graph. Snapshot it before
+  // any rules run so WHERE DATA and NOT DATA never see inferred triples.
+  const groundStore = new TripleStore(program.data);
   const inputKeys = new Set(program.data.map(tripleKey));
   const inferred = [];
   const trace = options.trace || options.prove ? [] : null;
@@ -63,6 +67,7 @@ function evaluate(program, options = {}) {
     hybridBackwardPredicates,
     hybridBackwardRules,
     hybridStats,
+    groundStore,
   };
 
   for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
@@ -103,6 +108,7 @@ function evaluate(program, options = {}) {
     perRule,
     trace: trace || [],
     hybridStats,
+    groundStore,
   };
 }
 
@@ -172,13 +178,14 @@ function applyRuleOnce(program, store, ruleIndex, context) {
   const seenBindings = dedupeBindings ? new Set() : null;
   const headBlankLabels = collectHeadBlankLabels(rule.head);
 
-  const bodyContext = { ...prepareBodyContext(program, store, context) };
+  const bodyStore = rule.groundData ? context.groundStore : store;
+  const bodyContext = { ...prepareBodyContext(program, bodyStore, context) };
   if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
     bodyContext.retainedBodyVariables = collectVariables(rule.head);
   }
   const bodyBindings = rule.body.length === 1 && rule.body[0].type === 'triple' && !shouldUseBackwardForTriple(rule.body[0].triple, {}, bodyContext)
-    ? store.match(rule.body[0].triple, {})
-    : evaluateBodyStream(rule.body, store, {}, bodyContext);
+    ? bodyStore.match(rule.body[0].triple, {})
+    : evaluateBodyStream(rule.body, bodyStore, {}, bodyContext);
 
   for (const binding of bodyBindings) {
     if (seenBindings) {
@@ -510,7 +517,8 @@ function* evaluateBodyClause(clause, store, initialBinding, options) {
   }
 
   if (clause.type === 'not') {
-    if (!bodyHasAny(clause.body, store, initialBinding, options)) {
+    const negationStore = clause.groundData ? (options.groundStore || store) : store;
+    if (!bodyHasAny(clause.body, negationStore, initialBinding, options)) {
       yield initialBinding;
     }
     return;

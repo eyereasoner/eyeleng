@@ -453,8 +453,9 @@ test('IMPORTS can be resolved by the API without duplicate cycles', () => {
 });
 
 
-test('non-spec optional rule names are rejected', () => {
-  assert.throws(() => parse('PREFIX : <http://example/> RULE :named { ?x :q ?y } WHERE { ?x :p ?y }'), /Expected \{/);
+test('optional rule IRIs are accepted by the SHACL 1.2 grammar', () => {
+  const program = parse('PREFIX : <http://example/> RULE :named { ?x :q ?y } WHERE { ?x :p ?y }');
+  assert.equal(program.rules[0].name, 'http://example/named');
 });
 
 test('blank-node property lists and RDF collections expand into graph patterns', () => {
@@ -843,3 +844,28 @@ RULE { ?x :twoStep ?y } WHERE { ?x :q/:q ?y }
 });
 
 main();
+
+
+test('WHERE DATA matches only the immutable ground-data graph', () => {
+  const result = run(`
+PREFIX : <http://example/>
+DATA { :a :seed :x . }
+RULE { ?x :derived :yes } WHERE { ?x :seed :x }
+RULE { ?x :groundOnly :yes } WHERE DATA { ?x :derived :yes }
+`);
+  const keys = result.inferred.map(tripleKey);
+  assert(keys.some((key) => key.includes('http://example/derived')));
+  assert(!keys.some((key) => key.includes('http://example/groundOnly')));
+});
+
+test('NOT DATA ignores inferred triples but sees input and DATA triples', () => {
+  const result = run(`
+PREFIX : <http://example/>
+DATA { :a :seed :x . }
+RULE { ?x :blocked :yes } WHERE { ?x :seed :x }
+RULE { ?x :allowed :yes } WHERE { ?x :seed :x . NOT DATA { ?x :blocked :yes } }
+`);
+  const keys = result.inferred.map(tripleKey);
+  assert(keys.some((key) => key.includes('http://example/blocked')));
+  assert(keys.some((key) => key.includes('http://example/allowed')));
+});

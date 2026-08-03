@@ -109,21 +109,27 @@ class Parser {
   }
 
   parseRule() {
+    let name = null;
+    if (!this.checkValue('{')) name = this.parseIRIValue().value;
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
     this.expectWord('WHERE');
+    const groundData = this.matchWord('DATA');
     this.expectValue('{');
     const body = this.parseBodyBlockAlreadyOpen();
-    return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+    return { name, head, body, groundData, runOnce: ruleNeedsRunOnce(head, body, this.options) };
   }
 
   parseIfThenRule() {
+    let name = null;
+    if (!this.checkValue('{') && !this.checkWord('DATA')) name = this.parseIRIValue().value;
+    const groundData = this.matchWord('DATA');
     this.expectValue('{');
     const body = this.parseBodyBlockAlreadyOpen();
     this.expectWord('THEN');
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-    return { name: null, head, body, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+    return { name, head, body, groundData, runOnce: ruleNeedsRunOnce(head, body, this.options) };
   }
 
   checkDeclarationKeyword() {
@@ -498,9 +504,10 @@ class Parser {
         if (this.strictGrammar()) throw this.error('BIND is not part of the SHACL 1.2 Rules grammar; use SET');
         clauses.push(this.parseBindClause());
       } else if (this.matchWord('NOT')) {
+        const groundData = this.matchWord('DATA');
         this.expectValue('{');
         const body = this.parseBodyBasicAlreadyOpen();
-        clauses.push({ type: 'not', body });
+        clauses.push({ type: 'not', body, groundData });
       } else {
         for (const triple of this.parseTripleStatement({ allowPath: true, context: 'body' })) {
           if (triple.p && triple.p.type === 'path') clauses.push({ type: 'path', triple });
@@ -735,6 +742,10 @@ class Parser {
   }
 
   consumeOptionalDot() { this.matchValue('.'); }
+
+  checkWord(value) {
+    return this.checkType('word') && this.peek().value.toUpperCase() === value.toUpperCase();
+  }
 
   matchWord(value) {
     if (this.checkType('word') && this.peek().value.toUpperCase() === value.toUpperCase()) {
