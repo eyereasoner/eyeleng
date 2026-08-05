@@ -3,8 +3,6 @@ name: Deploy Pages
 on:
   push:
     branches: ['main']
-    # optional: also deploy on tags
-    # tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -20,12 +18,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/configure-pages@v5
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
+      - uses: actions/jekyll-build-pages@v1
+      - uses: actions/upload-pages-artifact@v3
 
   deploy:
     runs-on: ubuntu-latest
