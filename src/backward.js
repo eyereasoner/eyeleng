@@ -38,6 +38,10 @@ function bodySupported(clauses, options = {}) {
 }
 
 function ruleSupported(rule, options = {}) {
+  // Targeted rules are seeded from SHACL focus nodes by the forward evaluator.
+  // Until the backward prover has an equivalent targeting gate, treating them
+  // as ordinary rules would be semantically incorrect.
+  if (rule.target) return false;
   if (!Array.isArray(rule.head) || rule.head.length === 0) return false;
   for (const head of rule.head) {
     if (!head || !head.p || head.p.type !== 'iri') return false;

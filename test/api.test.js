@@ -869,3 +869,93 @@ RULE { ?x :allowed :yes } WHERE { ?x :seed :x . NOT DATA { ?x :blocked :yes } }
   assert(keys.some((key) => key.includes('http://example/blocked')));
   assert(keys.some((key) => key.includes('http://example/allowed')));
 });
+
+test('SHACL 1.2 FOR clauses parse in both current SRL rule forms', () => {
+  const program = parse(`
+PREFIX : <http://example/>
+RULE :r1 { ?this :status :adult } FOR ?this IN :AdultShape WHERE { ?this :age ?age }
+IF :r2 FOR ?focus IN :PersonShape { ?focus :active true } THEN { ?focus :seen true }
+`, { strictGrammar: true });
+
+  assert.deepEqual(program.rules[0].target, {
+    variable: 'this',
+    shape: 'http://example/AdultShape',
+  });
+  assert.deepEqual(program.rules[1].target, {
+    variable: 'focus',
+    shape: 'http://example/PersonShape',
+  });
+});
+
+test('FOR focus variables are pre-bound for rule well-formedness and evaluation', () => {
+  const source = `
+PREFIX : <http://example/>
+RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE {
+  FILTER(isIRI(?this))
+}
+`;
+
+  const compiled = compile(source, { strictGrammar: true });
+  assert.equal(compiled.analysis.errors.length, 0);
+
+  let resolverCalls = 0;
+  const output = runToString(source, {
+    strictGrammar: true,
+    focusNodeResolver(shape, context) {
+      resolverCalls += 1;
+      assert.equal(shape, 'http://example/AdultShape');
+      assert.equal(context.variable, 'this');
+      assert.equal(context.layer, 1);
+      return ['http://example/Alice', 'http://example/Alice', 'http://example/Bob'];
+    },
+  });
+
+  assert.equal(resolverCalls, 1);
+  assert.match(output, /:Alice :eligible true \./);
+  assert.match(output, /:Bob :eligible true \./);
+});
+
+test('FOR target sets are frozen once per stratum', () => {
+  const source = `
+PREFIX : <http://example/>
+DATA { :Alice :parent :Bob . :Bob :parent :Carol . }
+RULE { ?this :ancestor ?parent } FOR ?this IN :PersonShape WHERE { ?this :parent ?parent }
+RULE { ?this :ancestor ?ancestor } FOR ?this IN :PersonShape WHERE {
+  ?this :parent ?parent .
+  ?parent :ancestor ?ancestor
+}
+`;
+
+  let resolverCalls = 0;
+  const output = runToString(source, {
+    focusNodeResolver() {
+      resolverCalls += 1;
+      return ['http://example/Alice', 'http://example/Bob'];
+    },
+  });
+
+  assert.equal(resolverCalls, 2);
+  assert.match(output, /:Alice :ancestor :Carol \./);
+});
+
+test('targeted rules require a focus-node integration hook at runtime', () => {
+  assert.throws(() => run(`
+PREFIX : <http://example/>
+RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE { }
+`), /provide a focusNodeResolver/);
+});
+
+test('queries fall back to forward evaluation for targeted rules', () => {
+  const result = runQuery(`
+PREFIX : <http://example/>
+RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE { }
+`, '?who :eligible true', {
+    focusNodeResolver() {
+      return ['http://example/Alice'];
+    },
+  });
+
+  assert.equal(result.query.mode, 'forward');
+  assert.equal(result.query.bindings.length, 1);
+  assert.equal(result.query.bindings[0].who.value, 'http://example/Alice');
+});

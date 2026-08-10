@@ -11,7 +11,8 @@ function analyze(program, options = {}) {
 
   program.rules.forEach((rule, index) => {
     const name = ruleName(rule, index);
-    const bound = boundVariables(rule.body);
+    const initialBound = rule.target ? new Set([rule.target.variable]) : new Set();
+    const bound = boundVariables(rule.body, initialBound);
     const head = new Set();
     for (const triple of rule.head) collectTripleVars(triple, head);
 
@@ -37,7 +38,7 @@ function analyze(program, options = {}) {
       }
     }
 
-    diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}));
+    diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}, initialBound));
 
     const depRule = dependency.rules[index] || {};
     if (depRule.createsTerms && recursiveIndexes.has(index)) {
@@ -424,7 +425,7 @@ function stronglyConnectedComponents(size, edges) {
   return components;
 }
 
-function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, prefixes = {}) {
+function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, prefixes = {}, initialBound = new Set()) {
   const diagnostics = [];
 
   function visit(items, initialBound, scopeLabel) {
@@ -470,7 +471,7 @@ function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, prefixes = 
     return bound;
   }
 
-  visit(clauses, new Set(), '');
+  visit(clauses, initialBound, '');
   return diagnostics;
 }
 
@@ -663,8 +664,8 @@ function ruleHeadHasBlankNode(rule) {
   return (rule.head || []).some(tripleHasBlankNode);
 }
 
-function boundVariables(clauses) {
-  const vars = new Set();
+function boundVariables(clauses, initialBound = new Set()) {
+  const vars = new Set(initialBound);
   for (const clause of clauses) {
     if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
     if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);

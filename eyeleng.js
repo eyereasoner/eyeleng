@@ -563,23 +563,32 @@
           if (!this.checkValue('{')) name = this.parseIRIValue().value;
           this.expectValue('{');
           const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
+          const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
           this.expectWord('WHERE');
           const groundData = this.matchWord('DATA');
           this.expectValue('{');
           const body = this.parseBodyBlockAlreadyOpen();
-          return { name, head, body, groundData, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+          return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
         }
       
         parseIfThenRule() {
           let name = null;
-          if (!this.checkValue('{') && !this.checkWord('DATA')) name = this.parseIRIValue().value;
+          if (!this.checkValue('{') && !this.checkWord('FOR') && !this.checkWord('DATA')) name = this.parseIRIValue().value;
+          const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
           const groundData = this.matchWord('DATA');
           this.expectValue('{');
           const body = this.parseBodyBlockAlreadyOpen();
           this.expectWord('THEN');
           this.expectValue('{');
           const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-          return { name, head, body, groundData, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+          return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+        }
+      
+        parseForClauseAfterFor() {
+          const focusVariable = this.expectType('variable');
+          this.expectWord('IN');
+          const shape = this.parseIRIValue();
+          return { variable: focusVariable.value, shape: shape.value };
         }
       
         checkDeclarationKeyword() {
@@ -4378,7 +4387,7 @@
       'use strict';
       
       const { TripleStore, bindingKey, instantiateTerm } = require('./store.js');
-      const { tripleKey, termKey, termEquals, blankNode, tripleTerm } = require('./term.js');
+      const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm } = require('./term.js');
       const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
       const { analyze } = require('./analyze.js');
       const { BackwardProver, preferredBackwardPredicates, ruleIsBackwardOriented } = require('./backward.js');
@@ -4445,10 +4454,13 @@
           hybridBackwardRules,
           hybridStats,
           groundStore,
+          targetBindingCache: new Map(),
         };
       
         for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
           const layer = layerIndexes[layerIndex];
+          baseContext.layer = layerIndex + 1;
+          prepareTargetBindingsForLayer(program, store, layer, baseContext);
           const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
           const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
           const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
@@ -4456,14 +4468,12 @@
           if (runOnce.length > 0) {
             iterations += 1;
             for (const ruleIndex of runOnce) {
-              baseContext.layer = layerIndex + 1;
               baseContext.iteration = iterations;
               const added = applyRuleOnce(program, store, ruleIndex, baseContext);
               ruleApplications += added.applications;
             }
           }
       
-          baseContext.layer = layerIndex + 1;
           baseContext.startingIterations = iterations;
           baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
           const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
@@ -4560,9 +4570,8 @@
         if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
           bodyContext.retainedBodyVariables = collectVariables(rule.head);
         }
-        const bodyBindings = rule.body.length === 1 && rule.body[0].type === 'triple' && !shouldUseBackwardForTriple(rule.body[0].triple, {}, bodyContext)
-          ? bodyStore.match(rule.body[0].triple, {})
-          : evaluateBodyStream(rule.body, bodyStore, {}, bodyContext);
+        const initialBindings = rule.target ? targetBindingsForRule(program, store, ruleIndex, context) : [{}];
+        const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
       
         for (const binding of bodyBindings) {
           if (seenBindings) {
@@ -4598,6 +4607,78 @@
       
         if (bodyContext.backwardProver && context.hybridStats) mergeBackwardStats(context.hybridStats, bodyContext.backwardProver.stats);
         return { applications, added };
+      }
+      
+      function* evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings) {
+        for (const initialBinding of initialBindings) {
+          if (rule.body.length === 1 && rule.body[0].type === 'triple' && !shouldUseBackwardForTriple(rule.body[0].triple, initialBinding, bodyContext)) {
+            yield* bodyStore.match(rule.body[0].triple, initialBinding);
+          } else {
+            yield* evaluateBodyStream(rule.body, bodyStore, initialBinding, bodyContext);
+          }
+        }
+      }
+      
+      function prepareTargetBindingsForLayer(program, store, ruleIndexes, context) {
+        for (const ruleIndex of ruleIndexes) {
+          if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
+            targetBindingsForRule(program, store, ruleIndex, context);
+          }
+        }
+      }
+      
+      function targetBindingsForRule(program, store, ruleIndex, context) {
+        const cached = context.targetBindingCache && context.targetBindingCache.get(ruleIndex);
+        if (cached) return cached;
+      
+        const rule = program.rules[ruleIndex];
+        const target = rule && rule.target;
+        if (!target) return [{}];
+      
+        const resolver = context.focusNodeResolver;
+        if (typeof resolver !== 'function') {
+          throw new Error(`${rule.name || `rule#${ruleIndex + 1}`} uses FOR ?${target.variable} IN <${target.shape}>; provide a focusNodeResolver(shape, context) option that returns the conforming target focus nodes`);
+        }
+      
+        const resolved = resolver(target.shape, {
+          variable: target.variable,
+          rule,
+          ruleIndex,
+          layer: context.layer,
+          graph: store.values(),
+          groundGraph: context.groundStore.values(),
+          program,
+        });
+        if (resolved == null || typeof resolved[Symbol.iterator] !== 'function') {
+          throw new Error(`focusNodeResolver for <${target.shape}> must return an iterable of RDF focus nodes`);
+        }
+      
+        const bindings = [];
+        const seen = new Set();
+        for (const node of resolved) {
+          const term = normalizeFocusNode(node);
+          const key = termKey(term);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          bindings.push({ [target.variable]: term });
+        }
+      
+        if (context.targetBindingCache) context.targetBindingCache.set(ruleIndex, bindings);
+        return bindings;
+      }
+      
+      function normalizeFocusNode(node) {
+        if (node && typeof node === 'object' && node.type) return node;
+        if (typeof node === 'string') return iri(node);
+        if (node && typeof node === 'object' && node.termType) {
+          if (node.termType === 'NamedNode') return iri(node.value);
+          if (node.termType === 'BlankNode') return blankNode(node.value);
+          if (node.termType === 'Literal') {
+            const datatype = node.datatype && node.datatype.value ? node.datatype.value : null;
+            return literal(node.value, datatype, node.language || null, node.direction || null);
+          }
+        }
+        throw new Error('focusNodeResolver returned an unsupported focus node; return an Eyeleng term, an RDF/JS term, or an absolute IRI string');
       }
       
       function proofUses(body, binding) {
@@ -5267,7 +5348,8 @@
       
         program.rules.forEach((rule, index) => {
           const name = ruleName(rule, index);
-          const bound = boundVariables(rule.body);
+          const initialBound = rule.target ? new Set([rule.target.variable]) : new Set();
+          const bound = boundVariables(rule.body, initialBound);
           const head = new Set();
           for (const triple of rule.head) collectTripleVars(triple, head);
       
@@ -5293,7 +5375,7 @@
             }
           }
       
-          diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}));
+          diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}, initialBound));
       
           const depRule = dependency.rules[index] || {};
           if (depRule.createsTerms && recursiveIndexes.has(index)) {
@@ -5680,7 +5762,7 @@
         return components;
       }
       
-      function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, prefixes = {}) {
+      function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, prefixes = {}, initialBound = new Set()) {
         const diagnostics = [];
       
         function visit(items, initialBound, scopeLabel) {
@@ -5726,7 +5808,7 @@
           return bound;
         }
       
-        visit(clauses, new Set(), '');
+        visit(clauses, initialBound, '');
         return diagnostics;
       }
       
@@ -5919,8 +6001,8 @@
         return (rule.head || []).some(tripleHasBlankNode);
       }
       
-      function boundVariables(clauses) {
-        const vars = new Set();
+      function boundVariables(clauses, initialBound = new Set()) {
+        const vars = new Set(initialBound);
         for (const clause of clauses) {
           if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
           if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
@@ -6043,6 +6125,10 @@
       }
       
       function ruleSupported(rule, options = {}) {
+        // Targeted rules are seeded from SHACL focus nodes by the forward evaluator.
+        // Until the backward prover has an equivalent targeting gate, treating them
+        // as ordinary rules would be semantically incorrect.
+        if (rule.target) return false;
         if (!Array.isArray(rule.head) || rule.head.length === 0) return false;
         for (const head of rule.head) {
           if (!head || !head.p || head.p.type !== 'iri') return false;

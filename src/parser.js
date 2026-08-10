@@ -113,23 +113,32 @@ class Parser {
     if (!this.checkValue('{')) name = this.parseIRIValue().value;
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
+    const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
     this.expectWord('WHERE');
     const groundData = this.matchWord('DATA');
     this.expectValue('{');
     const body = this.parseBodyBlockAlreadyOpen();
-    return { name, head, body, groundData, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+    return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
   }
 
   parseIfThenRule() {
     let name = null;
-    if (!this.checkValue('{') && !this.checkWord('DATA')) name = this.parseIRIValue().value;
+    if (!this.checkValue('{') && !this.checkWord('FOR') && !this.checkWord('DATA')) name = this.parseIRIValue().value;
+    const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
     const groundData = this.matchWord('DATA');
     this.expectValue('{');
     const body = this.parseBodyBlockAlreadyOpen();
     this.expectWord('THEN');
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-    return { name, head, body, groundData, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+    return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+  }
+
+  parseForClauseAfterFor() {
+    const focusVariable = this.expectType('variable');
+    this.expectWord('IN');
+    const shape = this.parseIRIValue();
+    return { variable: focusVariable.value, shape: shape.value };
   }
 
   checkDeclarationKeyword() {

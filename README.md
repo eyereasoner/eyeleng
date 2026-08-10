@@ -5,7 +5,7 @@
 
 The `leng` in `eyeleng` stands for **Logic Engine Next Generation**. Eyeleng's main purpose is **automatic hybrid reasoning**: it combines forward materialization with tabled backward proving and automatically chooses how rules should be evaluated.
 
-Eyeleng is a compact JavaScript implementation of SHACL 1.2 Rules with two rule front-ends:
+Eyeleng is a compact JavaScript implementation of SHACL 1.2 Rules, aligned with the W3C Working Draft published 10 August 2026, with two rule front-ends:
 
 - **SRL** — the Shape Rules Language syntax used by the SHACL 1.2 Rules draft.
 - **RDF Rules** — a Turtle/RDF syntax for rule sets.
@@ -144,6 +144,7 @@ Implemented syntax includes:
 
 - `PREFIX`, `BASE`, `VERSION`, and `IMPORTS`
 - `DATA`, `RULE`, `WHERE`, `FILTER`, `BIND`, `SET`, and `NOT`
+- targeted SRL rules using `FOR ?focus IN <shape>` in the positions defined by the current grammar
 - variables such as `?x`
 - IRIs, prefixed names, blank nodes, literals, RDF collections, and RDF 1.2 triple terms
 - Turtle-style `;`, `,`, `a`, blank-node property lists, lists, annotations, and reifiers where supported
@@ -152,6 +153,36 @@ Implemented syntax includes:
 - SRL and RDF Rules syntax front-ends
 
 The RDF parsing path is shared with the W3C RDF syntax harness, so SRL `DATA { ... }` uses the same grammar-hardened RDF parser surface as Turtle/TriG input.
+
+### SHACL-targeted rules (`FOR`)
+
+The 10 August 2026 Working Draft adds an optional `FOR ?v IN <shape>` clause. In the current published grammar, the clause follows the head template in the `RULE ... WHERE` form and precedes the body in the `IF ... THEN` form:
+
+```srl
+PREFIX : <http://example/>
+
+RULE { ?this :status :adult }
+FOR ?this IN :AdultShape
+WHERE { ?this :age ?age . FILTER(?age >= 18) }
+
+IF FOR ?this IN :AdultShape { ?this :active true }
+THEN { ?this :seen true }
+```
+
+The draft describes the focus variable as pre-bound to each target focus node that conforms to the referenced shape. Eyeleng is not a SHACL validation engine, so the embedding application supplies that eligible node set with `focusNodeResolver`. The resolver is called once per targeted rule when its stratum begins; the returned set is frozen for that stratum.
+
+```js
+const result = run(source, {
+  focusNodeResolver(shapeIRI, context) {
+    // Compute target focus nodes that conform to shapeIRI using your SHACL
+    // processor, local graph service, or remote endpoint. `context.graph`
+    // contains the RDF graph visible when this stratum begins.
+    return ['http://example/Alice', 'http://example/Carol'];
+  }
+});
+```
+
+Resolver results may be Eyeleng terms, RDF/JS terms, or absolute IRI strings. Targeted rules are deliberately excluded from backward-rule planning until the backward prover has an equivalent SHACL targeting gate.
 
 ## Builtins and expressions
 
@@ -323,6 +354,16 @@ const result = run(source, {
 });
 ```
 
+SHACL-targeted rules:
+
+```js
+const result = run(source, {
+  focusNodeResolver(shapeIRI, { graph, groundGraph, variable, rule }) {
+    return conformingTargets(shapeIRI, graph);
+  }
+});
+```
+
 The API returns structured parsed programs, diagnostics, inferred triples, closure triples, traces, stats, and query bindings.
 
 ## Project layout
@@ -381,6 +422,7 @@ Examples live in [examples/](./examples/):
 Eyeleng intentionally remains a compact reasoner:
 
 - it does not implement SHACL validation or validation reports
+- `FOR ?v IN <shape>` execution therefore requires a host-supplied `focusNodeResolver` that computes conforming target focus nodes
 - it does not aim to be a full RDF database
 - RDF Rules syntax support is a front-end for rule execution, not a shapes-validation layer
 - property paths and SPARQL expressions are practical subsets
