@@ -11,8 +11,8 @@
 <#report>
     a earl:TestResult ;
     dct:title "Eyeleng W3C SHACL 1.2 Rules EARL report"@en ;
-    dct:description "Generated Eyeleng EARL 1.0 report for the W3C SHACL 1.2 Rules test manifest. 166/166 tests passed."@en ;
-    dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime ;
+    dct:description "Generated Eyeleng EARL 1.0 report for the W3C SHACL 1.2 Rules test manifest. 171/171 tests passed."@en ;
+    dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime ;
     earl:outcome earl:passed .
 
 <https://github.com/eyereasoner/eyeleng>
@@ -35,7 +35,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_2>
@@ -52,7 +52,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_3>
@@ -69,7 +69,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_4>
@@ -86,7 +86,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_5>
@@ -103,7 +103,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_6>
@@ -120,7 +120,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_7>
@@ -137,7 +137,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_8>
@@ -154,7 +154,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_9>
@@ -171,7 +171,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_10>
@@ -188,7 +188,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_11>
@@ -205,7 +205,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_12>
@@ -222,7 +222,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_13>
@@ -239,7 +239,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_14>
@@ -256,7 +256,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_15>
@@ -273,7 +273,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_16>
@@ -290,7 +290,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_17>
@@ -307,7 +307,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_18>
@@ -324,7 +324,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_19>
@@ -341,7 +341,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_20>
@@ -358,7 +358,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_21>
@@ -375,7 +375,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_22>
@@ -392,7 +392,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_23>
@@ -409,7 +409,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_24>
@@ -426,7 +426,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_25>
@@ -443,7 +443,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_26>
@@ -460,7 +460,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_27>
@@ -477,7 +477,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_28>
@@ -494,7 +494,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_29>
@@ -511,7 +511,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_30>
@@ -528,7 +528,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_31>
@@ -545,7 +545,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_32>
@@ -562,7 +562,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_33>
@@ -579,7 +579,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_34>
@@ -596,7 +596,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_35>
@@ -613,7 +613,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_36>
@@ -630,7 +630,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_37>
@@ -647,7 +647,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_38>
@@ -664,7 +664,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_39>
@@ -681,7 +681,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_40>
@@ -698,7 +698,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_41>
@@ -715,7 +715,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_42>
@@ -732,7 +732,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_43>
@@ -749,7 +749,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_44>
@@ -766,7 +766,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_45>
@@ -783,7 +783,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_46>
@@ -800,7 +800,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_47>
@@ -817,7 +817,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_48>
@@ -834,7 +834,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_49>
@@ -851,7 +851,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_50>
@@ -868,7 +868,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_51>
@@ -885,7 +885,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_52>
@@ -902,7 +902,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_53>
@@ -919,7 +919,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_54>
@@ -936,7 +936,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_55>
@@ -953,7 +953,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_56>
@@ -970,7 +970,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_57>
@@ -987,7 +987,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_58>
@@ -1004,7 +1004,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_59>
@@ -1021,7 +1021,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_60>
@@ -1038,7 +1038,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_61>
@@ -1055,7 +1055,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_62>
@@ -1072,7 +1072,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_63>
@@ -1089,7 +1089,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_64>
@@ -1106,7 +1106,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_65>
@@ -1123,7 +1123,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_66>
@@ -1140,7 +1140,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_67>
@@ -1157,7 +1157,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_68>
@@ -1174,7 +1174,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_69>
@@ -1191,7 +1191,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_70>
@@ -1208,7 +1208,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_71>
@@ -1225,7 +1225,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_72>
@@ -1242,7 +1242,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_73>
@@ -1259,7 +1259,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_74>
@@ -1276,7 +1276,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_75>
@@ -1293,7 +1293,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_76>
@@ -1310,7 +1310,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_77>
@@ -1327,7 +1327,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_78>
@@ -1344,7 +1344,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_79>
@@ -1361,7 +1361,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_80>
@@ -1378,7 +1378,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_81>
@@ -1395,7 +1395,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_82>
@@ -1412,7 +1412,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_83>
@@ -1429,7 +1429,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_84>
@@ -1446,7 +1446,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_85>
@@ -1463,7 +1463,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_86>
@@ -1480,7 +1480,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_87>
@@ -1497,7 +1497,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_88>
@@ -1514,7 +1514,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_89>
@@ -1531,7 +1531,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_90>
@@ -1548,7 +1548,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_91>
@@ -1565,7 +1565,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_92>
@@ -1582,7 +1582,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_93>
@@ -1599,7 +1599,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_94>
@@ -1616,7 +1616,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_95>
@@ -1633,7 +1633,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_96>
@@ -1650,7 +1650,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_97>
@@ -1667,7 +1667,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_98>
@@ -1684,7 +1684,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_99>
@@ -1701,7 +1701,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_100>
@@ -1718,7 +1718,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_101>
@@ -1735,7 +1735,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_102>
@@ -1752,7 +1752,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_103>
@@ -1769,7 +1769,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_104>
@@ -1786,7 +1786,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_105>
@@ -1803,7 +1803,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_106>
@@ -1820,7 +1820,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_107>
@@ -1837,7 +1837,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_108>
@@ -1854,7 +1854,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_109>
@@ -1871,7 +1871,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_110>
@@ -1888,7 +1888,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_111>
@@ -1905,7 +1905,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_112>
@@ -1922,7 +1922,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_113>
@@ -1939,7 +1939,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_114>
@@ -1956,7 +1956,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_115>
@@ -1973,7 +1973,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_116>
@@ -1990,7 +1990,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_117>
@@ -2007,7 +2007,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_118>
@@ -2024,7 +2024,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_119>
@@ -2041,7 +2041,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_120>
@@ -2058,7 +2058,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_121>
@@ -2075,7 +2075,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_122>
@@ -2092,7 +2092,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_123>
@@ -2109,7 +2109,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_124>
@@ -2126,7 +2126,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_125>
@@ -2143,7 +2143,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_126>
@@ -2160,7 +2160,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_127>
@@ -2177,7 +2177,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_128>
@@ -2194,7 +2194,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_129>
@@ -2211,7 +2211,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_130>
@@ -2228,7 +2228,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_131>
@@ -2245,7 +2245,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_132>
@@ -2262,7 +2262,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_133>
@@ -2279,7 +2279,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_134>
@@ -2296,7 +2296,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_135>
@@ -2313,7 +2313,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_136>
@@ -2330,7 +2330,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_137>
@@ -2347,7 +2347,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/syntax/:test_138>
@@ -2364,7 +2364,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_1>
@@ -2381,7 +2381,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_2>
@@ -2398,7 +2398,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_3>
@@ -2415,7 +2415,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_4>
@@ -2432,7 +2432,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_5>
@@ -2449,7 +2449,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_6>
@@ -2466,7 +2466,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_7>
@@ -2483,7 +2483,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/wellformed/:test_8>
@@ -2500,7 +2500,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_1>
@@ -2517,7 +2517,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_2>
@@ -2534,7 +2534,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_3>
@@ -2551,7 +2551,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_4>
@@ -2568,7 +2568,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_5>
@@ -2585,7 +2585,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_6>
@@ -2602,7 +2602,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_7>
@@ -2619,7 +2619,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_8>
@@ -2636,7 +2636,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/stratification/:test_9>
@@ -2653,7 +2653,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-basic-01>
@@ -2670,7 +2670,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-basic-02>
@@ -2687,7 +2687,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-data-01>
@@ -2704,7 +2704,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-data-02>
@@ -2721,7 +2721,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-neg-01>
@@ -2738,7 +2738,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-subclass-1>
@@ -2755,7 +2755,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-subproperty-1>
@@ -2772,7 +2772,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-domain-1>
@@ -2789,7 +2789,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-domain-2>
@@ -2806,7 +2806,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-range-1>
@@ -2823,7 +2823,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/eval/:eval-rdfs-range-2>
@@ -2840,6 +2840,91 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-07-15T22:33:27.971Z"^^xsd:dateTime
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-2>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 2"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-3>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 3"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-3> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-4>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 4"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-4> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-5>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 5"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/manifest-rules.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/rules/examples/:example-5> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-10T09:38:38.064Z"^^xsd:dateTime
     ] .
 

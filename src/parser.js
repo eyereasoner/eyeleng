@@ -224,6 +224,9 @@ class Parser {
       profile: 'trig',
       base: this.baseIRI || '',
       prefixes: this.prefixes,
+      // SRL DATA blocks intentionally retain Eyeleng's generalized RDF-term
+      // subject extension; public Turtle/TriG parsing remains W3C-strict.
+      generalizedSubjects: true,
     });
     return (program.facts || []).map((triple) => this.convertRdfSyntaxTriple(triple));
   }

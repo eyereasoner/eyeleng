@@ -50,6 +50,32 @@ test('grammar-hardened Turtle/TriG parser handles RDF 1.2 annotations and graph 
   assert.ok(parseN3(trig, { profile: 'trig', base: 'http://example/base' }).facts.length >= 2);
 });
 
+test('Turtle/TriG reject literals and RDF 1.2 triple terms as subjects', () => {
+  const badTurtleSubjects = [
+    '"hello" <http://example/p> <http://example/o> .',
+    'true <http://example/p> <http://example/o> .',
+    '<<( <http://example/s> <http://example/p> <http://example/o> )>> <http://example/q> <http://example/r> .',
+  ];
+  for (const source of badTurtleSubjects) {
+    assert.throws(() => parseN3(source, { profile: 'turtle', base: 'http://example/base' }));
+  }
+
+  const badTrigSubjects = [
+    '{ "hello" <http://example/p> <http://example/o> . }',
+    '{ true <http://example/p> <http://example/o> . }',
+  ];
+  for (const source of badTrigSubjects) {
+    assert.throws(() => parseN3(source, { profile: 'trig', base: 'http://example/base' }));
+  }
+
+  // RDF 1.2 reifiedTriple syntax is still legal in the triples position: it
+  // denotes its reifier node, rather than using a triple term as the subject.
+  assert.ok(parseN3(
+    '<< <http://example/s> <http://example/p> <http://example/o> >> <http://example/q> <http://example/r> .',
+    { profile: 'turtle', base: 'http://example/base' },
+  ).facts.length >= 2);
+});
+
 test('W3C RDF progress lines color the whole successful description', () => {
   const line = formatW3cRdfProgressLine({
     status: 'pass',

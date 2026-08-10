@@ -674,6 +674,9 @@
             profile: 'trig',
             base: this.baseIRI || '',
             prefixes: this.prefixes,
+            // SRL DATA blocks intentionally retain Eyeleng's generalized RDF-term
+            // subject extension; public Turtle/TriG parsing remains W3C-strict.
+            generalizedSubjects: true,
           });
           return (program.facts || []).map((triple) => this.convertRdfSyntaxTriple(triple));
         }
@@ -2841,6 +2844,7 @@
         const bnodes = new Map();
         const syntaxProfile = String(options.profile || options.profileId || '').toLowerCase();
         const rdf12Surface = syntaxProfile === 'turtle' || syntaxProfile === 'trig';
+        const generalizedSubjects = options.generalizedSubjects === true;
         const implicitStatementNodes = new Set();
         function implicitStatementNodeKey(term) { return `${term.kind}:${term.value}`; }
       
@@ -3100,7 +3104,16 @@
             if (options3.requireDot) expect('.'); else accept('.');
             return;
           }
-          const subject = parseTerm(out, graph, { noLiteral: !rdf12Surface, noA: true });
+          // Turtle/TriG subjects are restricted to iri | BlankNode | collection.
+          // RDF 1.2 adds triple terms as objects, not subjects.  Keep reifiedTriple
+          // syntax (<< s p o >>) available here because it expands to its reifier
+          // node and is a separate `triples` grammar alternative, but reject the
+          // parenthesized tripleTerm form (<<( s p o )>>).
+          const subject = parseTerm(out, graph, {
+            noLiteral: !generalizedSubjects,
+            noTripleTerm: !generalizedSubjects,
+            noA: true,
+          });
           if ((peek()?.type === '.' || peek()?.type === '}' || peek()?.type === undefined) && implicitStatementNodes.has(implicitStatementNodeKey(subject))) {
             if (options3.requireDot) expect('.'); else accept('.');
             return;
