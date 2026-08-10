@@ -45923,24 +45923,6 @@ Tried mapping ${key} to ${JSON.stringify(keyValue)}`, ErrorCoded_1.ERROR_CODES.I
           imports: Array.from(new Set(imports))
         };
       }
-      async function parseRdfDataset(source, options = {}) {
-        const document = await parseRdfDocument(source, options);
-        return {
-          profile: options.profileId || options.profile || "rdfjs-dataset-v0",
-          prefixes: document.prefixes,
-          base: document.baseIRI || "",
-          imports: document.imports,
-          facts: document.quads.map((quad2) => ({
-            s: rdfJsTermToLegacy(quad2.subject),
-            p: rdfJsTermToLegacy(quad2.predicate),
-            o: rdfJsTermToLegacy(quad2.object),
-            graph: quad2.graph && quad2.graph.termType !== "DefaultGraph" ? rdfJsTermToLegacy(quad2.graph) : null
-          })),
-          rules: [],
-          queries: [],
-          expectations: []
-        };
-      }
       async function parseRdfSyntax(source, options = {}) {
         return rdfDocumentToProgram(await parseRdfDocument(source, options), options);
       }
@@ -46073,26 +46055,6 @@ Tried mapping ${key} to ${JSON.stringify(keyValue)}`, ErrorCoded_1.ERROR_CODES.I
         }
         if (term.termType === "Quad") return tripleTerm(rdfJsTermToTerm(term.subject), rdfJsTermToTerm(term.predicate), rdfJsTermToTerm(term.object));
         if (term.termType === "DefaultGraph") return null;
-        throw new Error(`Unsupported RDF/JS term type ${term.termType || typeof term}`);
-      }
-      function rdfJsTermToLegacy(term) {
-        if (!term || term.termType === "DefaultGraph") return null;
-        if (term.termType === "NamedNode") return { kind: "iri", value: term.value };
-        if (term.termType === "BlankNode") return { kind: "blank", value: term.value };
-        if (term.termType === "Variable") return { kind: "var", value: term.value, name: term.value };
-        if (term.termType === "Literal") return {
-          kind: "literal",
-          value: term.value,
-          datatype: term.datatype && term.datatype.value ? term.datatype.value : null,
-          language: term.language || null,
-          langDir: term.direction || null
-        };
-        if (term.termType === "Quad") return {
-          kind: "triple",
-          s: rdfJsTermToLegacy(term.subject),
-          p: rdfJsTermToLegacy(term.predicate),
-          o: rdfJsTermToLegacy(term.object)
-        };
         throw new Error(`Unsupported RDF/JS term type ${term.termType || typeof term}`);
       }
       function parseIntegerLiteral(value) {
@@ -46348,42 +46310,12 @@ Tried mapping ${key} to ${JSON.stringify(keyValue)}`, ErrorCoded_1.ERROR_CODES.I
         if (options.filename && /\.(ttl|turtle|trig|nt|ntriples|nq|nquads|n3|rdf|rdfxml|owl|json|jsonld|html|htm|xhtml|xml|svg|shaclc|shc)$/i.test(options.filename)) return true;
         return /\bsrl:RuleSet\b|\bsrl:rules\b|http:\/\/www\.w3\.org\/ns\/shacl-rules#RuleSet/.test(source);
       }
-      function escapeIri(value) {
-        return String(value).replace(/[\\>\u0000-\u0020]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`);
-      }
-      function escapeLiteral(value) {
-        return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
-      }
-      function termToNQuads(term) {
-        if (!term) return "";
-        if (term.kind === "iri") return `<${escapeIri(term.value)}>`;
-        if (term.kind === "blank") return `_:${term.value}`;
-        if (term.kind === "literal") {
-          let out = `"${escapeLiteral(term.value)}"`;
-          if (term.language) out += `@${term.language}${term.langDir ? `--${term.langDir}` : ""}`;
-          else if (term.datatype) out += `^^<${escapeIri(term.datatype)}>`;
-          return out;
-        }
-        if (term.kind === "triple") return `<<(${termToNQuads(term.s)} ${termToNQuads(term.p)} ${termToNQuads(term.o)})>>`;
-        throw new Error(`Cannot serialize RDF term ${JSON.stringify(term)}`);
-      }
-      function tripleToNQuads(triple) {
-        return `${termToNQuads(triple.s)} ${termToNQuads(triple.p)} ${termToNQuads(triple.o)}${triple.graph ? ` ${termToNQuads(triple.graph)}` : ""} .`;
-      }
-      function triplesToNQuads(triples) {
-        return (triples || []).map(tripleToNQuads).sort().join("\n");
-      }
       module.exports = {
         parseRdfDocument,
-        parseRdfDataset,
         parseRdfSyntax,
         rdfDocumentToProgram,
         looksLikeRdfRules,
         rdfJsTermToTerm,
-        rdfJsTermToLegacy,
-        termToNQuads,
-        tripleToNQuads,
-        triplesToNQuads,
         RdfGraph,
         constants: {
           SRL_NS,

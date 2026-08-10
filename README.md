@@ -152,7 +152,7 @@ Implemented syntax includes:
 - language tags, base-direction literals, and common XML Schema datatypes
 - SRL and RDF Rules syntax front-ends
 
-External RDF input is parsed by [`rdf-parse`](https://github.com/rubensworks/rdf-parse.js/) into RDF/JS quads. SRL itself, including `DATA { ... }`, remains parsed by the SRL grammar so Eyeleng-specific generalized terms stay available there. The W3C RDF syntax harness therefore exercises `rdf-parse` directly rather than a second Eyeleng RDF grammar.
+External RDF input is parsed by [`rdf-parse`](https://github.com/rubensworks/rdf-parse.js/) into RDF/JS quads. SRL itself, including `DATA { ... }`, remains parsed by the SRL grammar so Eyeleng-specific generalized terms stay available there.
 
 ### SHACL-targeted rules (`FOR`)
 
@@ -205,23 +205,15 @@ Eyeleng does not maintain a second standards-RDF grammar. `src/rdfSyntax.js` ada
 
 SRL remains a distinct language and continues to parse its own `DATA { ... }` blocks, including Eyeleng's generalized SRL term surface.
 
-The W3C harness in `src/rdfManifest.js` and `src/rdfEntailment.js` additionally covers:
-
-- graph isomorphism for blank nodes
-- simple, RDF, and RDFS entailment checks for RDF-MT / RDF 1.2 Semantics manifests
-
-W3C checks:
+SHACL Rules conformance checks:
 
 ```sh
 npm run w3c:rules
 npm run w3c:rules:json
 npm run w3c:rules:earl
-npm run w3c:rdf
-npm run w3c:rdf:json
-npm run w3c:rdf:earl
 ```
 
-`npm test` includes the W3C harnesses and prints progress test by test. Set `EYELENG_W3C_REQUIRED=0` to allow remote checks to be skipped when the W3C URLs are unavailable. The `*:earl` scripts print progress but write the EARL Turtle only to `reports/`.
+`npm test` includes the W3C SHACL Rules harness and prints progress test by test. Set `EYELENG_W3C_REQUIRED=0` to allow remote checks to be skipped when the W3C URLs are unavailable. The `w3c:rules:earl` script prints progress but writes the EARL Turtle only to `reports/`.
 
 The official Eyeleng EARL 1.0 report for the W3C SHACL 1.2 Rules manifest is in [reports/w3c-shacl12-rules-earl.ttl](./reports/w3c-shacl12-rules-earl.ttl).
 
@@ -402,8 +394,6 @@ src/tokenizer.js      source text -> tokens
 src/parser.js         SRL parser -> program object
 src/rdfSyntax.js      rdf-parse adapter + RDF Rules graph-to-program mapping
 src/shacl.js          shacl-engine adapter, targets, and shape dependencies
-src/rdfManifest.js    W3C RDF manifest runner
-src/rdfEntailment.js  simple/RDF/RDFS entailment checks
 src/rdfMessages.js    RDF Message Log replay support
 src/term.js           terms, keys, equality, formatting
 src/store.js          triple set, predicate index, matching, paths
@@ -432,7 +422,7 @@ npm run build
 
 `npm run build` writes the command-line bundle to `eyeleng.js` and the browser API bundle to `dist/browser/eyeleng.browser.js`. In a browser, the bundle exposes `window.eyeleng`.
 
-The tests are executable documentation. They cover parsing, recursion, filters, negation, assignment, typed/language literals, RDF 1.2 syntax, property paths, stratification, imports, queries, examples, deep taxonomy benchmarks, W3C SHACL Rules, W3C RDF syntax, and RDF/RDFS entailment.
+The tests are executable documentation. They cover parsing, recursion, filters, negation, assignment, typed/language literals, RDF 1.2 syntax, property paths, stratification, imports, queries, examples, deep taxonomy benchmarks, and W3C SHACL Rules.
 
 ## Examples
 
