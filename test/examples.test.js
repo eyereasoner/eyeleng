@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL, fileURLToPath } = require('node:url');
 const { spawnSync } = require('node:child_process');
-const { runToString } = require('../src/index.js');
+const { runToStringAsync } = require('../src/index.js');
 
 const root = path.join(__dirname, '..');
 const examplesDir = path.join(root, 'examples');
@@ -79,18 +79,19 @@ function runCheckExample(filename, expectedStatus) {
   return result.stderr || result.stdout || '';
 }
 
-function runOutputExample(filename) {
+async function runOutputExample(filename) {
   const source = fs.readFileSync(filename, 'utf8');
-  return runToString(source, runOptions(filename));
+  return runToStringAsync(source, runOptions(filename));
 }
+
 
 for (const filename of collectExampleFiles(examplesDir)) {
   const rel = relativeExample(filename);
   const check = checkExamples.get(rel);
 
-  test(rel, () => {
+  test(rel, async () => {
     const expectedPath = check ? goldenPath(filename, '.txt') : goldenPath(filename, '.trig');
-    const actual = check ? runCheckExample(filename, check.status) : runOutputExample(filename);
+    const actual = check ? runCheckExample(filename, check.status) : await runOutputExample(filename);
 
     if (updateGoldens) {
       fs.mkdirSync(goldenDir, { recursive: true });

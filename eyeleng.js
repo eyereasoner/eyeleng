@@ -10,8 +10,8 @@
       const path = require('node:path');
       const { fileURLToPath, pathToFileURL } = require('node:url');
       const {
-        compile,
-        evaluate,
+        compileAsync,
+        evaluateAsync,
         parseQuery,
         queryResult,
         queryProgram,
@@ -42,7 +42,7 @@
       const VERSION = readPackageVersion();
       
       function legacyHelp() {
-        return `eyeleng ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Force aggressive hybrid orientation for function-like rules\n  --no-hybrid           Disable automatic hybrid forward/backward execution\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
+        return `eyeleng ${VERSION}\n\nA JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Force aggressive hybrid orientation for function-like rules\n  --no-hybrid           Disable automatic hybrid forward/backward execution\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --shapes FILE         SHACL shapes graph for FOR ?v IN <shape> constraints\n  --validate            After rule saturation, validate the final graph against --shapes\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
       }
       
       function help() {
@@ -75,6 +75,8 @@
           imports: true,
           syntax: 'auto',
           ruleSet: null,
+          shapes: null,
+          validate: false,
           rdfMessages: false,
           includeMessageFacts: false,
         };
@@ -102,6 +104,12 @@
             i += 1;
             if (i >= argv.length) throw new Error('--ruleset requires an RDF term');
             options.ruleSet = argv[i];
+          } else if (arg === '--shapes') {
+            i += 1;
+            if (i >= argv.length) throw new Error('--shapes requires a file or URL');
+            options.shapes = argv[i];
+          } else if (arg === '--validate') {
+            options.validate = true;
           } else if (arg === '--query-mode') {
             i += 1;
             if (i >= argv.length) throw new Error('--query-mode requires auto, forward, or backward');
@@ -160,7 +168,7 @@
       
       function createFileImportResolver() {
         return function importResolver(target) {
-          if (!target.startsWith('file:')) throw new Error(`Cannot import remote URL ${target}; this self-contained CLI only loads file: imports`);
+          if (!target.startsWith('file:')) throw new Error(`Cannot import remote URL ${target}; this CLI only loads file: imports`);
           const filename = fileURLToPath(target);
           return {
             source: fs.readFileSync(filename, 'utf8'),
@@ -186,7 +194,7 @@
         for (const edge of edges) {
           const from = formatRuleName(analysis.dependency.rules[edge.from].name, prefixes);
           const to = formatRuleName(analysis.dependency.rules[edge.to].name, prefixes);
-          const kind = edge.negated ? 'NOT' : (edge.termGeneration ? 'generates' : 'uses');
+          const kind = edge.shapeConstraint ? 'shape' : (edge.negated ? 'NOT' : (edge.termGeneration ? 'generates' : 'uses'));
           stderr.write(`eyeleng: deps: ${from} --${kind} ${edge.predicate ? compactIRI(edge.predicate, prefixes) : '*'}--> ${to}\n`);
         }
         if (analysis.dependency.layers && analysis.dependency.layers.length > 0) {
@@ -216,9 +224,13 @@
             return 0;
           }
           const input = await readInput(files);
-          const compiled = compile(input.source, {
+          const shapesInput = options.shapes ? await readInput([options.shapes]) : null;
+          const compiled = await compileAsync(input.source, {
             filename: input.filename,
             baseIRI: input.baseIRI,
+            shapes: shapesInput ? shapesInput.source : null,
+            shapesFilename: shapesInput ? shapesInput.filename : null,
+            shapesBaseIRI: shapesInput ? shapesInput.baseIRI : null,
             strict: false,
             throwOnDiagnostics: false,
             resolveImports: options.imports,
@@ -245,7 +257,7 @@
             : null;
       
           let result;
-          if (querySpec) {
+          if (querySpec && !options.validate) {
             const directQuery = queryProgram(compiled.program, querySpec, options);
             if (directQuery) {
               result = {
@@ -270,10 +282,16 @@
             const runOptions = querySpec
               ? queryRunOptions(compiled.program, querySpec, options)
               : { ...options, hybrid: options.hybrid };
-            result = evaluate(compiled.program, { ...runOptions, analysis: compiled.analysis });
+            result = await evaluateAsync(compiled.program, { ...compiled.options, ...runOptions, analysis: compiled.analysis });
             result.diagnostics = compiled.diagnostics;
             result.analysis = compiled.analysis;
             if (querySpec) result.query = queryResult(result, querySpec, runOptions);
+          }
+      
+          if (options.validate) {
+            if (!compiled.shapeEngine) throw new Error('--validate requires --shapes');
+            result.validationReport = await compiled.shapeEngine.validate(result.closure, options);
+            io.stderr.write(`eyeleng: shacl conforms=${result.validationReport.conforms}${Array.isArray(result.validationReport.results) ? ` results=${result.validationReport.results.length}` : ''}\n`);
           }
       
           if (options.json) {
@@ -299,6 +317,7 @@
               if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyeleng: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
             }
           }
+          if (options.validate && result.validationReport && !result.validationReport.conforms) return 1;
           return 0;
         } catch (error) {
           io.stderr.write(`eyeleng: ${error.message}\n`);
@@ -317,16 +336,24 @@
       const { parse, parseQuery } = require('./parser.js');
       const { parseRdfSyntax, parseRdfDocument, rdfDocumentToProgram, looksLikeRdfRules } = require('./rdfSyntax.js');
       const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js');
-      const { evaluate } = require('./engine.js');
+      const { evaluate, evaluateAsync } = require('./engine.js');
       const { analyze } = require('./analyze.js');
       const { formatTriples, sortTriples, toJSON, formatTrace, formatProof, formatBindings } = require('./format.js');
-      const { runQuery, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require('./query.js');
+      const { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require('./query.js');
       const { resultTriples } = require('./output.js');
       
       function parseInput(source, options = {}) {
         if (typeof source !== 'string') return source;
-        if (looksLikeRdfMessageLog(source, options)) return parseRdfMessageLog(source, options);
-        return looksLikeRdfRules(source, options) ? parseRdfSyntax(source, options) : parse(source, options);
+        if (looksLikeRdfMessageLog(source, options) || looksLikeRdfRules(source, options)) {
+          throw new Error('RDF input parsing is asynchronous with rdf-parse; use parseInputAsync(), compileAsync(), runAsync(), or the CLI');
+        }
+        return parse(source, options);
+      }
+      
+      async function parseInputAsync(source, options = {}) {
+        if (typeof source !== 'string') return source;
+        if (looksLikeRdfMessageLog(source, options)) return await parseRdfMessageLog(source, options);
+        return looksLikeRdfRules(source, options) ? await parseRdfSyntax(source, options) : parse(source, options);
       }
       
       function compile(source, options = {}) {
@@ -340,6 +367,51 @@
           throw new Error(`${analysis.errors.length > 0 ? 'Analysis failed' : 'Strict mode failed'}: ${details}`);
         }
         return { program, diagnostics, analysis };
+      }
+      
+      async function compileAsync(source, options = {}) {
+        const asyncOptions = await withShapeEngine(options);
+        const parsed = await parseInputAsync(source, asyncOptions);
+        const program = asyncOptions.resolveImports === false ? parsed : await resolveImportsAsync(parsed, asyncOptions);
+        const analysis = analyze(program, asyncOptions);
+        const diagnostics = analysis.diagnostics;
+        const fatal = analysis.errors.length > 0 || (asyncOptions.strict && analysis.warnings.length > 0);
+        if (fatal && asyncOptions.throwOnDiagnostics !== false) {
+          const details = diagnostics.map((diagnostic) => diagnostic.message).join('; ');
+          throw new Error(`${analysis.errors.length > 0 ? 'Analysis failed' : 'Strict mode failed'}: ${details}`);
+        }
+        return { program, diagnostics, analysis, shapeEngine: asyncOptions.shapeEngine || null, options: asyncOptions };
+      }
+      
+      async function withShapeEngine(options = {}) {
+        if (!options.shapes || options.shapeEngine) return options;
+        const { createShaclShapeEngine } = require('./shacl.js');
+        const shapeEngine = await createShaclShapeEngine(options.shapes, options);
+        return { ...options, shapeEngine };
+      }
+      
+      async function resolveImportsAsync(program, options = {}, seen = new Set()) {
+        if (!program.imports || program.imports.length === 0) return cloneProgram(program);
+        const importResolver = options.importResolver;
+        if (!importResolver) return cloneProgram(program);
+      
+        let merged = emptyProgram(program);
+        const localKey = program.baseIRI || options.filename || '<input>';
+        if (localKey) seen.add(localKey);
+      
+        for (const target of program.imports) {
+          if (seen.has(target)) continue;
+          seen.add(target);
+          const resolved = await importResolver(target, { from: program.baseIRI || options.filename || null, seen });
+          if (!resolved) throw new Error(`IMPORTS resolver returned no source for ${target}`);
+          const importSource = typeof resolved === 'string' ? resolved : resolved.source;
+          const importOptions = typeof resolved === 'string' ? {} : (resolved.options || {});
+          const parsedImport = await parseInputAsync(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
+          const imported = await resolveImportsAsync(parsedImport, { ...options, ...importOptions, importResolver }, seen);
+          merged = mergePrograms(merged, imported);
+        }
+      
+        return mergePrograms(merged, program);
       }
       
       function resolveImports(program, options = {}, seen = new Set()) {
@@ -416,23 +488,56 @@
         return formatTriples(triples, result.prefixes);
       }
       
+      async function runAsync(source, options = {}) {
+        const compiled = await compileAsync(source, options);
+        const result = await evaluateAsync(compiled.program, { ...compiled.options, analysis: compiled.analysis });
+        result.diagnostics = compiled.diagnostics;
+        result.analysis = compiled.analysis;
+        if (compiled.shapeEngine && options.validateShapes) {
+          result.validationReport = await compiled.shapeEngine.validate(result.closure, options);
+        }
+        return result;
+      }
+      
+      async function runAndValidateAsync(source, options = {}) {
+        if (!options.shapes && !options.shapeEngine) throw new Error('runAndValidateAsync requires shapes or shapeEngine');
+        return runAsync(source, { ...options, validateShapes: true });
+      }
+      
+      async function runToStringAsync(source, options = {}) {
+        const compiled = await compileAsync(source, options);
+        const result = await evaluateAsync(compiled.program, { ...compiled.options, analysis: compiled.analysis });
+        result.diagnostics = compiled.diagnostics;
+        result.analysis = compiled.analysis;
+        const triples = resultTriples(result, compiled.program, options);
+        return formatTriples(triples, result.prefixes);
+      }
+      
       module.exports = {
         parse,
         parseQuery,
         parseInput,
+        parseInputAsync,
         parseRdfSyntax,
         parseRdfDocument,
         parseRdfMessageLog,
         looksLikeRdfMessageLog,
         rdfDocumentToProgram,
         compile,
+        compileAsync,
         resolveImports,
+        resolveImportsAsync,
         mergePrograms,
         analyze,
         evaluate,
+        evaluateAsync,
         run,
+        runAsync,
+        runAndValidateAsync,
         runToString,
+        runToStringAsync,
         runQuery,
+        runQueryAsync,
         queryResult,
         queryProgram,
         queryRunOptions,
@@ -451,7 +556,6 @@
       'use strict';
       
       const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
-      const { parseN3 } = require('./rdfSyntax.js');
       const { isBuiltinName } = require('./builtins.js');
       const { ruleNeedsRunOnce } = require('./assignments.js');
       const {
@@ -504,7 +608,7 @@
               this.parseImports();
             } else if (this.matchWord('DATA')) {
               this.expectValue('{');
-              data.push(...this.parseDataBlockWithRdfSyntax());
+              data.push(...this.parseTriplesBlock({ allowPath: false, context: 'data' }));
             } else if (this.matchWord('RULE')) {
               rules.push(this.parseRule());
             } else if (this.matchWord('IF')) {
@@ -668,101 +772,6 @@
           return triples;
         }
       
-        parseDataBlockWithRdfSyntax() {
-          const blockSource = this.collectBalancedDataBlockSource();
-          const program = parseN3(blockSource, {
-            profile: 'trig',
-            base: this.baseIRI || '',
-            prefixes: this.prefixes,
-            // SRL DATA blocks intentionally retain Eyeleng's generalized RDF-term
-            // subject extension; public Turtle/TriG parsing remains W3C-strict.
-            generalizedSubjects: true,
-          });
-          return (program.facts || []).map((triple) => this.convertRdfSyntaxTriple(triple));
-        }
-      
-        collectBalancedDataBlockSource() {
-          const tokens = [];
-          let depth = 1;
-          while (!this.is('eof')) {
-            const token = this.advance();
-            if (token.value === '{') {
-              depth += 1;
-              tokens.push(token);
-            } else if (token.value === '}') {
-              depth -= 1;
-              if (depth === 0) return this.tokensToRdfSource(tokens);
-              tokens.push(token);
-            } else {
-              tokens.push(token);
-            }
-          }
-          throw this.error('Unterminated DATA block');
-        }
-      
-        tokensToRdfSource(tokens) {
-          const parts = [];
-          for (let i = 0; i < tokens.length; i += 1) {
-            const token = tokens[i];
-            if (token.type === 'eof') continue;
-            if ((token.value === '+' || token.value === '-') && tokens[i + 1] && tokens[i + 1].type === 'number') {
-              parts.push(`${token.value}${this.tokenToRdfSource(tokens[i + 1])}`);
-              i += 1;
-            } else {
-              parts.push(this.tokenToRdfSource(token));
-            }
-          }
-          return parts.join(' ');
-        }
-      
-        tokenToRdfSource(token) {
-          if (token.type === 'iri') return `<${String(token.value).replace(/>/g, '\\>')}>`;
-          if (token.type === 'string') return JSON.stringify(token.value);
-          if (token.type === 'variable') return `?${token.value}`;
-          if (token.type === 'number') return String(token.value);
-          return String(token.value);
-        }
-      
-        convertRdfSyntaxTriple(triple) {
-          const out = {
-            s: this.convertRdfSyntaxTerm(triple.s),
-            p: this.convertRdfSyntaxTerm(triple.p),
-            o: this.convertRdfSyntaxTerm(triple.o),
-          };
-          if (out.s.type === 'var' || out.p.type === 'var' || out.o.type === 'var') {
-            throw this.error('DATA blocks may not contain variables');
-          }
-          if (out.p.type !== 'iri') {
-            throw this.error('DATA predicates must be IRIs');
-          }
-          if (triple.graph) out.graph = this.convertRdfSyntaxTerm(triple.graph);
-          return out;
-        }
-      
-        convertRdfSyntaxTerm(term) {
-          if (!term) return null;
-          if (term.type) return term;
-          if (term.kind === 'iri') return iri(term.value);
-          if (term.kind === 'blank') return blankNode(term.value);
-          if (term.kind === 'var') return variable(term.name || term.value);
-          if (term.kind === 'literal') {
-            return literal(
-              coerceLexicalLiteral(term.value, term.datatype),
-              term.datatype === XSD_STRING ? null : (term.datatype || null),
-              term.language || null,
-              term.langDir || null,
-            );
-          }
-          if (term.kind === 'triple') {
-            return tripleTerm(
-              this.convertRdfSyntaxTerm(term.s),
-              this.convertRdfSyntaxTerm(term.p),
-              this.convertRdfSyntaxTerm(term.o),
-            );
-          }
-          throw this.error(`Unsupported RDF term kind ${term.kind || typeof term}`);
-        }
-      
         parseTripleStatement(options = {}) {
           const subjectNode = this.parseGraphNode({ ...options, position: 'subject' });
           const triples = [...subjectNode.triples];
@@ -815,18 +824,22 @@
           this.expectValue('(');
           if (this.matchValue(')')) return { term: iri(RDF_NIL), triples: [] };
       
-          const items = [];
-          while (!this.checkValue(')')) items.push(this.parseGraphNode(options));
-          this.expectValue(')');
-      
+          const head = this.freshGraphNode(options);
+          let current = head;
           const triples = [];
-          for (const item of items) triples.push(...item.triples);
-          const cells = items.map(() => this.freshGraphNode(options));
-          for (let i = 0; i < items.length; i += 1) {
-            triples.push({ s: cells[i], p: iri(RDF_FIRST), o: items[i].term });
-            triples.push({ s: cells[i], p: iri(RDF_REST), o: i + 1 < cells.length ? cells[i + 1] : iri(RDF_NIL) });
+          while (true) {
+            const item = this.parseGraphNode(options);
+            triples.push(...item.triples);
+            triples.push({ s: current, p: iri(RDF_FIRST), o: item.term });
+            if (this.matchValue(')')) {
+              triples.push({ s: current, p: iri(RDF_REST), o: iri(RDF_NIL) });
+              break;
+            }
+            const rest = this.freshGraphNode(options);
+            triples.push({ s: current, p: iri(RDF_REST), o: rest });
+            current = rest;
           }
-          return { term: cells[0], triples };
+          return { term: head, triples };
         }
       
         freshGraphNode(options = {}) {
@@ -859,14 +872,14 @@
           if (this.checkValue('{|') || this.checkValue('.') || this.checkValue(';') || this.checkValue(',') || this.checkValue('}') || this.checkValue('|}') || this.checkValue('>>')) {
             return this.freshGraphNode(options);
           }
-          return this.parseVarOrReifierId();
+          return this.parseVarOrReifierId(options);
         }
       
-        parseVarOrReifierId() {
+        parseVarOrReifierId(options = {}) {
           const token = this.peek();
-          if (token.type === 'variable') return this.parseTerm();
-          if (token.type === 'iri') return this.parseTerm();
-          if (token.type === 'word' && (token.value.startsWith('_:') || token.value.includes(':'))) return this.parseTerm();
+          if (token.type === 'variable') return this.parseTerm(options);
+          if (token.type === 'iri') return this.parseTerm(options);
+          if (token.type === 'word' && (token.value.startsWith('_:') || token.value.includes(':'))) return this.parseTerm(options);
           throw this.error(`Expected variable, IRI, or blank node after ~; got ${token.value}`, token);
         }
       
@@ -1044,7 +1057,7 @@
           const p = this.parseVerbTerm(options);
           const o = this.parseTerm(options);
           if (this.matchValue('~')) {
-            if (!this.checkValue('>>')) this.parseVarOrReifierId();
+            if (!this.checkValue('>>')) this.parseVarOrReifierId(options);
           }
           this.expectValue('>>');
           return tripleTerm(s, p, o);
@@ -1682,1852 +1695,6 @@
       module.exports = { tokenize, SyntaxErrorWithLocation };
       
     },
-    "src/rdfSyntax.js": function (require, module, exports) {
-      'use strict';
-      
-      const { tokenize, SyntaxErrorWithLocation } = require('./tokenizer.js');
-      const { ruleNeedsRunOnce } = require('./assignments.js');
-      const {
-        iri,
-        variable,
-        blankNode,
-        literal,
-        tripleTerm,
-        termKey,
-        termEquals,
-        formatTerm,
-        RDF_TYPE,
-        RDF_FIRST,
-        RDF_REST,
-        RDF_NIL,
-        XSD_BOOLEAN,
-        XSD_INTEGER,
-        XSD_DECIMAL,
-        XSD_DOUBLE,
-      } = require('./term.js');
-      
-      const RDF_NS = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
-      const SRL_NS = 'http://www.w3.org/ns/shacl-rules#';
-      const SHNEX_NS = 'http://www.w3.org/ns/shacl-node-expr#';
-      const SPARQL_NS = 'http://www.w3.org/ns/sparql#';
-      const OWL_IMPORTS = 'http://www.w3.org/2002/07/owl#imports';
-      const SRL_RULE_SET = `${SRL_NS}RuleSet`;
-      const SRL_RULE = `${SRL_NS}Rule`;
-      const SRL_DATA = `${SRL_NS}data`;
-      const SRL_RULES = `${SRL_NS}rules`;
-      const SRL_BODY = `${SRL_NS}body`;
-      const SRL_HEAD = `${SRL_NS}head`;
-      const SRL_SUBJECT = `${SRL_NS}subject`;
-      const SRL_PREDICATE = `${SRL_NS}predicate`;
-      const SRL_OBJECT = `${SRL_NS}object`;
-      const SRL_FILTER = `${SRL_NS}filter`;
-      const SRL_EXPR = `${SRL_NS}expr`;
-      const SRL_ASSIGN = `${SRL_NS}assign`;
-      const SRL_ASSIGN_VAR = `${SRL_NS}assignVar`;
-      const SRL_ASSIGN_VALUE = `${SRL_NS}assignValue`;
-      const SRL_NOT = `${SRL_NS}not`;
-      const SRL_VAR_NAME = `${SRL_NS}varName`;
-      const SHNEX_VAR = `${SHNEX_NS}var`;
-      
-      class TurtleParser {
-        constructor(source, options = {}) {
-          this.tokens = Array.isArray(source) ? source : tokenize(source, options.filename || '<rdf>');
-          this.pos = 0;
-          this.baseIRI = options.baseIRI || null;
-          this.bnodeCounter = 0;
-          this.prefixes = {
-            '': 'http://example/',
-            rdf: RDF_NS,
-            srl: SRL_NS,
-            shnex: SHNEX_NS,
-            sparql: SPARQL_NS,
-            xsd: 'http://www.w3.org/2001/XMLSchema#',
-            owl: 'http://www.w3.org/2002/07/owl#',
-            ...options.prefixes,
-          };
-          this.triples = [];
-          this.imports = [];
-        }
-      
-        parseDocument() {
-          while (!this.is('eof')) {
-            if (this.matchDirective('PREFIX', '@prefix')) this.parsePrefix(this.previous().value.startsWith('@'));
-            else if (this.matchDirective('BASE', '@base')) this.parseBase(this.previous().value.startsWith('@'));
-            else this.parseTriplesStatement();
-          }
-          return {
-            baseIRI: this.baseIRI,
-            prefixes: { ...this.prefixes },
-            triples: this.triples,
-            imports: this.imports.slice(),
-          };
-        }
-      
-        parsePrefix(atStyle = false) {
-          const nameToken = this.advance();
-          if (nameToken.type !== 'word' || !nameToken.value.endsWith(':')) throw this.error('Expected prefix label ending in :', nameToken);
-          const iriToken = this.expectType('iri');
-          this.prefixes[nameToken.value.slice(0, -1)] = this.resolveIRI(iriToken.value, iriToken);
-          if (atStyle) this.expectValue('.');
-        }
-      
-        parseBase(atStyle = false) {
-          const iriToken = this.expectType('iri');
-          this.baseIRI = this.resolveIRI(iriToken.value, iriToken);
-          if (atStyle) this.expectValue('.');
-        }
-      
-        parseTriplesStatement() {
-          const subjectNode = this.parseNode();
-          this.triples.push(...subjectNode.triples);
-          this.triples.push(...this.parsePredicateObjectList(subjectNode.term, ['.']));
-          this.expectValue('.');
-        }
-      
-        parsePredicateObjectList(subject, terminators = [']']) {
-          const triples = [];
-          while (!terminators.some((value) => this.checkValue(value))) {
-            const predicate = this.parseVerb();
-            do {
-              const objectNode = this.parseNode();
-              triples.push(...objectNode.triples);
-              triples.push({ s: subject, p: predicate, o: objectNode.term });
-              if (predicate.type === 'iri' && predicate.value === OWL_IMPORTS && objectNode.term.type === 'iri') this.imports.push(objectNode.term.value);
-            } while (this.matchValue(','));
-            if (this.matchValue(';')) {
-              while (this.matchValue(';')) { /* tolerate repeated semicolons */ }
-              if (terminators.some((value) => this.checkValue(value))) break;
-            } else break;
-          }
-          return triples;
-        }
-      
-        parseNode() {
-          if (this.checkValue('[')) return this.parseBlankNodePropertyList();
-          if (this.checkValue('(')) return this.parseCollection();
-          return { term: this.parseTerm(), triples: [] };
-        }
-      
-        parseBlankNodePropertyList() {
-          this.expectValue('[');
-          const node = this.freshBlankNode();
-          if (this.matchValue(']')) return { term: node, triples: [] };
-          const triples = this.parsePredicateObjectList(node, [']']);
-          this.expectValue(']');
-          return { term: node, triples };
-        }
-      
-        parseCollection() {
-          this.expectValue('(');
-          if (this.matchValue(')')) return { term: iri(RDF_NIL), triples: [] };
-          const items = [];
-          while (!this.checkValue(')')) items.push(this.parseNode());
-          this.expectValue(')');
-          const triples = [];
-          for (const item of items) triples.push(...item.triples);
-          const cells = items.map(() => this.freshBlankNode());
-          for (let i = 0; i < items.length; i += 1) {
-            triples.push({ s: cells[i], p: iri(RDF_FIRST), o: items[i].term });
-            triples.push({ s: cells[i], p: iri(RDF_REST), o: i + 1 < cells.length ? cells[i + 1] : iri(RDF_NIL) });
-          }
-          return { term: cells[0], triples };
-        }
-      
-        parseVerb() {
-          if (this.checkType('word') && this.peek().value === 'a') { this.advance(); return iri(RDF_TYPE); }
-          const term = this.parseTerm();
-          if (term.type !== 'iri') throw this.error('Expected IRI as Turtle predicate');
-          return term;
-        }
-      
-        parseTerm() {
-          const token = this.advance();
-          if (token.type === 'operator' && (token.value === '+' || token.value === '-') && this.peek().type === 'number') {
-            const numberToken = this.advance();
-            return numericLiteral(token.value === '-' ? -numberToken.value : numberToken.value);
-          }
-          if (token.type === 'iri') return iri(this.resolveIRI(token.value, token));
-          if (token.type === 'string') return this.parseLiteralAfterToken(token);
-          if (token.type === 'number') return numericLiteral(token.value);
-          if (token.value === '<<(') return this.parseTripleTermAfterOpen();
-          if (token.type === 'word') {
-            const word = token.value.includes(':') || token.value.startsWith('_:') ? this.consumeHyphenatedWord(token.value) : token.value;
-            if (word === 'a') return iri(RDF_TYPE);
-            if (word === 'true') return literal(true, XSD_BOOLEAN);
-            if (word === 'false') return literal(false, XSD_BOOLEAN);
-            if (word.startsWith('_:')) return blankNode(word.slice(2));
-            if (word.includes(':')) return iri(this.expandPrefixedName(word, token));
-          }
-          throw this.error(`Expected RDF term, got ${token.value}`, token);
-        }
-      
-        parseTripleTermAfterOpen() {
-          const s = this.parseTerm();
-          const p = this.parseVerb();
-          const o = this.parseTerm();
-          this.expectValue(')>>');
-          return tripleTerm(s, p, o);
-        }
-      
-        parseLiteralAfterToken(token) {
-          if (this.matchValue('^^')) {
-            const datatype = this.parseDatatypeIRI();
-            return literal(coerceLexicalLiteral(token.value, datatype), datatype, null);
-          }
-          if (this.checkType('word') && /^@[A-Za-z]+(?:-[A-Za-z0-9]+)*(?:--[A-Za-z]+)?$/.test(this.peek().value)) {
-            const tag = this.advance().value.slice(1).toLowerCase();
-            const [lang, langDir = null] = tag.split('--');
-            return literal(token.value, null, lang, langDir);
-          }
-          return literal(token.value);
-        }
-      
-        parseDatatypeIRI() {
-          const token = this.advance();
-          if (token.type === 'iri') return this.resolveIRI(token.value, token);
-          if (token.type === 'word' && token.value.includes(':')) return this.expandPrefixedName(token.value, token);
-          throw this.error(`Expected datatype IRI, got ${token.value}`, token);
-        }
-      
-        freshBlankNode() {
-          this.bnodeCounter += 1;
-          return blankNode(`rdf${this.bnodeCounter}`);
-        }
-      
-        consumeHyphenatedWord(value) {
-          let out = value;
-          while (this.checkValue('-') && (this.peekN(1).type === 'word' || this.peekN(1).type === 'number')) {
-            this.advance();
-            out += `-${this.advance().value}`;
-          }
-          return out;
-        }
-      
-        expandPrefixedName(value, token) {
-          const colon = value.indexOf(':');
-          if (colon < 0) throw this.error(`Expected prefixed name, got ${value}`, token);
-          const prefix = value.slice(0, colon);
-          const local = value.slice(colon + 1);
-          if (!Object.hasOwn(this.prefixes, prefix)) throw this.error(`Unknown prefix ${prefix}:`, token);
-          return this.prefixes[prefix] + local;
-        }
-      
-        resolveIRI(value) {
-          if (!this.baseIRI || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(value)) return value;
-          try { return new URL(value, this.baseIRI).href; } catch (_) { return value; }
-        }
-      
-        matchDirective(...names) {
-          if (this.checkType('word')) {
-            const value = this.peek().value;
-            if (names.some((name) => value.toUpperCase() === name.toUpperCase())) { this.advance(); return true; }
-          }
-          return false;
-        }
-      
-        previous() { return this.tokens[this.pos - 1]; }
-        peek() { return this.tokens[this.pos]; }
-        peekN(n) { return this.tokens[this.pos + n]; }
-        is(type) { return this.peek().type === type; }
-        checkType(type) { return this.peek().type === type; }
-        checkValue(value) { return this.peek().value === value; }
-        matchValue(value) { if (this.checkValue(value)) { this.advance(); return true; } return false; }
-        advance() { return this.tokens[this.pos++]; }
-        expectType(type) { const token = this.advance(); if (token.type !== type) throw this.error(`Expected ${type}, got ${token.value}`, token); return token; }
-        expectValue(value) { const token = this.advance(); if (token.value !== value) throw this.error(`Expected ${value}, got ${token.value}`, token); return token; }
-        error(message, token = this.peek()) { return new SyntaxErrorWithLocation(message, token); }
-      }
-      
-      function parseRdfDocument(source, options = {}) {
-        return new TurtleParser(source, options).parseDocument();
-      }
-      
-      function parseRdfSyntax(source, options = {}) {
-        const document = parseRdfDocument(source, options);
-        return rdfDocumentToProgram(document, options);
-      }
-      
-      function rdfDocumentToProgram(document, options = {}) {
-        const graph = new RdfGraph(document.triples, document.prefixes);
-        const ruleSetNodes = chooseRuleSets(graph, options.ruleSet);
-        if (ruleSetNodes.length === 0) throw new Error('No srl:RuleSet found in RDF Rules syntax input');
-      
-        const program = {
-          baseIRI: document.baseIRI || null,
-          version: null,
-          imports: options.rdfImportsAsImports ? document.imports.slice() : [],
-          prefixes: { ...document.prefixes },
-          data: [],
-          rules: [],
-          rdfSyntax: true,
-          options: { shacl12Conformance: !!options.shacl12Conformance },
-          ruleSets: ruleSetNodes.map((term) => formatTerm(term, document.prefixes)),
-        };
-      
-        for (const ruleSet of ruleSetNodes) {
-          for (const dataList of graph.objects(ruleSet, SRL_DATA)) {
-            for (const item of graph.list(dataList)) program.data.push(toDataTriple(item, graph));
-          }
-          for (const rulesList of graph.objects(ruleSet, SRL_RULES)) {
-            for (const ruleNode of graph.list(rulesList)) program.rules.push(toRule(ruleNode, graph, options));
-          }
-        }
-        return program;
-      }
-      
-      function chooseRuleSets(graph, selected) {
-        if (selected) {
-          const term = graph.parseReference(selected);
-          return [term];
-        }
-        const typed = graph.subjects(RDF_TYPE, iri(SRL_RULE_SET));
-        if (typed.length > 0) return uniqueTerms(typed);
-        const byData = graph.subjectsWithPredicate(SRL_DATA);
-        const byRules = graph.subjectsWithPredicate(SRL_RULES);
-        return uniqueTerms([...byData, ...byRules]).filter((term) => graph.objects(term, SRL_RULES).length > 0 || graph.objects(term, SRL_DATA).length > 0);
-      }
-      
-      function toDataTriple(item, graph) {
-        if (item.type === 'triple') return { s: item.s, p: item.p, o: item.o };
-        const triple = toTripleLike(item, graph);
-        if ([triple.s, triple.p, triple.o].some((term) => term.type === 'var')) throw new Error('RDF Rules srl:data may not contain variables');
-        if (triple.p.type !== 'iri') throw new Error('RDF Rules data triple predicate must be an IRI');
-        return triple;
-      }
-      
-      function toRule(ruleNode, graph, options = {}) {
-        const bodyLists = graph.objects(ruleNode, SRL_BODY);
-        const headLists = graph.objects(ruleNode, SRL_HEAD);
-        if (bodyLists.length !== 1 || headLists.length !== 1) throw new Error(`RDF Rule ${graph.label(ruleNode)} must have exactly one srl:body and one srl:head`);
-        const body = graph.list(bodyLists[0]).map((item) => toBodyElement(item, graph));
-        const head = graph.list(headLists[0]).map((item) => toTripleLike(item, graph));
-        return { name: graph.label(ruleNode), head, body, runOnce: ruleNeedsRunOnce(head, body, options) };
-      }
-      
-      function toBodyElement(node, graph) {
-        if (hasTripleShape(node, graph)) return { type: 'triple', triple: toTripleLike(node, graph) };
-        const filters = graph.objects(node, SRL_FILTER).concat(graph.objects(node, SRL_EXPR));
-        if (filters.length > 0) {
-          if (filters.length !== 1) throw new Error(`Filter element ${graph.label(node)} must have exactly one srl:filter`);
-          return { type: 'filter', expr: toExpression(filters[0], graph) };
-        }
-        const assigns = graph.objects(node, SRL_ASSIGN);
-        if (assigns.length > 0) {
-          if (assigns.length !== 1) throw new Error(`Assignment element ${graph.label(node)} must have exactly one srl:assign`);
-          const assign = assigns[0];
-          const vars = graph.objects(assign, SRL_ASSIGN_VAR);
-          const values = graph.objects(assign, SRL_ASSIGN_VALUE);
-          if (vars.length !== 1 || values.length !== 1) throw new Error(`Assignment ${graph.label(assign)} must have exactly one srl:assignVar and srl:assignValue`);
-          const variableTerm = toVarOrTerm(vars[0], graph);
-          if (variableTerm.type !== 'var') throw new Error('srl:assignVar must point to a variable node');
-          return { type: 'set', variable: variableTerm.value, expr: toExpression(values[0], graph) };
-        }
-        const negations = graph.objects(node, SRL_NOT);
-        if (negations.length > 0) {
-          if (negations.length !== 1) throw new Error(`Negation element ${graph.label(node)} must have exactly one srl:not`);
-          const body = graph.list(negations[0]).map((item) => {
-            const clause = toBodyElement(item, graph);
-            if (clause.type === 'set' || clause.type === 'not') throw new Error('RDF Rules srl:not may contain only triple patterns and filters');
-            return clause;
-          });
-          return { type: 'not', body };
-        }
-        throw new Error(`Unsupported RDF Rules body element ${graph.label(node)}`);
-      }
-      
-      function toTripleLike(node, graph) {
-        if (node.type === 'triple') return { s: node.s, p: node.p, o: node.o };
-        const subjects = graph.objects(node, SRL_SUBJECT);
-        const predicates = graph.objects(node, SRL_PREDICATE);
-        const objects = graph.objects(node, SRL_OBJECT);
-        if (subjects.length !== 1 || predicates.length !== 1 || objects.length !== 1) {
-          throw new Error(`Triple node ${graph.label(node)} must have exactly one srl:subject, srl:predicate and srl:object`);
-        }
-        return {
-          s: toVarOrTerm(subjects[0], graph),
-          p: toVarOrTerm(predicates[0], graph),
-          o: toVarOrTerm(objects[0], graph),
-        };
-      }
-      
-      function hasTripleShape(node, graph) {
-        return graph.objects(node, SRL_SUBJECT).length > 0 || graph.objects(node, SRL_PREDICATE).length > 0 || graph.objects(node, SRL_OBJECT).length > 0;
-      }
-      
-      function toVarOrTerm(node, graph) {
-        const varNames = graph.objects(node, SRL_VAR_NAME);
-        if (varNames.length > 0) {
-          if (varNames.length !== 1 || varNames[0].type !== 'literal') throw new Error(`Variable node ${graph.label(node)} must have exactly one string srl:varName`);
-          return variable(String(varNames[0].value));
-        }
-        return node;
-      }
-      
-      function toExpression(node, graph) {
-        const varNames = graph.objects(node, SHNEX_VAR).concat(graph.objects(node, SRL_VAR_NAME));
-        if (varNames.length > 0) {
-          if (varNames.length !== 1 || varNames[0].type !== 'literal') throw new Error(`Expression variable ${graph.label(node)} must name one variable`);
-          return { type: 'var', name: String(varNames[0].value) };
-        }
-        if (node.type === 'literal') {
-          if (node.datatype || node.lang) return { type: 'term', value: node };
-          return { type: 'literal', value: node.value };
-        }
-        if (node.type === 'iri' || node.type === 'blank' || node.type === 'triple') {
-          const call = graph.functionCall(node);
-          if (call) return toFunctionExpression(call.name, call.args.map((arg) => toExpression(arg, graph)));
-          if (node.type === 'blank' && graph.hasOutgoing(node)) return { type: 'term', value: node };
-          return { type: 'term', value: toVarOrTerm(node, graph) };
-        }
-        return { type: 'term', value: node };
-      }
-      
-      function toFunctionExpression(name, args) {
-        if (name.startsWith(SPARQL_NS)) {
-          const local = name.slice(SPARQL_NS.length);
-          if (local === 'less-than' || local === 'lessThan') return binary('<', args);
-          if (local === 'less-than-or-equal' || local === 'lessThanOrEqual') return binary('<=', args);
-          if (local === 'greater-than' || local === 'greaterThan') return binary('>', args);
-          if (local === 'greater-than-or-equal' || local === 'greaterThanOrEqual') return binary('>=', args);
-          if (local === 'equal' || local === 'equals') return binary('=', args);
-          if (local === 'not-equal' || local === 'notEqual') return binary('!=', args);
-          if (local === 'add') return foldBinary('+', args);
-          if (local === 'subtract') return binary('-', args);
-          if (local === 'multiply') return foldBinary('*', args);
-          if (local === 'divide') return binary('/', args);
-          if (local === 'and' || local === 'function-and') return foldBinary('&&', args);
-          if (local === 'or' || local === 'function-or') return foldBinary('||', args);
-          if (local === 'not') return { type: 'unary', op: '!', expr: args[0] };
-          const builtin = sparqlLocalToBuiltin(local);
-          return { type: 'call', name: builtin, args };
-        }
-        return { type: 'call', name, args };
-      }
-      
-      function binary(op, args) {
-        if (args.length !== 2) throw new Error(`sparql operator ${op} expects 2 arguments`);
-        return { type: 'binary', op, left: args[0], right: args[1] };
-      }
-      
-      function foldBinary(op, args) {
-        if (args.length < 2) throw new Error(`sparql operator ${op} expects at least 2 arguments`);
-        return args.slice(1).reduce((left, right) => ({ type: 'binary', op, left, right }), args[0]);
-      }
-      
-      function sparqlLocalToBuiltin(local) {
-        return local.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase()).replace(/^./, (ch) => ch.toUpperCase());
-      }
-      
-      class RdfGraph {
-        constructor(triples, prefixes = {}) {
-          this.triples = triples;
-          this.prefixes = prefixes;
-          this.bySubject = new Map();
-          for (const triple of triples) {
-            const key = termKey(triple.s);
-            if (!this.bySubject.has(key)) this.bySubject.set(key, []);
-            this.bySubject.get(key).push(triple);
-          }
-        }
-      
-        objects(subject, predicateIRI) {
-          const rows = this.bySubject.get(termKey(subject)) || [];
-          return rows.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI).map((triple) => triple.o);
-        }
-      
-        subjects(predicateIRI, object) {
-          return this.triples.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI && termEquals(triple.o, object)).map((triple) => triple.s);
-        }
-      
-        subjectsWithPredicate(predicateIRI) {
-          return this.triples.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI).map((triple) => triple.s);
-        }
-      
-        hasOutgoing(subject) {
-          return (this.bySubject.get(termKey(subject)) || []).length > 0;
-        }
-      
-        list(head) {
-          const out = [];
-          let node = head;
-          const seen = new Set();
-          while (!(node.type === 'iri' && node.value === RDF_NIL)) {
-            const key = termKey(node);
-            if (seen.has(key)) throw new Error(`Cycle in RDF list at ${this.label(node)}`);
-            seen.add(key);
-            const first = this.objects(node, RDF_FIRST);
-            const rest = this.objects(node, RDF_REST);
-            if (first.length !== 1 || rest.length !== 1) throw new Error(`Expected RDF list node at ${this.label(node)}`);
-            out.push(first[0]);
-            node = rest[0];
-          }
-          return out;
-        }
-      
-        functionCall(node) {
-          if (node.type !== 'blank') return null;
-          const rows = (this.bySubject.get(termKey(node)) || []).filter((triple) => triple.p.type === 'iri');
-          const calls = rows.filter((triple) => triple.p.value.startsWith(SPARQL_NS) || triple.p.value.includes('#') || triple.p.value.includes('/'));
-          const viable = calls.filter((triple) => isRdfListHead(triple.o, this));
-          if (viable.length !== 1) return null;
-          return { name: viable[0].p.value, args: this.list(viable[0].o) };
-        }
-      
-        parseReference(text) {
-          if (typeof text !== 'string') return text;
-          if (text.startsWith('<') && text.endsWith('>')) return iri(text.slice(1, -1));
-          if (text.startsWith('_:')) return blankNode(text.slice(2));
-          const colon = text.indexOf(':');
-          if (colon >= 0) {
-            const prefix = text.slice(0, colon);
-            const local = text.slice(colon + 1);
-            const ns = this.prefixes[prefix] || (prefix === 'srl' ? SRL_NS : null);
-            if (ns) return iri(ns + local);
-          }
-          return iri(text);
-        }
-      
-        label(term) { return formatTerm(term, this.prefixes); }
-      }
-      
-      function isRdfListHead(term, graph) {
-        return (term.type === 'iri' && term.value === RDF_NIL) || graph.objects(term, RDF_FIRST).length === 1;
-      }
-      
-      function uniqueTerms(terms) {
-        const seen = new Set();
-        const out = [];
-        for (const term of terms) {
-          const key = termKey(term);
-          if (!seen.has(key)) { seen.add(key); out.push(term); }
-        }
-        return out;
-      }
-      
-      function numericLiteral(value) {
-        if (Number.isInteger(value)) return literal(value, XSD_INTEGER);
-        if (String(value).includes('e') || String(value).includes('E')) return literal(value, XSD_DOUBLE);
-        return literal(value, XSD_DECIMAL);
-      }
-      
-      function parseIntegerLiteral(value) {
-        const text = String(value);
-        const asNumber = Number.parseInt(text, 10);
-        return Number.isSafeInteger(asNumber) && String(asNumber) === text.replace(/^\+/, '') ? asNumber : BigInt(text);
-      }
-      
-      function coerceLexicalLiteral(value, datatype) {
-        if (datatype === XSD_INTEGER) return parseIntegerLiteral(value);
-        if (datatype === XSD_DECIMAL || datatype === XSD_DOUBLE) return Number(value);
-        if (datatype === XSD_BOOLEAN) return value === true || value === 'true' || value === '1';
-        return value;
-      }
-      
-      function looksLikeRdfRules(source, options = {}) {
-        if (options.syntax === 'rdf') return true;
-        if (options.syntax === 'srl') return false;
-        if (options.filename && /\.(ttl|trig|nt|n3)$/i.test(options.filename)) return true;
-        return /\bsrl:RuleSet\b|\bsrl:rules\b|http:\/\/www\.w3\.org\/ns\/shacl-rules#RuleSet/.test(source);
-      }
-      
-      module.exports = {
-        parseRdfDocument,
-        parseRdfSyntax,
-        rdfDocumentToProgram,
-        looksLikeRdfRules,
-        TurtleParser,
-        RdfGraph,
-        constants: {
-          SRL_NS,
-          SHNEX_NS,
-          SPARQL_NS,
-          SRL_RULE_SET,
-          SRL_RULE,
-        },
-      };
-      
-      
-      // ---- Grammar-hardened RDF 1.1 / RDF 1.2 syntax helpers ----
-      // These functions are used by the W3C RDF manifest harness and are kept in
-      // rdfSyntax.js beside the existing Turtle/RDF-Rules front-end instead of in a
-      // separate monolithic test file.  They intentionally keep an internal test
-      // graph representation because the W3C manifests exercise syntax, datasets,
-      // triple terms, and RDF 1.2 annotation isomorphism independently from the SRL
-      // rule engine representation.
-      const rdfW3cSyntax = (() => {
-      // Grammar-hardened RDF syntax code shared by the RDF Rules front-end and W3C manifest harness.
-      function iri(value) {
-        if (!value) throw new Error('iri(value) requires a non-empty value');
-        return Object.freeze({ kind: 'iri', value: String(value) });
-      }
-      function literal(value, datatype = null, language = null, langDir = null) {
-        return Object.freeze({ kind: 'literal', value: String(value), datatype, language, langDir });
-      }
-      function blank(value) {
-        const clean = String(value || '').replace(/^_:/, '');
-        if (!clean) throw new Error('blank(value) requires a name');
-        return Object.freeze({ kind: 'blank', value: clean });
-      }
-      function tripleTerm(s, p, o) { return Object.freeze({ kind: 'triple', s, p, o }); }
-      function variable(name) {
-        const clean = String(name || '').replace(/^\?/, '');
-        if (!clean) throw new Error('variable(name) requires a name');
-        return Object.freeze({ kind: 'var', name: clean });
-      }
-      function triple(s, p, o, graph = null) { return Object.freeze({ s, p, o, graph }); }
-      function termKey(term) {
-        if (!term) return 'default';
-        switch (term.kind) {
-          case 'iri': return `I:${term.value}`;
-          case 'literal': return `L:${JSON.stringify(term.value)}^^${term.datatype || ''}@${term.language || ''}`;
-          case 'blank': return `B:${term.value}`;
-          case 'var': return `V:${term.name}`;
-          case 'triple': return `T:${termKey(term.s)} ${termKey(term.p)} ${termKey(term.o)}`;
-          default: throw new Error(`Unsupported term kind: ${term.kind}`);
-        }
-      }
-      function tripleKey(t) { return `${termKey(t.s)} ${termKey(t.p)} ${termKey(t.o)} ${termKey(t.graph)}`; }
-      class Rule { constructor({ id, body = [], head = [], profile = 'n3-rules-subset-v0' } = {}) { this.id = id; this.body = body; this.head = head; this.profile = profile; } }
-      
-      const RDF_NS = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
-      const RDF_TYPE = `${RDF_NS}type`;
-      const RDF_FIRST = `${RDF_NS}first`;
-      const RDF_REST = `${RDF_NS}rest`;
-      const RDF_NIL = `${RDF_NS}nil`;
-      const RDF_REIFIES = `${RDF_NS}reifies`;
-      const RDF_LANG_STRING = `${RDF_NS}langString`;
-      const RDF_DIR_LANG_STRING = `${RDF_NS}dirLangString`;
-      const XSD_BOOLEAN = 'http://www.w3.org/2001/XMLSchema#boolean';
-      const XSD_INTEGER = 'http://www.w3.org/2001/XMLSchema#integer';
-      const XSD_DECIMAL = 'http://www.w3.org/2001/XMLSchema#decimal';
-      const XSD_DOUBLE = 'http://www.w3.org/2001/XMLSchema#double';
-      const XSD_STRING = 'http://www.w3.org/2001/XMLSchema#string';
-      
-      // ---- N-Triples / N-Quads parser ----
-      const { parseNQuads, termToNQuads, tripleToNQuads, triplesToNQuads } = (() => {
-      
-      function isWs(ch) { return ch === ' ' || ch === '\t'; }
-      function isLineEnd(ch) { return ch === '\n' || ch === '\r'; }
-      function isHex(text) { return /^[0-9A-Fa-f]+$/.test(text); }
-      
-      function decodeCodePoint(hex, token) {
-        const code = Number.parseInt(hex, 16);
-        if (!Number.isFinite(code) || code < 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) {
-          throw new Error(`Invalid Unicode escape in ${token}`);
-        }
-        return String.fromCodePoint(code);
-      }
-      
-      function decodeIriEscapes(value, token = 'IRI') {
-        let out = '';
-        for (let i = 0; i < value.length; i += 1) {
-          const ch = value[i];
-          if (ch !== '\\') {
-            if (/[<>"{}|^`\u0000-\u0020]/.test(ch)) throw new Error(`Invalid character in ${token}`);
-            out += ch;
-            continue;
-          }
-          const esc = value[++i];
-          if (esc === 'u') {
-            const hex = value.slice(i + 1, i + 5);
-            if (hex.length !== 4 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${token}`);
-            out += decodeCodePoint(hex, token);
-            i += 4;
-          } else if (esc === 'U') {
-            const hex = value.slice(i + 1, i + 9);
-            if (hex.length !== 8 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${token}`);
-            out += decodeCodePoint(hex, token);
-            i += 8;
-          } else {
-            throw new Error(`Invalid IRI escape \\${esc} in ${token}`);
-          }
-        }
-        return out;
-      }
-      
-      function decodeLiteralEscapes(value, token = 'literal') {
-        let out = '';
-        for (let i = 0; i < value.length; i += 1) {
-          const ch = value[i];
-          if (ch !== '\\') {
-            if (ch === '\n' || ch === '\r') throw new Error(`Raw line break in ${token}`);
-            out += ch;
-            continue;
-          }
-          const esc = value[++i];
-          if (!esc) throw new Error(`Trailing escape in ${token}`);
-          if (esc === 't') out += '\t';
-          else if (esc === 'b') out += '\b';
-          else if (esc === 'n') out += '\n';
-          else if (esc === 'r') out += '\r';
-          else if (esc === 'f') out += '\f';
-          else if (esc === '"') out += '"';
-          else if (esc === "'") out += "'";
-          else if (esc === '\\') out += '\\';
-          else if (esc === 'u') {
-            const hex = value.slice(i + 1, i + 5);
-            if (hex.length !== 4 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${token}`);
-            out += decodeCodePoint(hex, token);
-            i += 4;
-          } else if (esc === 'U') {
-            const hex = value.slice(i + 1, i + 9);
-            if (hex.length !== 8 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${token}`);
-            out += decodeCodePoint(hex, token);
-            i += 8;
-          } else {
-            throw new Error(`Invalid escape \\${esc} in ${token}`);
-          }
-        }
-        return out;
-      }
-      
-      function stripNqComment(line) {
-        let inString = false;
-        let inIri = false;
-        let escaped = false;
-        for (let i = 0; i < line.length; i += 1) {
-          const ch = line[i];
-          if (escaped) { escaped = false; continue; }
-          if (ch === '\\') { escaped = true; continue; }
-          if (!inIri && ch === '"') { inString = !inString; continue; }
-          if (!inString && ch === '<' && line[i + 1] !== '<') { inIri = true; continue; }
-          if (!inString && inIri && ch === '>') { inIri = false; continue; }
-          if (!inString && !inIri && ch === '#') return line.slice(0, i);
-        }
-        return line;
-      }
-      
-      function validateAbsoluteIri(value, position) {
-        if (!/^[A-Za-z][A-Za-z0-9+.-]*:/.test(value)) throw new Error(`${position} must be absolute`);
-        return value;
-      }
-      
-      function validateBlankLabel(value) {
-        // RDF blank node labels follow PN_CHARS-style rules. This deliberately accepts
-        // Unicode letters and leading underscores; it still rejects empty labels,
-        // labels ending in '.', and doubled dots because those are common false
-        // positives when a compact statement terminator is adjacent to a blank node.
-        if (!value || value.endsWith('.') || value.includes('..')) throw new Error(`Invalid blank node label _: ${value}`);
-        if (!/^[\p{L}\p{N}_](?:[\p{L}\p{N}._\-\u00B7\u0300-\u036F\u203F-\u2040]*[\p{L}\p{N}_\-\u00B7\u0300-\u036F\u203F-\u2040])?$/u.test(value)) {
-          throw new Error(`Invalid blank node label _: ${value}`);
-        }
-        return value;
-      }
-      
-      function validateLang(value) {
-        // LANG_DIR uses BCP47-style language tags. Keep this intentionally strict enough
-        // for the W3C syntax tests: each subtag is 1..8 alphanumeric chars, starting alpha.
-        if (!value || value.includes('--') || !/^[A-Za-z]{1,8}(?:-[A-Za-z0-9]{1,8})*$/.test(value)) throw new Error(`Invalid language tag @${value}`);
-        return value;
-      }
-      
-      class LineReader {
-        constructor(line, lineNumber) {
-          this.line = line;
-          this.lineNumber = lineNumber;
-          this.i = 0;
-        }
-      
-        eof() { return this.i >= this.line.length; }
-        peek(offset = 0) { return this.line[this.i + offset]; }
-        startsWith(value) { return this.line.startsWith(value, this.i); }
-        skipWs() { while (isWs(this.peek())) this.i += 1; }
-      
-        expect(value) {
-          if (!this.startsWith(value)) throw new Error(`Expected ${value} on line ${this.lineNumber}, got ${this.line.slice(this.i, this.i + 20) || 'end of line'}`);
-          this.i += value.length;
-        }
-      
-        readIri(position = 'IRI') {
-          this.expect('<');
-          let raw = '';
-          while (!this.eof()) {
-            const ch = this.peek();
-            if (ch === '>') { this.i += 1; return validateAbsoluteIri(decodeIriEscapes(raw, position), position); }
-            raw += ch;
-            this.i += 1;
-          }
-          throw new Error(`Unterminated ${position} on line ${this.lineNumber}`);
-        }
-      
-        readBlank() {
-          this.expect('_:');
-          const start = this.i;
-          while (!this.eof()) {
-            const ch = this.peek();
-            if (!/[\p{L}\p{N}._\-\u00B7\u0300-\u036F\u203F-\u2040]/u.test(ch)) break;
-            if (ch === '.') {
-              const next = this.peek(1);
-              if (!next || isWs(next) || next === '<' || next === '_' || next === '"' || next === '#') break;
-            }
-            this.i += 1;
-          }
-          return blank(validateBlankLabel(this.line.slice(start, this.i)));
-        }
-      
-        readLiteral() {
-          this.expect('"');
-          let raw = '';
-          let escaped = false;
-          while (!this.eof()) {
-            const ch = this.peek();
-            this.i += 1;
-            if (escaped) { raw += `\\${ch}`; escaped = false; continue; }
-            if (ch === '\\') { escaped = true; continue; }
-            if (ch === '"') {
-              const value = decodeLiteralEscapes(raw, 'literal');
-              let language = null;
-              let datatype = XSD_STRING;
-              if (this.peek() === '@') {
-                this.i += 1;
-                const start = this.i;
-                while (!this.eof() && /[A-Za-z0-9-]/.test(this.peek())) this.i += 1;
-                let rawLang = this.line.slice(start, this.i);
-                if (!rawLang) throw new Error('Invalid language tag: missing');
-                if (rawLang.endsWith('--ltr') || rawLang.endsWith('--rtl')) rawLang = rawLang.slice(0, -5);
-                language = validateLang(rawLang);
-                datatype = null;
-              } else if (this.startsWith('^^')) {
-                this.i += 2;
-                this.skipWs();
-                datatype = this.readIri('datatype IRI');
-                if (datatype === RDF_LANG_STRING || datatype === RDF_DIR_LANG_STRING) {
-                  throw new Error(`Datatype ${datatype} requires LANG_DIR syntax, not ^^`);
-                }
-              }
-              // RDF 1.2 base direction suffix, e.g. --ltr / --rtl. The core term model does not preserve it yet;
-              // accepting it is enough for syntax tests and keeps eval comparison conservative for now.
-              if (this.startsWith('--ltr') || this.startsWith('--rtl')) {
-                if (!language) throw new Error('Base direction requires a language tag');
-                this.i += 5;
-              }
-              return literal(value, datatype, language);
-            }
-            raw += ch;
-          }
-          throw new Error(`Unterminated literal on line ${this.lineNumber}`);
-        }
-      
-        readTerm(position = 'term') {
-          this.skipWs();
-          if (this.startsWith('<<')) return this.readTripleTerm();
-          if (this.peek() === '<') return iri(this.readIri(position));
-          if (this.startsWith('_:')) return this.readBlank();
-          if (this.peek() === '"') return this.readLiteral();
-          throw new Error(`Expected RDF term for ${position}, got ${this.line.slice(this.i, this.i + 20) || 'end of line'}`);
-        }
-      
-        readSubjectOrGraph(position) {
-          const term = this.readTerm(position);
-          if (term.kind === 'literal') throw new Error(`N-Quads ${position} cannot be a literal`);
-          if (term.kind === 'triple' && (position === 'subject' || position === 'graph')) throw new Error(`N-Quads ${position} cannot be a triple term`);
-          return term;
-        }
-      
-        readPredicate() {
-          this.skipWs();
-          if (this.peek() !== '<') throw new Error(`N-Quads predicate must be an IRI, got ${this.line.slice(this.i, this.i + 20) || 'end of line'}`);
-          return iri(this.readIri('predicate'));
-        }
-      
-        readTripleTerm() {
-          this.expect('<<');
-          this.skipWs();
-          // RDF 1.2 N-Triples/N-Quads triple terms use parenthesized triples: <<( s p o )>>.
-          // The older unparenthesized RDF-star form is a reified-triple syntax form and is not
-          // accepted as a plain subject/object term by the RDF 1.2 syntax manifests.
-          this.expect('(');
-          this.skipWs();
-          const s = this.readSubjectOrGraph('triple-term subject');
-          this.skipWs();
-          const p = this.readPredicate();
-          this.skipWs();
-          const o = this.readTerm('triple-term object');
-          this.skipWs();
-          this.expect(')');
-          this.skipWs();
-          this.expect('>>');
-          return tripleTerm(s, p, o);
-        }
-      }
-      
-      function parseLine(line, lineNumber, format) {
-        const clean = stripNqComment(line).trim();
-        if (!clean) return null;
-        const r = new LineReader(clean, lineNumber);
-        const s = r.readSubjectOrGraph('subject');
-        r.skipWs();
-        const p = r.readPredicate();
-        r.skipWs();
-        const o = r.readTerm('object');
-        r.skipWs();
-        let g = null;
-        if (r.peek() !== '.') {
-          if (format === 'ntriples') throw new Error(`N-Triples line ${lineNumber} has too many terms before .`);
-          g = r.readSubjectOrGraph('graph');
-          r.skipWs();
-        }
-        if (r.peek() !== '.') throw new Error(`N-Quads line ${lineNumber} must end with .`);
-        r.i += 1;
-        r.skipWs();
-        if (!r.eof()) throw new Error(`Unexpected trailing content on N-Quads line ${lineNumber}: ${clean.slice(r.i)}`);
-        return triple(s, p, o, g);
-      }
-      
-      function parseNQuads(source, options = {}) {
-        const facts = [];
-        const prefixes = { ...(options.prefixes || {}) };
-        const format = options.format || (options.profileId === 'ntriples-graph-v0' ? 'ntriples' : 'nquads');
-        const lines = String(source || '').split(/\r\n|\n|\r/);
-        for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
-          const fact = parseLine(lines[lineIndex], lineIndex + 1, format);
-          if (fact) facts.push(fact);
-        }
-        return {
-          profile: options.profileId || (format === 'ntriples' ? 'ntriples-graph-v0' : 'nquads-dataset-v0'),
-          prefixes,
-          base: options.base || '',
-          imports: [],
-          facts,
-          rules: [],
-          queries: [],
-          expectations: [],
-        };
-      }
-      
-      function escapeIri(value) {
-        return String(value).replace(/[\\>\u0000-\u0020]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
-      }
-      
-      function escapeLiteral(value) {
-        return String(value)
-          .replace(/\\/g, '\\\\')
-          .replace(/"/g, '\\"')
-          .replace(/\n/g, '\\n')
-          .replace(/\r/g, '\\r')
-          .replace(/\t/g, '\\t')
-          .replace(/\u0008/g, '\\b')
-          .replace(/\u000c/g, '\\f');
-      }
-      
-      function termToNQuads(term) {
-        if (!term) return '';
-        switch (term.kind) {
-          case 'iri':
-            return `<${escapeIri(term.value)}>`;
-          case 'blank':
-            return `_:${term.value}`;
-          case 'literal': {
-            let out = `"${escapeLiteral(term.value)}"`;
-            if (term.language) out += `@${term.language}`;
-            else if (term.datatype && term.datatype !== XSD_STRING) out += `^^<${escapeIri(term.datatype)}>`;
-            return out;
-          }
-          case 'triple':
-            return `<< ${termToNQuads(term.s)} ${termToNQuads(term.p)} ${termToNQuads(term.o)} >>`;
-          default:
-            throw new Error(`Cannot serialize ${term.kind} as N-Quads`);
-        }
-      }
-      
-      function tripleToNQuads(value) {
-        const terms = [termToNQuads(value.s), termToNQuads(value.p), termToNQuads(value.o)];
-        if (value.graph) terms.push(termToNQuads(value.graph));
-        return `${terms.join(' ')} .`;
-      }
-      
-      function triplesToNQuads(triples) {
-        return Array.from(new Set(Array.from(triples || []).map(tripleToNQuads))).sort().join('\n');
-      }
-      return { parseNQuads, termToNQuads, tripleToNQuads, triplesToNQuads };
-      })();
-      
-      // ---- Turtle / TriG parser ----
-      const { parseN3 } = (() => {
-      
-      const DEFAULT_PREFIXES = Object.freeze({
-        rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-        xsd: 'http://www.w3.org/2001/XMLSchema#',
-        log: 'http://www.w3.org/2000/10/swap/log#',
-      });
-      
-      
-      function isWs(ch) { return /\s/.test(ch || ''); }
-      function isPunct(ch) { return '{}.;,()[]|'.includes(ch || ''); }
-      function isHex(text) { return /^[0-9A-Fa-f]+$/.test(text); }
-      function isAbsoluteIri(value) { return /^[A-Za-z][A-Za-z0-9+.-]*:/.test(value || ''); }
-      function resolveIriReference(value, base) {
-        if (isAbsoluteIri(value)) return value;
-        if (!base) return value;
-        try {
-          const url = new URL(value, base);
-          let href = url.href;
-          // The RDF IRI-resolution tests expect bare authority references such as //g
-          // to remain http://g, not to gain the URL API's cosmetic trailing slash.
-          if (/^\/\/[^/?#]+$/.test(value) && href.endsWith('/')) href = href.slice(0, -1);
-          if (/^file:\/\/[^/?#]+$/.test(value) && href.endsWith('/')) href = href.slice(0, -1);
-          return href;
-        } catch { return `${base}${value}`; }
-      }
-      function validateBlankLabel(value) {
-        const clean = String(value || '').replace(/^_:/, '');
-        if (!clean || clean.endsWith('.') || clean.includes('..')) throw new Error(`Invalid blank node label _: ${clean}`);
-        // BLANK_NODE_LABEL follows the PN_CHARS family; ':' is only for prefixed names, not blank labels.
-        if (/[\s<>"{}|^`\\:]/u.test(clean)) throw new Error(`Invalid blank node label _: ${clean}`);
-        if (/^[\-.]/u.test(clean)) throw new Error(`Invalid blank node label _: ${clean}`);
-        return clean;
-      }
-      function validateIriReference(value) {
-        if (/[<>\"{}|^`\u0000-\u0020]/.test(value)) throw new Error('Invalid character in IRIREF');
-        return value;
-      }
-      function validatePrefixedLocal(raw, decoded) {
-        if (!raw) return decoded;
-        if (raw.startsWith('-') || raw.startsWith('\\-') || raw.startsWith('.')) throw new Error(`Invalid prefixed name local ${raw}`);
-        for (let i = 0; i < raw.length; i += 1) {
-          const ch = raw[i];
-          if (ch === '\\') {
-            const esc = raw[i + 1];
-            if (!esc || !'_~.-!$&\'()*+,;=/?#@%'.includes(esc)) throw new Error(`Invalid prefixed name local escape ${raw}`);
-            i += 1;
-            continue;
-          }
-          if (ch === '%') {
-            const hex = raw.slice(i + 1, i + 3);
-            if (hex.length !== 2 || !isHex(hex)) throw new Error(`Invalid percent escape in prefixed name local ${raw}`);
-            i += 2;
-            continue;
-          }
-          if (ch === '~' || ch === '^') throw new Error(`Invalid prefixed name local ${raw}`);
-        }
-        return decoded;
-      }
-      function decodePrefixedLocal(raw) {
-        let out = '';
-        for (let i = 0; i < raw.length; i += 1) {
-          const ch = raw[i];
-          if (ch === '\\') { out += raw[i + 1] || ''; i += 1; }
-          else out += ch;
-        }
-        return out;
-      }
-      function codePoint(hex, label) {
-        const n = Number.parseInt(hex, 16);
-        if (!Number.isFinite(n) || n < 0 || n > 0x10ffff || (n >= 0xd800 && n <= 0xdfff)) throw new Error(`Invalid Unicode escape in ${label}`);
-        return String.fromCodePoint(n);
-      }
-      function decodeEscapes(text, label, iriMode = false) {
-        let out = '';
-        for (let i = 0; i < text.length; i += 1) {
-          const ch = text[i];
-          if (ch !== '\\') { out += ch; continue; }
-          const esc = text[++i];
-          if (!esc) throw new Error(`Trailing escape in ${label}`);
-          if (esc === 'u') {
-            const hex = text.slice(i + 1, i + 5); if (hex.length !== 4 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${label}`);
-            out += codePoint(hex, label); i += 4;
-          } else if (esc === 'U') {
-            const hex = text.slice(i + 1, i + 9); if (hex.length !== 8 || !isHex(hex)) throw new Error(`Invalid Unicode escape in ${label}`);
-            out += codePoint(hex, label); i += 8;
-          } else if (!iriMode && 'tbnrf"\''.includes(esc)) {
-            out += { t: '\t', b: '\b', n: '\n', r: '\r', f: '\f', '"': '"', "'": "'" }[esc] ?? esc;
-          } else if (!iriMode && esc === '\\') out += '\\';
-          else if (iriMode) throw new Error(`Invalid escape \\${esc} in ${label}`);
-          else throw new Error(`Invalid escape \\${esc} in ${label}`);
-        }
-        return out;
-      }
-      
-      class Tokenizer {
-        constructor(source) { this.source = String(source || ''); this.i = 0; this.tokens = []; }
-        eof() { return this.i >= this.source.length; }
-        peek(offset = 0) { return this.source[this.i + offset]; }
-        startsWith(value) { return this.source.startsWith(value, this.i); }
-        push(type, value, extra = {}) { this.tokens.push({ type, value, ...extra }); }
-        skipComment() { while (!this.eof() && this.peek() !== '\n' && this.peek() !== '\r') this.i += 1; }
-        readIri() {
-          this.i += 1;
-          let raw = '';
-          while (!this.eof()) {
-            const ch = this.peek();
-            if (ch === '>') { this.i += 1; this.push('iri', validateIriReference(decodeEscapes(raw, 'IRI', true))); return; }
-            raw += ch; this.i += 1;
-          }
-          throw new Error('Unterminated IRIREF');
-        }
-        readString() {
-          const quote = this.peek();
-          const long = this.source.startsWith(quote.repeat(3), this.i);
-          this.i += long ? 3 : 1;
-          let raw = '';
-          let escaped = false;
-          while (!this.eof()) {
-            const ch = this.peek();
-            if (!escaped && long && this.source.startsWith(quote.repeat(3), this.i)) { this.i += 3; this.push(long ? 'longString' : 'string', decodeEscapes(raw, 'string'), { long }); return; }
-            if (!escaped && !long && ch === quote) { this.i += 1; this.push('string', decodeEscapes(raw, 'string'), { long: false }); return; }
-            if (!long && (ch === '\n' || ch === '\r')) throw new Error('Raw line break in short string');
-            raw += ch;
-            this.i += 1;
-            escaped = !escaped && ch === '\\';
-            if (ch !== '\\') escaped = false;
-          }
-          throw new Error('Unterminated string');
-        }
-        readBare() {
-          const start = this.i;
-          if (this.startsWith('_:')) {
-            this.i += 2;
-            while (!this.eof()) {
-              const ch = this.peek();
-              // BLANK_NODE_LABEL uses PN_CHARS, including broad Unicode ranges that are
-              // not all JavaScript \p{L}/\p{N}.  Tokenize generously up to a real
-              // Turtle delimiter, then validate the label separately.  Keep ':' as a
-              // boundary so compact forms such as _:s:p tokenize as blank-node _:s
-              // followed by predicate :p.
-              if (isWs(ch) || '<>\"{}|^`\\;,)[]'.includes(ch) || ch === ':' || ch === '#') break;
-              if (ch === '.') {
-                const next = this.source[this.i + 1];
-                if (!next || isWs(next) || '{};,)[]'.includes(next)) break;
-              }
-              this.i += 1;
-            }
-            this.push('bare', this.source.slice(start, this.i));
-            return;
-          }
-          while (!this.eof()) {
-            const ch = this.peek();
-            if (isWs(ch)) break;
-            if (ch === '\\' && this.source[this.i + 1]) { this.i += 2; continue; }
-            if (ch === '<' || ch === '>' || ch === '"' || ch === "'") break;
-            if (ch === '.') {
-              const next = this.source[this.i + 1];
-              if (!next || isWs(next) || '{};,)[]'.includes(next)) break;
-            } else if (isPunct(ch)) break;
-            if (ch === '#') break;
-            if (ch === '^' && this.peek(1) === '^') break;
-            if (ch === '=' && this.peek(1) === '>') break;
-            this.i += 1;
-          }
-          this.push('bare', this.source.slice(start, this.i));
-        }
-        tokenize() {
-          while (!this.eof()) {
-            const ch = this.peek();
-            if (isWs(ch)) { this.i += 1; continue; }
-            if (ch === '#') { this.skipComment(); continue; }
-            if (this.startsWith('@prefix') && (isWs(this.source[this.i + 7]) || this.source[this.i + 7] === ':')) { this.push('bare', '@prefix'); this.i += 7; continue; }
-            if (this.startsWith('@base') && isWs(this.source[this.i + 5])) { this.push('bare', '@base'); this.i += 5; continue; }
-            if (this.startsWith('@version') && isWs(this.source[this.i + 8])) { this.push('bare', '@version'); this.i += 8; continue; }
-            if (this.startsWith('=>')) { this.push('=>', '=>'); this.i += 2; continue; }
-            if (this.startsWith('^^')) { this.push('^^', '^^'); this.i += 2; continue; }
-            if (this.startsWith('<<')) { this.push('<<', '<<'); this.i += 2; continue; }
-            if (this.startsWith('>>')) { this.push('>>', '>>'); this.i += 2; continue; }
-            if (ch === '<') { this.readIri(); continue; }
-            if (ch === '"' || ch === "'") { this.readString(); continue; }
-            if (ch === '.' && /[0-9]/.test(this.peek(1) || '')) { this.readBare(); continue; }
-            if (ch === '~') { this.readBare(); continue; }
-            if (isPunct(ch)) { this.push(ch, ch); this.i += 1; continue; }
-            this.readBare();
-          }
-          return this.tokens;
-        }
-      }
-      
-      function parseN3(source, options = {}) {
-        const tokens = new Tokenizer(source).tokenize();
-        let i = 0;
-        let base = options.base || '';
-        const prefixes = { ...DEFAULT_PREFIXES, ...(options.prefixes || {}) };
-        const facts = [];
-        const rules = [];
-        let bnodeCounter = 0;
-        const bnodes = new Map();
-        const syntaxProfile = String(options.profile || options.profileId || '').toLowerCase();
-        const rdf12Surface = syntaxProfile === 'turtle' || syntaxProfile === 'trig';
-        const generalizedSubjects = options.generalizedSubjects === true;
-        const implicitStatementNodes = new Set();
-        function implicitStatementNodeKey(term) { return `${term.kind}:${term.value}`; }
-      
-        function freshBlank() { bnodeCounter += 1; return blank(`b${bnodeCounter}`); }
-        function peek(offset = 0) { return tokens[i + offset]; }
-        function next() { return tokens[i++]; }
-        function eof() { return i >= tokens.length; }
-        function accept(value) { if (peek()?.value === value || peek()?.type === value) { i += 1; return true; } return false; }
-        function expect(value) { const t = next(); if (!t || (t.value !== value && t.type !== value)) throw new Error(`Expected ${value}, got ${t?.value || 'end of input'}`); return t; }
-        function error(msg) { throw new Error(msg); }
-      
-        function parseIriValueFromBare(token) {
-          if (token === 'a') return RDF_TYPE;
-          if (token.startsWith('_:')) error(`Blank node label ${token} cannot be used as IRI`);
-          const split = token.indexOf(':');
-          if (split >= 0) {
-            const prefix = token.slice(0, split);
-            let local = token.slice(split + 1);
-            if (!(prefix in prefixes)) throw new Error(`Unknown prefix ${prefix}:`);
-            // Turtle permits reserved escaped characters in local names.
-            local = validatePrefixedLocal(local, decodePrefixedLocal(local));
-            return prefixes[prefix] + local;
-          }
-          throw new Error(`Expected IRI or prefixed name, got ${token}`);
-        }
-      
-        function parseIriLike() {
-          const t = next();
-          if (!t) error('Unexpected end of input while reading IRI');
-          if (t.type === 'iri') return resolveIriReference(t.value, base);
-          if (t.type === 'bare') return parseIriValueFromBare(t.value);
-          throw new Error(`Expected IRI or prefixed name, got ${t.value}`);
-        }
-      
-        function parseBlankLabel(label) {
-          const key = validateBlankLabel(label);
-          if (!bnodes.has(key)) bnodes.set(key, blank(key));
-          return bnodes.get(key);
-        }
-      
-        function parseNumber(token) {
-          if (/^[+-]?\d+$/.test(token)) return literal(token, XSD_INTEGER);
-          if (/^[+-]?(?:\d+\.\d*|\.\d+)$/.test(token)) return literal(token, XSD_DECIMAL);
-          if (/^[+-]?(?:(?:\d+\.\d*)|(?:\.\d+)|\d+)[eE][+-]?\d+$/.test(token)) return literal(token, XSD_DOUBLE);
-          return null;
-        }
-      
-        function parseTerm(out = facts, graph = null, options2 = {}) {
-          const t = peek();
-          if (!t) error('Unexpected end of input while reading Turtle term');
-          if (t.type === '<<') return parseTripleTerm(out, graph, options2);
-          if (t.type === 'iri') { next(); return iri(resolveIriReference(t.value, base)); }
-          if (t.type === 'string' || t.type === 'longString') {
-            if (options2.noLiteral) throw new Error('Literal is not allowed here');
-            return parseLiteral();
-          }
-          if (t.type === '[') {
-            // ANON is a BlankNode and is permitted in rtSubject/ttSubject, even where
-            // blankNodePropertyList is not. Keep [ ... ] rejected in those positions.
-            if (options2.noCompound) {
-              if (peek(1)?.type === ']') { expect('['); expect(']'); return freshBlank(); }
-              throw new Error('Compound blank node expression is not allowed here');
-            }
-            return parseBlankNodePropertyList(out, graph);
-          }
-          if (t.type === '(') {
-            if (options2.noCompound) throw new Error('Collection is not allowed here');
-            return parseCollection(out, graph);
-          }
-          if (t.type === 'bare') {
-            next();
-            if (t.value.startsWith('?')) {
-              if (rdf12Surface) throw new Error(`Variables are not allowed in Turtle/TriG: ${t.value}`);
-              return variable(t.value.slice(1));
-            }
-            if (t.value.startsWith('_:')) return parseBlankLabel(t.value);
-            if (t.value === 'a' && options2.noA) throw new Error('a is only allowed as a predicate');
-            if (t.value === 'true' || t.value === 'false') {
-              if (options2.noLiteral) throw new Error('Literal is not allowed here');
-              return literal(t.value, XSD_BOOLEAN);
-            }
-            const num = parseNumber(t.value);
-            if (num) {
-              if (options2.noLiteral) throw new Error('Literal is not allowed here');
-              return num;
-            }
-            return iri(parseIriValueFromBare(t.value));
-          }
-          throw new Error(`Expected IRI or prefixed name, got ${t.value}`);
-        }
-      
-        function parseLiteral() {
-          const t = next(); if (!t || (t.type !== 'string' && t.type !== 'longString')) throw new Error(`Expected string, got ${t?.value || 'end of input'}`);
-          if (peek()?.type === 'bare' && peek().value.startsWith('@')) {
-            let lang = next().value.slice(1);
-            let langDir = null;
-            if (lang.endsWith('--ltr') || lang.endsWith('--rtl')) {
-              langDir = lang.slice(-3);
-              lang = lang.slice(0, -5);
-            }
-            if (!lang || lang.includes('--') || !/^[A-Za-z]+(?:-[A-Za-z0-9]+)*$/.test(lang)) throw new Error(`Invalid language tag @${lang}`);
-            if (peek()?.type === 'bare' && ['--ltr', '--rtl'].includes(peek().value)) langDir = next().value.slice(2);
-            return literal(t.value, null, lang, langDir);
-          }
-          if (accept('^^')) return literal(t.value, parseIriLike());
-          if (peek()?.type === 'bare' && ['--ltr', '--rtl'].includes(peek().value)) throw new Error('Base direction requires a language tag');
-          return literal(t.value, XSD_STRING);
-        }
-      
-        function parseReifierToken(out, graph) {
-          const t = peek();
-          if (!t || t.type !== 'bare' || !t.value.startsWith('~')) return null;
-          next();
-          const suffix = t.value.slice(1);
-          if (suffix) {
-            if (suffix.startsWith('_:')) return parseBlankLabel(suffix);
-            return iri(parseIriValueFromBare(suffix));
-          }
-          const n = peek();
-          if (n && (n.type === 'iri' || (n.type === 'bare' && (n.value.startsWith('_:') || n.value.includes(':') || n.value === 'a')))) {
-            const term = parseTerm(out, graph, { noLiteral: true, noCompound: true, noTripleTerm: true });
-            if (term.kind !== 'iri' && term.kind !== 'blank') throw new Error('Reifier must be an IRI or blank node');
-            return term;
-          }
-          return freshBlank();
-        }
-      
-        function parseTripleTerm(out, graph, options2 = {}) {
-          expect('<<');
-          const parenthesized = accept('(');
-          if (parenthesized) {
-            if (options2.noTripleTerm) throw new Error('Triple term is not allowed here');
-            const s = parseTerm(out, graph, { noLiteral: true, noCompound: true, noReifiedTriple: true });
-            if (s.kind === 'triple') throw new Error('Triple term subject cannot be a triple term');
-            const p = iri(parseIriLike());
-            const o = parseTerm(out, graph, { noCompound: true, noReifiedTriple: true });
-            if (o.kind !== 'iri' && o.kind !== 'blank' && o.kind !== 'literal' && o.kind !== 'triple') throw new Error('Invalid triple term object');
-            expect(')');
-            expect('>>');
-            return tripleTerm(s, p, o);
-          }
-          if (options2.noReifiedTriple) throw new Error('Reified triple is not allowed here');
-          const s = parseTerm(out, graph, { noLiteral: true, noCompound: true, noTripleTerm: true });
-          if (s.kind !== 'iri' && s.kind !== 'blank') throw new Error('Invalid reified triple subject');
-          const p = iri(parseIriLike());
-          const o = parseTerm(out, graph, { noCompound: true });
-          if (o.kind !== 'iri' && o.kind !== 'blank' && o.kind !== 'literal' && o.kind !== 'triple') throw new Error('Invalid reified triple object');
-          let reifier = null;
-          if (peek()?.type === 'bare' && peek().value.startsWith('~')) reifier = parseReifierToken(out, graph);
-          expect('>>');
-          const node = reifier || freshBlank();
-          out.push(triple(node, iri(RDF_REIFIES), tripleTerm(s, p, o), graph));
-          implicitStatementNodes.add(implicitStatementNodeKey(node));
-          return node;
-        }
-      
-        function parseCollection(out, graph) {
-          expect('(');
-          if (accept(')')) return iri(RDF_NIL);
-          const head = freshBlank();
-          let current = head;
-          while (true) {
-            const item = parseTerm(out, graph);
-            out.push(triple(current, iri(RDF_FIRST), item, graph));
-            if (accept(')')) {
-              out.push(triple(current, iri(RDF_REST), iri(RDF_NIL), graph));
-              break;
-            }
-            const rest = freshBlank();
-            out.push(triple(current, iri(RDF_REST), rest, graph));
-            current = rest;
-          }
-          return head;
-        }
-      
-        function parseBlankNodePropertyList(out, graph) {
-          expect('[');
-          const node = freshBlank();
-          if (accept(']')) return node;
-          parsePredicateObjectList(node, out, graph);
-          expect(']');
-          if (node.kind === 'blank') implicitStatementNodes.add(implicitStatementNodeKey(node));
-          return node;
-        }
-      
-        function parseAnnotationBlock(reifier, out, graph = null) {
-          expect('{');
-          expect('|');
-          if (peek()?.type === '|') {
-            // Empty annotation blocks are rejected by the RDF 1.2 syntax tests.
-            throw new Error('Empty annotation block');
-          }
-          parsePredicateObjectList(reifier, out, graph);
-          expect('|');
-          expect('}');
-        }
-      
-        function ensureReifierForTriple(assertedTriple, out, graph = null) {
-          const reifier = freshBlank();
-          out.push(triple(reifier, iri(RDF_REIFIES), tripleTerm(assertedTriple.s, assertedTriple.p, assertedTriple.o), graph));
-          return reifier;
-        }
-      
-        function parseObjectList(subject, predicate, out, graph = null) {
-          while (true) {
-            const object = parseTerm(out, graph, { noA: true });
-            const asserted = triple(subject, predicate, object, graph);
-            out.push(asserted);
-            let pendingReifier = null;
-            while (true) {
-              if (peek()?.type === 'bare' && peek().value.startsWith('~')) {
-                pendingReifier = parseReifierToken(out, graph);
-                out.push(triple(pendingReifier, iri(RDF_REIFIES), tripleTerm(asserted.s, asserted.p, asserted.o), graph));
-                continue;
-              }
-              if (peek()?.type === '{' && peek(1)?.type === '|') {
-                const blockReifier = pendingReifier || ensureReifierForTriple(asserted, out, graph);
-                parseAnnotationBlock(blockReifier, out, graph);
-                pendingReifier = null;
-                continue;
-              }
-              break;
-            }
-            if (!accept(',')) break;
-          }
-        }
-      
-        function parsePredicateObjectList(subject, out, graph = null) {
-          while (true) {
-            const predicate = iri(parseIriLike());
-            parseObjectList(subject, predicate, out, graph);
-            if (!accept(';')) break;
-            while (accept(';')) {}
-            if ([']', '.', '}', '|'].includes(peek()?.type)) break;
-          }
-        }
-      
-        function parseGraphLabel(out, inheritedGraph = null) {
-          if (peek()?.type === '[' && peek(1)?.type === ']') { expect('['); expect(']'); return freshBlank(); }
-          if (peek()?.type === '(') throw new Error('GRAPH name must be an IRI or blank node');
-          const graph = parseTerm(out, inheritedGraph, { noLiteral: true, noCompound: true, noTripleTerm: true, noReifiedTriple: true, noA: true });
-          if (graph.kind !== 'iri' && graph.kind !== 'blank') throw new Error('GRAPH name must be an IRI or blank node');
-          return graph;
-        }
-      
-        function parseGraphBlock(out, inheritedGraph = null) {
-          expect('GRAPH');
-          const graph = parseGraphLabel(out, inheritedGraph);
-          parseFormula(graph, out);
-        }
-      
-        function parseTripleStatement(out, graph = null, options3 = {}) {
-          if (String(peek()?.value || '').toUpperCase() === 'GRAPH') {
-            if (syntaxProfile === 'turtle') throw new Error('GRAPH blocks are not Turtle');
-            if (graph) throw new Error('GRAPH blocks cannot be nested inside a graph block');
-            parseGraphBlock(out, graph);
-            if (options3.requireDot) expect('.'); else accept('.');
-            return;
-          }
-          // Turtle/TriG subjects are restricted to iri | BlankNode | collection.
-          // RDF 1.2 adds triple terms as objects, not subjects.  Keep reifiedTriple
-          // syntax (<< s p o >>) available here because it expands to its reifier
-          // node and is a separate `triples` grammar alternative, but reject the
-          // parenthesized tripleTerm form (<<( s p o )>>).
-          const subject = parseTerm(out, graph, {
-            noLiteral: !generalizedSubjects,
-            noTripleTerm: !generalizedSubjects,
-            noA: true,
-          });
-          if ((peek()?.type === '.' || peek()?.type === '}' || peek()?.type === undefined) && implicitStatementNodes.has(implicitStatementNodeKey(subject))) {
-            if (options3.requireDot) expect('.'); else accept('.');
-            return;
-          }
-          parsePredicateObjectList(subject, out, graph);
-          if (options3.requireDot) expect('.'); else accept('.');
-        }
-      
-        function parseFormula(graph = null, target = null) {
-          expect('{');
-          const triples = target || [];
-          while (peek()?.type !== '}') parseTripleStatement(triples, graph);
-          expect('}');
-          return triples;
-        }
-      
-        function parseBase() {
-          const directive = next();
-          const iriToken = next();
-          if (iriToken?.type !== 'iri') throw new Error(`Expected base IRI, got ${iriToken?.value}`);
-          base = resolveIriReference(iriToken.value, base);
-          if (String(directive.value || '').startsWith('@')) expect('.');
-        }
-      
-        function parsePrefix() {
-          const directive = next();
-          const label = next();
-          if (label?.type !== 'bare' || !label.value.endsWith(':')) throw new Error(`Expected prefix label ending with :, got ${label?.value}`);
-          const prefixLabel = label.value.slice(0, -1);
-          if (prefixLabel.endsWith('.') || prefixLabel.includes('..')) throw new Error(`Invalid prefix label ${prefixLabel}`);
-          const iriToken = next();
-          if (iriToken?.type !== 'iri') throw new Error(`Expected prefix IRI, got ${iriToken?.value}`);
-          prefixes[prefixLabel] = resolveIriReference(iriToken.value, base);
-          if (String(directive.value || '').startsWith('@')) expect('.');
-        }
-      
-        function isSimpleGraphLabelStart(t) {
-          return t && (t.type === 'iri' || (t.type === 'bare' && (t.value.startsWith('_:') || t.value.includes(':'))));
-        }
-      
-        while (!eof()) {
-          const token = peek();
-          const lowerValue = String(token.value || '').toLowerCase();
-          if (token.value === '@base' || (!String(token.value || '').startsWith('@') && lowerValue === 'base')) parseBase();
-          else if (token.value === '@prefix' || (!String(token.value || '').startsWith('@') && lowerValue === 'prefix')) parsePrefix();
-          else if ((!String(token.value || '').startsWith('@') && String(token.value || '').toUpperCase() === 'VERSION') || token.value === '@version') {
-            const directive = next();
-            const v = next();
-            if (!v || v.type !== 'string') throw new Error('VERSION requires a short quoted string');
-            if (String(directive.value || '').startsWith('@')) expect('.');
-          }
-          else if (token.type === '{') {
-            if (syntaxProfile === 'turtle') throw new Error('Turtle does not allow top-level graph/formula blocks');
-            const body = parseFormula();
-            if (accept('=>')) {
-              const head = parseFormula();
-              accept('.');
-              rules.push(new Rule({ id: `n3${rules.length + 1}`, body, head, profile: 'n3-rules-subset-v0' }));
-            } else {
-              facts.push(...body);
-              accept('.');
-            }
-          } else if (String(token.value || '').toUpperCase() === 'GRAPH') {
-            parseGraphBlock(facts);
-            if (accept('.')) throw new Error('GRAPH block must not be followed by .');
-          } else if (token.type === '[' && peek(1)?.type === ']' && peek(2)?.type === '{') {
-            if (syntaxProfile === 'turtle') throw new Error('Turtle does not allow graph labels');
-            const graph = parseGraphLabel(facts, null);
-            parseFormula(graph, facts);
-            accept('.');
-          } else if (isSimpleGraphLabelStart(token) && peek(1)?.type === '{') {
-            if (syntaxProfile === 'turtle') throw new Error('Turtle does not allow graph labels');
-            const graph = parseGraphLabel(facts, null);
-            parseFormula(graph, facts);
-            accept('.');
-          } else {
-            parseTripleStatement(facts, null, { requireDot: syntaxProfile === 'turtle' });
-          }
-        }
-      
-        return { profile: 'n3-rules-subset-v0', prefixes, base, facts, rules };
-      }
-      return { parseN3 };
-      })();
-      
-      
-      return {
-        parseNQuads,
-        termToNQuads,
-        tripleToNQuads,
-        triplesToNQuads,
-        parseN3,
-      };
-      })();
-      
-      Object.assign(module.exports, rdfW3cSyntax);
-      
-    },
-    "src/assignments.js": function (require, module, exports) {
-      'use strict';
-      
-      // Most SET expressions are deterministic and can safely participate in the
-      // ordinary fixpoint loop.  Only genuinely fresh generators need run-once
-      // evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
-      // creating new terms forever.
-      function assignmentsNeedRunOnce(clauses = [], options = {}) {
-        if (options.shacl12Conformance) {
-          return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
-        }
-        const hasSet = clauses.some((clause) => clause.type === 'set');
-        const hasNegation = clauses.some((clause) => clause.type === 'not');
-        return (hasSet && hasNegation)
-          || clauses.some((clause) => (clause.type === 'set' || clause.type === 'bind') && expressionIsVolatile(clause.expr));
-      }
-      
-      function ruleNeedsRunOnce(head = [], body = [], options = {}) {
-        return assignmentsNeedRunOnce(body, options) || head.some(tripleHasBlankNode);
-      }
-      
-      function tripleHasBlankNode(triple) {
-        return termHasBlankNode(triple && triple.s)
-          || termHasBlankNode(triple && triple.p)
-          || termHasBlankNode(triple && triple.o);
-      }
-      
-      function termHasBlankNode(term) {
-        if (!term) return false;
-        if (term.type === 'blank') return true;
-        if (term.type === 'triple') return termHasBlankNode(term.s) || termHasBlankNode(term.p) || termHasBlankNode(term.o);
-        return false;
-      }
-      
-      function expressionIsVolatile(expr) {
-        if (!expr) return false;
-        switch (expr.type) {
-          case 'call': {
-            const name = localName(expr.name).toLowerCase();
-            if (name === 'uuid' || name === 'struuid') return true;
-            if (name === 'bnode' && (!expr.args || expr.args.length === 0)) return true;
-            return (expr.args || []).some(expressionIsVolatile);
-          }
-          case 'binary':
-            return expressionIsVolatile(expr.left) || expressionIsVolatile(expr.right);
-          case 'unary':
-            return expressionIsVolatile(expr.expr);
-          case 'list':
-            return (expr.items || []).some(expressionIsVolatile);
-          default:
-            return false;
-        }
-      }
-      
-      function localName(name) {
-        const text = String(name || '');
-        const hash = text.lastIndexOf('#');
-        const slash = text.lastIndexOf('/');
-        const colon = text.lastIndexOf(':');
-        const index = Math.max(hash, slash, colon);
-        return index >= 0 ? text.slice(index + 1) : text;
-      }
-      
-      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, expressionIsVolatile, tripleHasBlankNode, termHasBlankNode };
-      
-    },
-    "src/term.js": function (require, module, exports) {
-      'use strict';
-      
-      const RDF_NS = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
-      const RDF_TYPE = `${RDF_NS}type`;
-      const RDF_FIRST = `${RDF_NS}first`;
-      const RDF_REST = `${RDF_NS}rest`;
-      const RDF_NIL = `${RDF_NS}nil`;
-      const RDF_REIFIES = `${RDF_NS}reifies`;
-      const XSD_STRING = 'http://www.w3.org/2001/XMLSchema#string';
-      const XSD_BOOLEAN = 'http://www.w3.org/2001/XMLSchema#boolean';
-      const XSD_INTEGER = 'http://www.w3.org/2001/XMLSchema#integer';
-      const XSD_DECIMAL = 'http://www.w3.org/2001/XMLSchema#decimal';
-      const XSD_DOUBLE = 'http://www.w3.org/2001/XMLSchema#double';
-      
-      function iri(value) {
-        return { type: 'iri', value: String(value) };
-      }
-      
-      function variable(name) {
-        const value = String(name);
-        return { type: 'var', value: value[0] === '?' || value[0] === '$' ? value.slice(1) : value };
-      }
-      
-      function blankNode(value) {
-        const label = String(value);
-        return { type: 'blank', value: label.startsWith('_:') ? label.slice(2) : label };
-      }
-      
-      function literal(value, datatype = null, lang = null, langDir = null) {
-        return { type: 'literal', value, datatype, lang, langDir };
-      }
-      
-      function tripleTerm(s, p, o) {
-        return { type: 'triple', s, p, o };
-      }
-      
-      function isVariable(term) {
-        return term && term.type === 'var';
-      }
-      
-      function isIRI(term) {
-        return term && term.type === 'iri';
-      }
-      
-      function isBlank(term) {
-        return term && term.type === 'blank';
-      }
-      
-      function isLiteral(term) {
-        return term && term.type === 'literal';
-      }
-      
-      function isTripleTerm(term) {
-        return term && term.type === 'triple';
-      }
-      
-      function termEquals(a, b) {
-        return termKey(a) === termKey(b);
-      }
-      
-      function literalKeyValue(value) {
-        if (typeof value === 'bigint') return `${value.toString()}n`;
-        return JSON.stringify(value);
-      }
-      
-      function isNumericPrimitive(value) {
-        return typeof value === 'number' || typeof value === 'bigint';
-      }
-      
-      function compareNumericPrimitives(a, b) {
-        if (typeof a === 'bigint' && typeof b === 'bigint') {
-          if (a < b) return -1;
-          if (a > b) return 1;
-          return 0;
-        }
-        if (typeof a === 'bigint' && typeof b === 'number' && Number.isInteger(b) && Number.isSafeInteger(b)) {
-          const bi = BigInt(b);
-          if (a < bi) return -1;
-          if (a > bi) return 1;
-          return 0;
-        }
-        if (typeof a === 'number' && typeof b === 'bigint' && Number.isInteger(a) && Number.isSafeInteger(a)) {
-          const ai = BigInt(a);
-          if (ai < b) return -1;
-          if (ai > b) return 1;
-          return 0;
-        }
-        const diff = Number(a) - Number(b);
-        if (diff < 0) return -1;
-        if (diff > 0) return 1;
-        return 0;
-      }
-      
-      function termKey(term) {
-        if (!term) return 'null';
-        if (term.type === 'iri') return `I:${term.value}`;
-        if (term.type === 'blank') return `B:${term.value}`;
-        if (term.type === 'var') return `V:${term.value}`;
-        if (term.type === 'literal') return `L:${literalKeyValue(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
-        if (term.type === 'triple') return `T:${termKey(term.s)} ${termKey(term.p)} ${termKey(term.o)}`;
-        return JSON.stringify(term);
-      }
-      
-      function tripleKey(triple) {
-        return `${termKey(triple.s)} ${termKey(triple.p)} ${termKey(triple.o)}`;
-      }
-      
-      function cloneTerm(term) {
-        if (!term) return term;
-        if (term.type === 'triple') return tripleTerm(cloneTerm(term.s), cloneTerm(term.p), cloneTerm(term.o));
-        return { ...term };
-      }
-      
-      function valueToTerm(value) {
-        if (value && typeof value === 'object' && value.type) return value;
-        return literal(value, inferDatatype(value));
-      }
-      
-      function inferDatatype(value) {
-        if (typeof value === 'boolean') return XSD_BOOLEAN;
-        if (typeof value === 'bigint') return XSD_INTEGER;
-        if (typeof value === 'number' && Number.isInteger(value)) return XSD_INTEGER;
-        if (typeof value === 'number') return XSD_DECIMAL;
-        if (typeof value === 'string') return XSD_STRING;
-        return null;
-      }
-      
-      function termToPrimitive(term) {
-        if (!term) return undefined;
-        if (term.type === 'literal') return term.value;
-        if (term.type === 'iri') return term.value;
-        if (term.type === 'blank') return `_:${term.value}`;
-        if (term.type === 'var') return undefined;
-        if (term.type === 'triple') return term;
-        return term;
-      }
-      
-      function termToString(term) {
-        const value = termToPrimitive(term);
-        if (value === undefined || value === null) return '';
-        if (value && value.type === 'triple') return formatTerm(value);
-        return String(value);
-      }
-      
-      function booleanValue(value) {
-        const primitive = value && value.type ? termToPrimitive(value) : value;
-        if (primitive === undefined || primitive === null) return false;
-        if (typeof primitive === 'boolean') return primitive;
-        if (typeof primitive === 'bigint') return primitive !== 0n;
-        if (typeof primitive === 'number') return primitive !== 0 && !Number.isNaN(primitive);
-        if (typeof primitive === 'string') return primitive.length > 0 && primitive !== 'false';
-        return Boolean(primitive);
-      }
-      
-      function comparePrimitives(a, b) {
-        const av = a && a.type ? termToPrimitive(a) : a;
-        const bv = b && b.type ? termToPrimitive(b) : b;
-        if (isNumericPrimitive(av) && isNumericPrimitive(bv)) return compareNumericPrimitives(av, bv);
-        const as = String(av);
-        const bs = String(bv);
-        if (as < bs) return -1;
-        if (as > bs) return 1;
-        return 0;
-      }
-      
-      function escapeString(value) {
-        return String(value)
-          .replace(/\\/g, '\\\\')
-          .replace(/\n/g, '\\n')
-          .replace(/\r/g, '\\r')
-          .replace(/\t/g, '\\t')
-          .replace(/"/g, '\\"');
-      }
-      
-      function compactIRI(value, prefixes = {}) {
-        if (value === RDF_TYPE) return 'a';
-        const entries = Object.entries(prefixes)
-          .filter(([, iriPrefix]) => iriPrefix && value.startsWith(iriPrefix))
-          .sort((a, b) => b[1].length - a[1].length);
-        if (entries.length > 0) {
-          const [prefix, iriPrefix] = entries[0];
-          const local = value.slice(iriPrefix.length);
-          if (/^[A-Za-z_][A-Za-z0-9_\-]*$/.test(local) || /^[A-Za-z0-9_\-]+$/.test(local)) {
-            return `${prefix}:${local}`;
-          }
-        }
-        return `<${value}>`;
-      }
-      
-      function formatTerm(term, prefixes = {}) {
-        if (term.type === 'iri') return compactIRI(term.value, prefixes);
-        if (term.type === 'blank') return `_:${term.value}`;
-        if (term.type === 'var') return `?${term.value}`;
-        if (term.type === 'triple') return `<<(${formatTerm(term.s, prefixes)} ${formatTerm(term.p, prefixes)} ${formatTerm(term.o, prefixes)})>>`;
-        if (term.type === 'literal') {
-          const v = term.value;
-          if (typeof v === 'bigint' && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER)) return String(v);
-          if (typeof v === 'number' && Number.isFinite(v) && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER || term.datatype === XSD_DECIMAL || term.datatype === XSD_DOUBLE)) return String(v);
-          if (typeof v === 'boolean' && !term.lang && (!term.datatype || term.datatype === XSD_BOOLEAN)) return v ? 'true' : 'false';
-          const lexical = `"${escapeString(v)}"`;
-          if (term.lang) return `${lexical}@${term.lang}${term.langDir ? `--${term.langDir}` : ''}`;
-          if (term.datatype && term.datatype !== XSD_STRING) return `${lexical}^^${compactIRI(term.datatype, prefixes)}`;
-          return lexical;
-        }
-        return String(term.value ?? term);
-      }
-      
-      function formatTriple(triple, prefixes = {}) {
-        return `${formatTerm(triple.s, prefixes)} ${formatTerm(triple.p, prefixes)} ${formatTerm(triple.o, prefixes)} .`;
-      }
-      
-      module.exports = {
-        RDF_NS,
-        RDF_TYPE,
-        RDF_FIRST,
-        RDF_REST,
-        RDF_NIL,
-        RDF_REIFIES,
-        XSD_STRING,
-        XSD_BOOLEAN,
-        XSD_INTEGER,
-        XSD_DECIMAL,
-        XSD_DOUBLE,
-        iri,
-        variable,
-        blankNode,
-        literal,
-        tripleTerm,
-        isVariable,
-        isIRI,
-        isBlank,
-        isLiteral,
-        isTripleTerm,
-        termEquals,
-        termKey,
-        tripleKey,
-        cloneTerm,
-        valueToTerm,
-        inferDatatype,
-        termToPrimitive,
-        termToString,
-        booleanValue,
-        comparePrimitives,
-        compactIRI,
-        formatTerm,
-        formatTriple,
-      };
-      
-    },
     "src/builtins.js": function (require, module, exports) {
       'use strict';
       
@@ -4072,6 +2239,937 @@
       };
       
     },
+    "src/term.js": function (require, module, exports) {
+      'use strict';
+      
+      const RDF_NS = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+      const RDF_TYPE = `${RDF_NS}type`;
+      const RDF_FIRST = `${RDF_NS}first`;
+      const RDF_REST = `${RDF_NS}rest`;
+      const RDF_NIL = `${RDF_NS}nil`;
+      const RDF_REIFIES = `${RDF_NS}reifies`;
+      const XSD_STRING = 'http://www.w3.org/2001/XMLSchema#string';
+      const XSD_BOOLEAN = 'http://www.w3.org/2001/XMLSchema#boolean';
+      const XSD_INTEGER = 'http://www.w3.org/2001/XMLSchema#integer';
+      const XSD_DECIMAL = 'http://www.w3.org/2001/XMLSchema#decimal';
+      const XSD_DOUBLE = 'http://www.w3.org/2001/XMLSchema#double';
+      
+      function iri(value) {
+        return { type: 'iri', value: String(value) };
+      }
+      
+      function variable(name) {
+        const value = String(name);
+        return { type: 'var', value: value[0] === '?' || value[0] === '$' ? value.slice(1) : value };
+      }
+      
+      function blankNode(value) {
+        const label = String(value);
+        return { type: 'blank', value: label.startsWith('_:') ? label.slice(2) : label };
+      }
+      
+      function literal(value, datatype = null, lang = null, langDir = null) {
+        return { type: 'literal', value, datatype, lang, langDir };
+      }
+      
+      function tripleTerm(s, p, o) {
+        return { type: 'triple', s, p, o };
+      }
+      
+      function isVariable(term) {
+        return term && term.type === 'var';
+      }
+      
+      function isIRI(term) {
+        return term && term.type === 'iri';
+      }
+      
+      function isBlank(term) {
+        return term && term.type === 'blank';
+      }
+      
+      function isLiteral(term) {
+        return term && term.type === 'literal';
+      }
+      
+      function isTripleTerm(term) {
+        return term && term.type === 'triple';
+      }
+      
+      function termEquals(a, b) {
+        return termKey(a) === termKey(b);
+      }
+      
+      function literalKeyValue(value) {
+        if (typeof value === 'bigint') return `${value.toString()}n`;
+        return JSON.stringify(value);
+      }
+      
+      function isNumericPrimitive(value) {
+        return typeof value === 'number' || typeof value === 'bigint';
+      }
+      
+      function compareNumericPrimitives(a, b) {
+        if (typeof a === 'bigint' && typeof b === 'bigint') {
+          if (a < b) return -1;
+          if (a > b) return 1;
+          return 0;
+        }
+        if (typeof a === 'bigint' && typeof b === 'number' && Number.isInteger(b) && Number.isSafeInteger(b)) {
+          const bi = BigInt(b);
+          if (a < bi) return -1;
+          if (a > bi) return 1;
+          return 0;
+        }
+        if (typeof a === 'number' && typeof b === 'bigint' && Number.isInteger(a) && Number.isSafeInteger(a)) {
+          const ai = BigInt(a);
+          if (ai < b) return -1;
+          if (ai > b) return 1;
+          return 0;
+        }
+        const diff = Number(a) - Number(b);
+        if (diff < 0) return -1;
+        if (diff > 0) return 1;
+        return 0;
+      }
+      
+      function termKey(term) {
+        if (!term) return 'null';
+        if (term.type === 'iri') return `I:${term.value}`;
+        if (term.type === 'blank') return `B:${term.value}`;
+        if (term.type === 'var') return `V:${term.value}`;
+        if (term.type === 'literal') return `L:${literalKeyValue(term.value)}^^${term.datatype || ''}@${term.lang || ''}--${term.langDir || ''}`;
+        if (term.type === 'triple') return `T:${termKey(term.s)} ${termKey(term.p)} ${termKey(term.o)}`;
+        return JSON.stringify(term);
+      }
+      
+      function tripleKey(triple) {
+        return `${termKey(triple.s)} ${termKey(triple.p)} ${termKey(triple.o)}`;
+      }
+      
+      function cloneTerm(term) {
+        if (!term) return term;
+        if (term.type === 'triple') return tripleTerm(cloneTerm(term.s), cloneTerm(term.p), cloneTerm(term.o));
+        return { ...term };
+      }
+      
+      function valueToTerm(value) {
+        if (value && typeof value === 'object' && value.type) return value;
+        return literal(value, inferDatatype(value));
+      }
+      
+      function inferDatatype(value) {
+        if (typeof value === 'boolean') return XSD_BOOLEAN;
+        if (typeof value === 'bigint') return XSD_INTEGER;
+        if (typeof value === 'number' && Number.isInteger(value)) return XSD_INTEGER;
+        if (typeof value === 'number') return XSD_DECIMAL;
+        if (typeof value === 'string') return XSD_STRING;
+        return null;
+      }
+      
+      function termToPrimitive(term) {
+        if (!term) return undefined;
+        if (term.type === 'literal') return term.value;
+        if (term.type === 'iri') return term.value;
+        if (term.type === 'blank') return `_:${term.value}`;
+        if (term.type === 'var') return undefined;
+        if (term.type === 'triple') return term;
+        return term;
+      }
+      
+      function termToString(term) {
+        const value = termToPrimitive(term);
+        if (value === undefined || value === null) return '';
+        if (value && value.type === 'triple') return formatTerm(value);
+        return String(value);
+      }
+      
+      function booleanValue(value) {
+        const primitive = value && value.type ? termToPrimitive(value) : value;
+        if (primitive === undefined || primitive === null) return false;
+        if (typeof primitive === 'boolean') return primitive;
+        if (typeof primitive === 'bigint') return primitive !== 0n;
+        if (typeof primitive === 'number') return primitive !== 0 && !Number.isNaN(primitive);
+        if (typeof primitive === 'string') return primitive.length > 0 && primitive !== 'false';
+        return Boolean(primitive);
+      }
+      
+      function comparePrimitives(a, b) {
+        const av = a && a.type ? termToPrimitive(a) : a;
+        const bv = b && b.type ? termToPrimitive(b) : b;
+        if (isNumericPrimitive(av) && isNumericPrimitive(bv)) return compareNumericPrimitives(av, bv);
+        const as = String(av);
+        const bs = String(bv);
+        if (as < bs) return -1;
+        if (as > bs) return 1;
+        return 0;
+      }
+      
+      function escapeString(value) {
+        return String(value)
+          .replace(/\\/g, '\\\\')
+          .replace(/\n/g, '\\n')
+          .replace(/\r/g, '\\r')
+          .replace(/\t/g, '\\t')
+          .replace(/"/g, '\\"');
+      }
+      
+      function compactIRI(value, prefixes = {}) {
+        if (value === RDF_TYPE) return 'a';
+        const entries = Object.entries(prefixes)
+          .filter(([, iriPrefix]) => iriPrefix && value.startsWith(iriPrefix))
+          .sort((a, b) => b[1].length - a[1].length);
+        if (entries.length > 0) {
+          const [prefix, iriPrefix] = entries[0];
+          const local = value.slice(iriPrefix.length);
+          if (/^[A-Za-z_][A-Za-z0-9_\-]*$/.test(local) || /^[A-Za-z0-9_\-]+$/.test(local)) {
+            return `${prefix}:${local}`;
+          }
+        }
+        return `<${value}>`;
+      }
+      
+      function formatTerm(term, prefixes = {}) {
+        if (term.type === 'iri') return compactIRI(term.value, prefixes);
+        if (term.type === 'blank') return `_:${term.value}`;
+        if (term.type === 'var') return `?${term.value}`;
+        if (term.type === 'triple') return `<<(${formatTerm(term.s, prefixes)} ${formatTerm(term.p, prefixes)} ${formatTerm(term.o, prefixes)})>>`;
+        if (term.type === 'literal') {
+          const v = term.value;
+          if (typeof v === 'bigint' && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER)) return String(v);
+          if (typeof v === 'number' && Number.isFinite(v) && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER || term.datatype === XSD_DECIMAL || term.datatype === XSD_DOUBLE)) return String(v);
+          if (typeof v === 'boolean' && !term.lang && (!term.datatype || term.datatype === XSD_BOOLEAN)) return v ? 'true' : 'false';
+          const lexical = `"${escapeString(v)}"`;
+          if (term.lang) return `${lexical}@${term.lang}${term.langDir ? `--${term.langDir}` : ''}`;
+          if (term.datatype && term.datatype !== XSD_STRING) return `${lexical}^^${compactIRI(term.datatype, prefixes)}`;
+          return lexical;
+        }
+        return String(term.value ?? term);
+      }
+      
+      function formatTriple(triple, prefixes = {}) {
+        return `${formatTerm(triple.s, prefixes)} ${formatTerm(triple.p, prefixes)} ${formatTerm(triple.o, prefixes)} .`;
+      }
+      
+      module.exports = {
+        RDF_NS,
+        RDF_TYPE,
+        RDF_FIRST,
+        RDF_REST,
+        RDF_NIL,
+        RDF_REIFIES,
+        XSD_STRING,
+        XSD_BOOLEAN,
+        XSD_INTEGER,
+        XSD_DECIMAL,
+        XSD_DOUBLE,
+        iri,
+        variable,
+        blankNode,
+        literal,
+        tripleTerm,
+        isVariable,
+        isIRI,
+        isBlank,
+        isLiteral,
+        isTripleTerm,
+        termEquals,
+        termKey,
+        tripleKey,
+        cloneTerm,
+        valueToTerm,
+        inferDatatype,
+        termToPrimitive,
+        termToString,
+        booleanValue,
+        comparePrimitives,
+        compactIRI,
+        formatTerm,
+        formatTriple,
+      };
+      
+    },
+    "src/assignments.js": function (require, module, exports) {
+      'use strict';
+      
+      // Most SET expressions are deterministic and can safely participate in the
+      // ordinary fixpoint loop.  Only genuinely fresh generators need run-once
+      // evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
+      // creating new terms forever.
+      function assignmentsNeedRunOnce(clauses = [], options = {}) {
+        if (options.shacl12Conformance) {
+          return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
+        }
+        const hasSet = clauses.some((clause) => clause.type === 'set');
+        const hasNegation = clauses.some((clause) => clause.type === 'not');
+        return (hasSet && hasNegation)
+          || clauses.some((clause) => (clause.type === 'set' || clause.type === 'bind') && expressionIsVolatile(clause.expr));
+      }
+      
+      function ruleNeedsRunOnce(head = [], body = [], options = {}) {
+        return assignmentsNeedRunOnce(body, options) || head.some(tripleHasBlankNode);
+      }
+      
+      function tripleHasBlankNode(triple) {
+        return termHasBlankNode(triple && triple.s)
+          || termHasBlankNode(triple && triple.p)
+          || termHasBlankNode(triple && triple.o);
+      }
+      
+      function termHasBlankNode(term) {
+        if (!term) return false;
+        if (term.type === 'blank') return true;
+        if (term.type === 'triple') return termHasBlankNode(term.s) || termHasBlankNode(term.p) || termHasBlankNode(term.o);
+        return false;
+      }
+      
+      function expressionIsVolatile(expr) {
+        if (!expr) return false;
+        switch (expr.type) {
+          case 'call': {
+            const name = localName(expr.name).toLowerCase();
+            if (name === 'uuid' || name === 'struuid') return true;
+            if (name === 'bnode' && (!expr.args || expr.args.length === 0)) return true;
+            return (expr.args || []).some(expressionIsVolatile);
+          }
+          case 'binary':
+            return expressionIsVolatile(expr.left) || expressionIsVolatile(expr.right);
+          case 'unary':
+            return expressionIsVolatile(expr.expr);
+          case 'list':
+            return (expr.items || []).some(expressionIsVolatile);
+          default:
+            return false;
+        }
+      }
+      
+      function localName(name) {
+        const text = String(name || '');
+        const hash = text.lastIndexOf('#');
+        const slash = text.lastIndexOf('/');
+        const colon = text.lastIndexOf(':');
+        const index = Math.max(hash, slash, colon);
+        return index >= 0 ? text.slice(index + 1) : text;
+      }
+      
+      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, expressionIsVolatile, tripleHasBlankNode, termHasBlankNode };
+      
+    },
+    "src/rdfSyntax.js": function (require, module, exports) {
+      'use strict';
+      
+      const { ruleNeedsRunOnce } = require('./assignments.js');
+      const {
+        iri,
+        variable,
+        blankNode,
+        literal,
+        tripleTerm,
+        termKey,
+        termEquals,
+        formatTerm,
+        RDF_TYPE,
+        RDF_FIRST,
+        RDF_REST,
+        RDF_NIL,
+        XSD_STRING,
+        XSD_BOOLEAN,
+        XSD_INTEGER,
+        XSD_DECIMAL,
+        XSD_DOUBLE,
+      } = require('./term.js');
+      
+      const RDF_NS = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+      const SRL_NS = 'http://www.w3.org/ns/shacl-rules#';
+      const SHNEX_NS = 'http://www.w3.org/ns/shacl-node-expr#';
+      const SPARQL_NS = 'http://www.w3.org/ns/sparql#';
+      const OWL_IMPORTS = 'http://www.w3.org/2002/07/owl#imports';
+      const SRL_RULE_SET = `${SRL_NS}RuleSet`;
+      const SRL_RULE = `${SRL_NS}Rule`;
+      const SRL_DATA = `${SRL_NS}data`;
+      const SRL_RULES = `${SRL_NS}rules`;
+      const SRL_BODY = `${SRL_NS}body`;
+      const SRL_HEAD = `${SRL_NS}head`;
+      const SRL_SUBJECT = `${SRL_NS}subject`;
+      const SRL_PREDICATE = `${SRL_NS}predicate`;
+      const SRL_OBJECT = `${SRL_NS}object`;
+      const SRL_FILTER = `${SRL_NS}filter`;
+      const SRL_EXPR = `${SRL_NS}expr`;
+      const SRL_ASSIGN = `${SRL_NS}assign`;
+      const SRL_ASSIGN_VAR = `${SRL_NS}assignVar`;
+      const SRL_ASSIGN_VALUE = `${SRL_NS}assignValue`;
+      const SRL_NOT = `${SRL_NS}not`;
+      const SRL_VAR_NAME = `${SRL_NS}varName`;
+      const SHNEX_VAR = `${SHNEX_NS}var`;
+      
+      const CONTENT_TYPES = Object.freeze({
+        turtle: 'text/turtle',
+        trig: 'application/trig',
+        ntriples: 'application/n-triples',
+        nquads: 'application/n-quads',
+        n3: 'text/n3',
+        jsonld: 'application/ld+json',
+        rdfxml: 'application/rdf+xml',
+        shaclc: 'text/shaclc',
+      });
+      
+      async function parseRdfDocument(source, options = {}) {
+        const { Readable } = require('readable-stream');
+        const { rdfParser } = require('rdf-parse');
+        const { default: dataFactory } = await import('@rdfjs/data-model');
+        const prefixes = { ...(options.prefixes || {}) };
+        const parseOptions = rdfParseOptions(options);
+        parseOptions.dataFactory = dataFactory;
+        const prepared = prepareRdf12TripleTerms(String(source ?? ''));
+        const stream = rdfParser.parse(Readable.from([prepared.source]), parseOptions);
+        stream.on('prefix', (prefix, value) => {
+          prefixes[String(prefix)] = value && value.value ? value.value : String(value);
+        });
+      
+        let quads = [];
+        for await (const quad of stream) quads.push(quad);
+        quads = restoreRdf12TripleTerms(quads, prepared.markerPrefix, dataFactory);
+      
+        const triples = quads.map((quad) => {
+          const triple = {
+            s: rdfJsTermToTerm(quad.subject),
+            p: rdfJsTermToTerm(quad.predicate),
+            o: rdfJsTermToTerm(quad.object),
+          };
+          if (quad.graph && quad.graph.termType !== 'DefaultGraph') triple.graph = rdfJsTermToTerm(quad.graph);
+          return triple;
+        });
+        const imports = triples
+          .filter((triple) => triple.p.type === 'iri' && triple.p.value === OWL_IMPORTS && triple.o.type === 'iri')
+          .map((triple) => triple.o.value);
+      
+        return {
+          baseIRI: options.baseIRI || options.base || null,
+          prefixes,
+          triples,
+          quads,
+          imports: Array.from(new Set(imports)),
+        };
+      }
+      
+      async function parseRdfDataset(source, options = {}) {
+        const document = await parseRdfDocument(source, options);
+        return {
+          profile: options.profileId || options.profile || 'rdfjs-dataset-v0',
+          prefixes: document.prefixes,
+          base: document.baseIRI || '',
+          imports: document.imports,
+          facts: document.quads.map((quad) => ({
+            s: rdfJsTermToLegacy(quad.subject),
+            p: rdfJsTermToLegacy(quad.predicate),
+            o: rdfJsTermToLegacy(quad.object),
+            graph: quad.graph && quad.graph.termType !== 'DefaultGraph' ? rdfJsTermToLegacy(quad.graph) : null,
+          })),
+          rules: [],
+          queries: [],
+          expectations: [],
+        };
+      }
+      
+      async function parseRdfSyntax(source, options = {}) {
+        return rdfDocumentToProgram(await parseRdfDocument(source, options), options);
+      }
+      
+      function rdfParseOptions(options = {}) {
+        const out = {};
+        const contentType = options.contentType || CONTENT_TYPES[options.profile] || CONTENT_TYPES[options.format];
+        if (contentType) out.contentType = contentType;
+        else if (options.filename && !/^<.*>$/.test(options.filename)) {
+          const cleanFilename = String(options.filename).replace(/[?#].*$/, '');
+          if (/\.[A-Za-z0-9]+$/.test(cleanFilename)) out.path = cleanFilename;
+          else out.contentType = 'text/turtle';
+        }
+        else out.contentType = 'text/turtle';
+        if (options.baseIRI || options.base) out.baseIRI = options.baseIRI || options.base;
+        if (options.version) out.version = options.version;
+        if (options.parseUnsupportedVersions) out.parseUnsupportedVersions = true;
+        return out;
+      }
+      
+      // N3.js 2.2 parses RDF 1.2 triple terms in ordinary object position, but not
+      // as RDF collection items. Give each triple term a private reifier while
+      // parsing, then replace that reifier with the RDF/JS Quad term afterwards.
+      function prepareRdf12TripleTerms(source) {
+        let markerPrefix = 'urn:eyeleng:rdf12-triple-term:';
+        while (source.includes(markerPrefix)) markerPrefix += 'x:';
+        const contexts = [];
+        let count = 0;
+        let out = '';
+        let i = 0;
+        while (i < source.length) {
+          const ch = source[i];
+          if (ch === '"' || ch === "'") {
+            const quote = ch;
+            const long = source.startsWith(quote.repeat(3), i);
+            const start = i;
+            i += long ? 3 : 1;
+            while (i < source.length) {
+              if (source[i] === '\\') { i += 2; continue; }
+              if (long ? source.startsWith(quote.repeat(3), i) : source[i] === quote) {
+                i += long ? 3 : 1;
+                break;
+              }
+              i += 1;
+            }
+            out += source.slice(start, i);
+            continue;
+          }
+          if (ch === '<' && !source.startsWith('<<', i)) {
+            const start = i++;
+            while (i < source.length) {
+              if (source[i] === '\\') { i += 2; continue; }
+              if (source[i++] === '>') break;
+            }
+            out += source.slice(start, i);
+            continue;
+          }
+          if (ch === '#') {
+            const start = i++;
+            while (i < source.length && source[i] !== '\n' && source[i] !== '\r') i += 1;
+            out += source.slice(start, i);
+            continue;
+          }
+          if (source.startsWith('<<(', i)) {
+            if (contexts.some((context) => context.type === 'collection')) {
+              const marker = `${markerPrefix}${++count}`;
+              contexts.push({ type: 'preparedTriple', marker });
+              out += '<< ';
+            } else {
+              contexts.push({ type: 'triple' });
+              out += '<<(';
+            }
+            i += 3;
+            continue;
+          }
+          if (source.startsWith(')>>', i) && contexts.length > 0
+            && (contexts.at(-1).type === 'triple' || contexts.at(-1).type === 'preparedTriple')) {
+            const context = contexts.pop();
+            out += context.type === 'preparedTriple' ? ` ~ <${context.marker}> >>` : ')>>';
+            i += 3;
+            continue;
+          }
+          if (ch === '(') contexts.push({ type: 'collection' });
+          else if (ch === ')' && contexts.at(-1)?.type === 'collection') contexts.pop();
+          out += ch;
+          i += 1;
+        }
+        if (contexts.some((context) => context.type !== 'collection')) return { source, markerPrefix: null };
+        return { source: out, markerPrefix: count > 0 ? markerPrefix : null };
+      }
+      
+      function restoreRdf12TripleTerms(quads, markerPrefix, dataFactory) {
+        if (!markerPrefix) return quads;
+        const replacements = new Map();
+        for (const quad of quads) {
+          if (quad.subject.termType === 'NamedNode' && quad.subject.value.startsWith(markerPrefix)
+            && quad.predicate.termType === 'NamedNode' && quad.predicate.value === `${RDF_NS}reifies`
+            && quad.object.termType === 'Quad') {
+            replacements.set(quad.subject.value, quad.object);
+          }
+        }
+        const replace = (term, seen = new Set()) => {
+          if (term.termType === 'NamedNode' && replacements.has(term.value)) {
+            if (seen.has(term.value)) throw new Error('Cyclic RDF 1.2 triple term');
+            const nextSeen = new Set(seen).add(term.value);
+            return replace(replacements.get(term.value), nextSeen);
+          }
+          if (term.termType !== 'Quad') return term;
+          return dataFactory.quad(
+            replace(term.subject, seen),
+            replace(term.predicate, seen),
+            replace(term.object, seen),
+            replace(term.graph, seen),
+          );
+        };
+        return quads
+          .filter((quad) => !(quad.subject.termType === 'NamedNode' && replacements.has(quad.subject.value)
+            && quad.predicate.termType === 'NamedNode' && quad.predicate.value === `${RDF_NS}reifies`))
+          .map((quad) => dataFactory.quad(
+            replace(quad.subject),
+            replace(quad.predicate),
+            replace(quad.object),
+            replace(quad.graph),
+          ));
+      }
+      
+      function rdfJsTermToTerm(term) {
+        if (!term) return null;
+        if (term.termType === 'NamedNode') return iri(term.value);
+        if (term.termType === 'BlankNode') return blankNode(term.value);
+        if (term.termType === 'Variable') return variable(term.value);
+        if (term.termType === 'Literal') {
+          const datatype = term.datatype && term.datatype.value ? term.datatype.value : null;
+          const lang = term.language || null;
+          const direction = term.direction || null;
+          const value = coerceLexicalLiteral(term.value, datatype);
+          return literal(value, datatype === XSD_STRING ? null : datatype, lang, direction);
+        }
+        if (term.termType === 'Quad') return tripleTerm(rdfJsTermToTerm(term.subject), rdfJsTermToTerm(term.predicate), rdfJsTermToTerm(term.object));
+        if (term.termType === 'DefaultGraph') return null;
+        throw new Error(`Unsupported RDF/JS term type ${term.termType || typeof term}`);
+      }
+      
+      function rdfJsTermToLegacy(term) {
+        if (!term || term.termType === 'DefaultGraph') return null;
+        if (term.termType === 'NamedNode') return { kind: 'iri', value: term.value };
+        if (term.termType === 'BlankNode') return { kind: 'blank', value: term.value };
+        if (term.termType === 'Variable') return { kind: 'var', value: term.value, name: term.value };
+        if (term.termType === 'Literal') return {
+          kind: 'literal',
+          value: term.value,
+          datatype: term.datatype && term.datatype.value ? term.datatype.value : null,
+          language: term.language || null,
+          langDir: term.direction || null,
+        };
+        if (term.termType === 'Quad') return {
+          kind: 'triple',
+          s: rdfJsTermToLegacy(term.subject),
+          p: rdfJsTermToLegacy(term.predicate),
+          o: rdfJsTermToLegacy(term.object),
+        };
+        throw new Error(`Unsupported RDF/JS term type ${term.termType || typeof term}`);
+      }
+      
+      function parseIntegerLiteral(value) {
+        const text = String(value);
+        const asNumber = Number.parseInt(text, 10);
+        return Number.isSafeInteger(asNumber) && String(asNumber) === text.replace(/^\+/, '') ? asNumber : BigInt(text);
+      }
+      
+      function coerceLexicalLiteral(value, datatype) {
+        if (datatype === XSD_INTEGER) return parseIntegerLiteral(value);
+        if (datatype === XSD_DECIMAL || datatype === XSD_DOUBLE) return Number(value);
+        if (datatype === XSD_BOOLEAN) return value === true || value === 'true' || value === '1';
+        return value;
+      }
+      
+      function rdfDocumentToProgram(document, options = {}) {
+        const graph = new RdfGraph(document.triples, document.prefixes);
+        const ruleSetNodes = chooseRuleSets(graph, options.ruleSet);
+        if (ruleSetNodes.length === 0) throw new Error('No srl:RuleSet found in RDF Rules syntax input');
+      
+        const program = {
+          baseIRI: document.baseIRI || null,
+          version: null,
+          imports: options.rdfImportsAsImports ? document.imports.slice() : [],
+          prefixes: { ...document.prefixes },
+          data: [],
+          rules: [],
+          rdfSyntax: true,
+          options: { shacl12Conformance: !!options.shacl12Conformance },
+          ruleSets: ruleSetNodes.map((term) => formatTerm(term, document.prefixes)),
+        };
+      
+        for (const ruleSet of ruleSetNodes) {
+          for (const dataList of graph.objects(ruleSet, SRL_DATA)) {
+            for (const item of graph.list(dataList)) program.data.push(toDataTriple(item, graph));
+          }
+          for (const rulesList of graph.objects(ruleSet, SRL_RULES)) {
+            for (const ruleNode of graph.list(rulesList)) program.rules.push(toRule(ruleNode, graph, options));
+          }
+        }
+        return program;
+      }
+      
+      function chooseRuleSets(graph, selected) {
+        if (selected) {
+          const term = graph.parseReference(selected);
+          return [term];
+        }
+        const typed = graph.subjects(RDF_TYPE, iri(SRL_RULE_SET));
+        if (typed.length > 0) return uniqueTerms(typed);
+        const byData = graph.subjectsWithPredicate(SRL_DATA);
+        const byRules = graph.subjectsWithPredicate(SRL_RULES);
+        return uniqueTerms([...byData, ...byRules]).filter((term) => graph.objects(term, SRL_RULES).length > 0 || graph.objects(term, SRL_DATA).length > 0);
+      }
+      
+      function toDataTriple(item, graph) {
+        if (item.type === 'triple') return { s: item.s, p: item.p, o: item.o };
+        const triple = toTripleLike(item, graph);
+        if ([triple.s, triple.p, triple.o].some((term) => term.type === 'var')) throw new Error('RDF Rules srl:data may not contain variables');
+        if (triple.p.type !== 'iri') throw new Error('RDF Rules data triple predicate must be an IRI');
+        return triple;
+      }
+      
+      function toRule(ruleNode, graph, options = {}) {
+        const bodyLists = graph.objects(ruleNode, SRL_BODY);
+        const headLists = graph.objects(ruleNode, SRL_HEAD);
+        if (bodyLists.length !== 1 || headLists.length !== 1) throw new Error(`RDF Rule ${graph.label(ruleNode)} must have exactly one srl:body and one srl:head`);
+        const body = graph.list(bodyLists[0]).map((item) => toBodyElement(item, graph));
+        const head = graph.list(headLists[0]).map((item) => toTripleLike(item, graph));
+        return { name: graph.label(ruleNode), head, body, runOnce: ruleNeedsRunOnce(head, body, options) };
+      }
+      
+      function toBodyElement(node, graph) {
+        if (hasTripleShape(node, graph)) return { type: 'triple', triple: toTripleLike(node, graph) };
+        const filters = graph.objects(node, SRL_FILTER).concat(graph.objects(node, SRL_EXPR));
+        if (filters.length > 0) {
+          if (filters.length !== 1) throw new Error(`Filter element ${graph.label(node)} must have exactly one srl:filter`);
+          return { type: 'filter', expr: toExpression(filters[0], graph) };
+        }
+        const assigns = graph.objects(node, SRL_ASSIGN);
+        if (assigns.length > 0) {
+          if (assigns.length !== 1) throw new Error(`Assignment element ${graph.label(node)} must have exactly one srl:assign`);
+          const assign = assigns[0];
+          const vars = graph.objects(assign, SRL_ASSIGN_VAR);
+          const values = graph.objects(assign, SRL_ASSIGN_VALUE);
+          if (vars.length !== 1 || values.length !== 1) throw new Error(`Assignment ${graph.label(assign)} must have exactly one srl:assignVar and srl:assignValue`);
+          const variableTerm = toVarOrTerm(vars[0], graph);
+          if (variableTerm.type !== 'var') throw new Error('srl:assignVar must point to a variable node');
+          return { type: 'set', variable: variableTerm.value, expr: toExpression(values[0], graph) };
+        }
+        const negations = graph.objects(node, SRL_NOT);
+        if (negations.length > 0) {
+          if (negations.length !== 1) throw new Error(`Negation element ${graph.label(node)} must have exactly one srl:not`);
+          const body = graph.list(negations[0]).map((item) => {
+            const clause = toBodyElement(item, graph);
+            if (clause.type === 'set' || clause.type === 'not') throw new Error('RDF Rules srl:not may contain only triple patterns and filters');
+            return clause;
+          });
+          return { type: 'not', body };
+        }
+        throw new Error(`Unsupported RDF Rules body element ${graph.label(node)}`);
+      }
+      
+      function toTripleLike(node, graph) {
+        if (node.type === 'triple') return { s: node.s, p: node.p, o: node.o };
+        const subjects = graph.objects(node, SRL_SUBJECT);
+        const predicates = graph.objects(node, SRL_PREDICATE);
+        const objects = graph.objects(node, SRL_OBJECT);
+        if (subjects.length !== 1 || predicates.length !== 1 || objects.length !== 1) {
+          throw new Error(`Triple node ${graph.label(node)} must have exactly one srl:subject, srl:predicate and srl:object`);
+        }
+        return {
+          s: toVarOrTerm(subjects[0], graph),
+          p: toVarOrTerm(predicates[0], graph),
+          o: toVarOrTerm(objects[0], graph),
+        };
+      }
+      
+      function hasTripleShape(node, graph) {
+        return graph.objects(node, SRL_SUBJECT).length > 0 || graph.objects(node, SRL_PREDICATE).length > 0 || graph.objects(node, SRL_OBJECT).length > 0;
+      }
+      
+      function toVarOrTerm(node, graph) {
+        const varNames = graph.objects(node, SRL_VAR_NAME);
+        if (varNames.length > 0) {
+          if (varNames.length !== 1 || varNames[0].type !== 'literal') throw new Error(`Variable node ${graph.label(node)} must have exactly one string srl:varName`);
+          return variable(String(varNames[0].value));
+        }
+        return node;
+      }
+      
+      function toExpression(node, graph) {
+        const varNames = graph.objects(node, SHNEX_VAR).concat(graph.objects(node, SRL_VAR_NAME));
+        if (varNames.length > 0) {
+          if (varNames.length !== 1 || varNames[0].type !== 'literal') throw new Error(`Expression variable ${graph.label(node)} must name one variable`);
+          return { type: 'var', name: String(varNames[0].value) };
+        }
+        if (node.type === 'literal') {
+          if (node.datatype || node.lang) return { type: 'term', value: node };
+          return { type: 'literal', value: node.value };
+        }
+        if (node.type === 'iri' || node.type === 'blank' || node.type === 'triple') {
+          const call = graph.functionCall(node);
+          if (call) return toFunctionExpression(call.name, call.args.map((arg) => toExpression(arg, graph)));
+          if (node.type === 'blank' && graph.hasOutgoing(node)) return { type: 'term', value: node };
+          return { type: 'term', value: toVarOrTerm(node, graph) };
+        }
+        return { type: 'term', value: node };
+      }
+      
+      function toFunctionExpression(name, args) {
+        if (name.startsWith(SPARQL_NS)) {
+          const local = name.slice(SPARQL_NS.length);
+          if (local === 'less-than' || local === 'lessThan') return binary('<', args);
+          if (local === 'less-than-or-equal' || local === 'lessThanOrEqual') return binary('<=', args);
+          if (local === 'greater-than' || local === 'greaterThan') return binary('>', args);
+          if (local === 'greater-than-or-equal' || local === 'greaterThanOrEqual') return binary('>=', args);
+          if (local === 'equal' || local === 'equals') return binary('=', args);
+          if (local === 'not-equal' || local === 'notEqual') return binary('!=', args);
+          if (local === 'add') return foldBinary('+', args);
+          if (local === 'subtract') return binary('-', args);
+          if (local === 'multiply') return foldBinary('*', args);
+          if (local === 'divide') return binary('/', args);
+          if (local === 'and' || local === 'function-and') return foldBinary('&&', args);
+          if (local === 'or' || local === 'function-or') return foldBinary('||', args);
+          if (local === 'not') return { type: 'unary', op: '!', expr: args[0] };
+          const builtin = sparqlLocalToBuiltin(local);
+          return { type: 'call', name: builtin, args };
+        }
+        return { type: 'call', name, args };
+      }
+      
+      function binary(op, args) {
+        if (args.length !== 2) throw new Error(`sparql operator ${op} expects 2 arguments`);
+        return { type: 'binary', op, left: args[0], right: args[1] };
+      }
+      
+      function foldBinary(op, args) {
+        if (args.length < 2) throw new Error(`sparql operator ${op} expects at least 2 arguments`);
+        return args.slice(1).reduce((left, right) => ({ type: 'binary', op, left, right }), args[0]);
+      }
+      
+      function sparqlLocalToBuiltin(local) {
+        return local.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase()).replace(/^./, (ch) => ch.toUpperCase());
+      }
+      
+      class RdfGraph {
+        constructor(triples, prefixes = {}) {
+          this.triples = triples;
+          this.prefixes = prefixes;
+          this.bySubject = new Map();
+          for (const triple of triples) {
+            const key = termKey(triple.s);
+            if (!this.bySubject.has(key)) this.bySubject.set(key, []);
+            this.bySubject.get(key).push(triple);
+          }
+        }
+      
+        objects(subject, predicateIRI) {
+          const rows = this.bySubject.get(termKey(subject)) || [];
+          return rows.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI).map((triple) => triple.o);
+        }
+      
+        subjects(predicateIRI, object) {
+          return this.triples.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI && termEquals(triple.o, object)).map((triple) => triple.s);
+        }
+      
+        subjectsWithPredicate(predicateIRI) {
+          return this.triples.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI).map((triple) => triple.s);
+        }
+      
+        hasOutgoing(subject) {
+          return (this.bySubject.get(termKey(subject)) || []).length > 0;
+        }
+      
+        list(head) {
+          const out = [];
+          let node = head;
+          const seen = new Set();
+          while (!(node.type === 'iri' && node.value === RDF_NIL)) {
+            const key = termKey(node);
+            if (seen.has(key)) throw new Error(`Cycle in RDF list at ${this.label(node)}`);
+            seen.add(key);
+            const first = this.objects(node, RDF_FIRST);
+            const rest = this.objects(node, RDF_REST);
+            if (first.length !== 1 || rest.length !== 1) throw new Error(`Expected RDF list node at ${this.label(node)}`);
+            out.push(first[0]);
+            node = rest[0];
+          }
+          return out;
+        }
+      
+        functionCall(node) {
+          if (node.type !== 'blank') return null;
+          const rows = (this.bySubject.get(termKey(node)) || []).filter((triple) => triple.p.type === 'iri');
+          const calls = rows.filter((triple) => triple.p.value.startsWith(SPARQL_NS) || triple.p.value.includes('#') || triple.p.value.includes('/'));
+          const viable = calls.filter((triple) => isRdfListHead(triple.o, this));
+          if (viable.length !== 1) return null;
+          return { name: viable[0].p.value, args: this.list(viable[0].o) };
+        }
+      
+        parseReference(text) {
+          if (typeof text !== 'string') return text;
+          if (text.startsWith('<') && text.endsWith('>')) return iri(text.slice(1, -1));
+          if (text.startsWith('_:')) return blankNode(text.slice(2));
+          const colon = text.indexOf(':');
+          if (colon >= 0) {
+            const prefix = text.slice(0, colon);
+            const local = text.slice(colon + 1);
+            const ns = this.prefixes[prefix] || (prefix === 'srl' ? SRL_NS : null);
+            if (ns) return iri(ns + local);
+          }
+          return iri(text);
+        }
+      
+        label(term) { return formatTerm(term, this.prefixes); }
+      }
+      
+      function isRdfListHead(term, graph) {
+        return (term.type === 'iri' && term.value === RDF_NIL) || graph.objects(term, RDF_FIRST).length === 1;
+      }
+      
+      function uniqueTerms(terms) {
+        const seen = new Set();
+        const out = [];
+        for (const term of terms) {
+          const key = termKey(term);
+          if (!seen.has(key)) { seen.add(key); out.push(term); }
+        }
+        return out;
+      }
+      
+      
+      function looksLikeRdfRules(source, options = {}) {
+        if (options.syntax === 'rdf') return true;
+        if (options.syntax === 'srl') return false;
+        if (options.filename && /\.(ttl|turtle|trig|nt|ntriples|nq|nquads|n3|rdf|rdfxml|owl|json|jsonld|html|htm|xhtml|xml|svg|shaclc|shc)$/i.test(options.filename)) return true;
+        return /\bsrl:RuleSet\b|\bsrl:rules\b|http:\/\/www\.w3\.org\/ns\/shacl-rules#RuleSet/.test(source);
+      }
+      
+      function escapeIri(value) {
+        return String(value).replace(/[\\>\u0000-\u0020]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
+      }
+      
+      function escapeLiteral(value) {
+        return String(value)
+          .replace(/\\/g, '\\\\')
+          .replace(/"/g, '\\"')
+          .replace(/\n/g, '\\n')
+          .replace(/\r/g, '\\r')
+          .replace(/\t/g, '\\t');
+      }
+      
+      function termToNQuads(term) {
+        if (!term) return '';
+        if (term.kind === 'iri') return `<${escapeIri(term.value)}>`;
+        if (term.kind === 'blank') return `_:${term.value}`;
+        if (term.kind === 'literal') {
+          let out = `"${escapeLiteral(term.value)}"`;
+          if (term.language) out += `@${term.language}${term.langDir ? `--${term.langDir}` : ''}`;
+          else if (term.datatype) out += `^^<${escapeIri(term.datatype)}>`;
+          return out;
+        }
+        if (term.kind === 'triple') return `<<(${termToNQuads(term.s)} ${termToNQuads(term.p)} ${termToNQuads(term.o)})>>`;
+        throw new Error(`Cannot serialize RDF term ${JSON.stringify(term)}`);
+      }
+      
+      function tripleToNQuads(triple) {
+        return `${termToNQuads(triple.s)} ${termToNQuads(triple.p)} ${termToNQuads(triple.o)}${triple.graph ? ` ${termToNQuads(triple.graph)}` : ''} .`;
+      }
+      
+      function triplesToNQuads(triples) {
+        return (triples || []).map(tripleToNQuads).sort().join('\n');
+      }
+      
+      module.exports = {
+        parseRdfDocument,
+        parseRdfDataset,
+        parseRdfSyntax,
+        rdfDocumentToProgram,
+        looksLikeRdfRules,
+        rdfJsTermToTerm,
+        rdfJsTermToLegacy,
+        termToNQuads,
+        tripleToNQuads,
+        triplesToNQuads,
+        RdfGraph,
+        constants: {
+          SRL_NS,
+          SHNEX_NS,
+          SPARQL_NS,
+          SRL_RULE_SET,
+          SRL_RULE,
+        },
+      };
+      
+    },
     "src/rdfMessages.js": function (require, module, exports) {
       'use strict';
       
@@ -4317,7 +3415,7 @@
         return headTerm || cells[0];
       }
       
-      function parseRdfMessageLog(source, options = {}) {
+      async function parseRdfMessageLog(source, options = {}) {
         const text = String(source || '');
         const directives = collectDirectiveLines(text);
         const chunks = splitRdfMessageLog(text);
@@ -4356,7 +3454,7 @@
           const chunk = rewriteMessageBlankLabels(rawChunk, i + 1);
           const hasBody = messageChunkHasRdf(chunk);
           const bodySource = `${directives.join('')}\n${stripDirectiveLines(chunk)}`;
-          const parsed = hasBody ? parseRdfDocument(bodySource, { ...options, filename: `${options.filename || '<message>'}#m${i + 1}`, baseIRI: options.baseIRI }) : { triples: [], prefixes: {} };
+          const parsed = hasBody ? await parseRdfDocument(bodySource, { ...options, filename: `${options.filename || '<message>'}#m${i + 1}`, baseIRI: options.baseIRI }) : { triples: [], prefixes: {} };
           Object.assign(prefixes, parsed.prefixes || {});
           const payloadTriples = parsed.triples || [];
           const tripleTerms = payloadTriples.map((t) => tripleTerm(t.s, t.p, t.o));
@@ -4474,6 +3572,114 @@
           const layer = layerIndexes[layerIndex];
           baseContext.layer = layerIndex + 1;
           prepareTargetBindingsForLayer(program, store, layer, baseContext);
+          const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
+          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
+          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
+      
+          if (runOnce.length > 0) {
+            iterations += 1;
+            for (const ruleIndex of runOnce) {
+              baseContext.iteration = iterations;
+              const added = applyRuleOnce(program, store, ruleIndex, baseContext);
+              ruleApplications += added.applications;
+            }
+          }
+      
+          baseContext.startingIterations = iterations;
+          baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
+          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
+          iterations = ordinaryResult.iterations;
+          ruleApplications += ordinaryResult.ruleApplications;
+        }
+      
+        return {
+          baseIRI: program.baseIRI,
+          version: program.version || null,
+          imports: program.imports || [],
+          prefixes: program.prefixes,
+          input: program.data.slice(),
+          inferred,
+          closure: store.values(),
+          iterations,
+          layers: layerIndexes.map((layer) => layer.map((ruleIndex) => perRule[ruleIndex].name)),
+          ruleApplications,
+          perRule,
+          trace: trace || [],
+          hybridStats,
+          groundStore,
+        };
+      }
+      
+      
+      async function evaluateAsync(program, options = {}) {
+        const maxIterations = options.maxIterations ?? 10000;
+        const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
+        const store = new TripleStore(program.data);
+        // SHACL 1.2 Rules distinguishes the immutable ground-data graph (base graph
+        // plus DATA blocks) from the growing evaluation graph. Snapshot it before
+        // any rules run so WHERE DATA and NOT DATA never see inferred triples.
+        const groundStore = new TripleStore(program.data);
+        const inputKeys = new Set(program.data.map(tripleKey));
+        const inferred = [];
+        const trace = options.trace || options.prove ? [] : null;
+        let iterations = 0;
+        let ruleApplications = 0;
+        const perRule = program.rules.map((rule, index) => ({
+          name: rule.name || `rule#${index + 1}`,
+          applications: 0,
+          added: 0,
+          runOnce: !!rule.runOnce,
+          backward: false,
+        }));
+      
+        const analysis = options.analysis || analyze(program, options);
+        if (analysis.errors && analysis.errors.length > 0 && !options.ignoreAnalysisErrors) {
+          throw new Error(`Analysis failed: ${analysis.errors.map((error) => error.message).join('; ')}`);
+        }
+        const layerIndexes = analysis.dependency && analysis.dependency.layerIndexes
+          ? analysis.dependency.layerIndexes
+          : [program.rules.map((_, index) => index)];
+        const recursiveLayerFlags = computeRecursiveLayerFlags(
+          layerIndexes,
+          analysis.dependency ? analysis.dependency.edges : [],
+        );
+        const relaxedRecursiveRunOnce = options.relaxedRecursion === false
+          ? new Set()
+          : recursiveTermGenerationRuleIndexes(analysis);
+        const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+        const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
+          ? preferredBackwardPredicates(program, options)
+          : new Set();
+        const hybridBackwardRules = new Set();
+        if (hybridBackwardPredicates.size > 0) {
+          for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
+            if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
+          }
+        }
+        const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
+        for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
+        const baseContext = {
+          ...evalOptions,
+          maxIterations,
+          inputKeys,
+          inferred,
+          trace,
+          perRule,
+          layer: 0,
+          iteration: 0,
+          startingIterations: 0,
+          recursiveLayer: false,
+          hybridBackwardPredicates,
+          hybridBackwardRules,
+          hybridStats,
+          groundStore,
+          targetBindingCache: new Map(),
+        };
+      
+        for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
+          const layer = layerIndexes[layerIndex];
+          baseContext.layer = layerIndex + 1;
+          await prepareTargetBindingsForLayerAsync(program, store, layer, baseContext);
           const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
           const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
           const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
@@ -4632,6 +3838,67 @@
         }
       }
       
+      async function prepareTargetBindingsForLayerAsync(program, store, ruleIndexes, context) {
+        for (const ruleIndex of ruleIndexes) {
+          if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
+            await targetBindingsForRuleAsync(program, store, ruleIndex, context);
+          }
+        }
+      }
+      
+      async function targetBindingsForRuleAsync(program, store, ruleIndex, context) {
+        const cached = context.targetBindingCache && context.targetBindingCache.get(ruleIndex);
+        if (cached) return cached;
+      
+        const rule = program.rules[ruleIndex];
+        const target = rule && rule.target;
+        if (!target) return [{}];
+      
+        let resolved;
+        if (context.shapeEngine && typeof context.shapeEngine.eligibleFocusNodes === 'function') {
+          resolved = await context.shapeEngine.eligibleFocusNodes(target.shape, {
+            variable: target.variable,
+            rule,
+            ruleIndex,
+            layer: context.layer,
+            graph: store.values(),
+            groundGraph: context.groundStore.values(),
+            program,
+          });
+        } else if (typeof context.focusNodeResolver === 'function') {
+          resolved = await context.focusNodeResolver(target.shape, {
+            variable: target.variable,
+            rule,
+            ruleIndex,
+            layer: context.layer,
+            graph: store.values(),
+            groundGraph: context.groundStore.values(),
+            program,
+          });
+        } else {
+          throw new Error(`${rule.name || `rule#${ruleIndex + 1}`} uses FOR ?${target.variable} IN <${target.shape}>; provide shapes/shapeEngine or a focusNodeResolver(shape, context)`);
+        }
+      
+        return cacheTargetBindings(resolved, target, ruleIndex, context);
+      }
+      
+      function cacheTargetBindings(resolved, target, ruleIndex, context) {
+        if (resolved == null || typeof resolved[Symbol.iterator] !== 'function') {
+          throw new Error(`Focus-node resolution for <${target.shape}> must return an iterable of RDF focus nodes`);
+        }
+        const bindings = [];
+        const seen = new Set();
+        for (const node of resolved) {
+          const term = normalizeFocusNode(node);
+          const key = termKey(term);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          bindings.push({ [target.variable]: term });
+        }
+        if (context.targetBindingCache) context.targetBindingCache.set(ruleIndex, bindings);
+        return bindings;
+      }
+      
       function prepareTargetBindingsForLayer(program, store, ruleIndexes, context) {
         for (const ruleIndex of ruleIndexes) {
           if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
@@ -4662,22 +3929,7 @@
           groundGraph: context.groundStore.values(),
           program,
         });
-        if (resolved == null || typeof resolved[Symbol.iterator] !== 'function') {
-          throw new Error(`focusNodeResolver for <${target.shape}> must return an iterable of RDF focus nodes`);
-        }
-      
-        const bindings = [];
-        const seen = new Set();
-        for (const node of resolved) {
-          const term = normalizeFocusNode(node);
-          const key = termKey(term);
-          if (seen.has(key)) continue;
-          seen.add(key);
-          bindings.push({ [target.variable]: term });
-        }
-      
-        if (context.targetBindingCache) context.targetBindingCache.set(ruleIndex, bindings);
-        return bindings;
+        return cacheTargetBindings(resolved, target, ruleIndex, context);
       }
       
       function normalizeFocusNode(node) {
@@ -5022,7 +4274,7 @@
         return out;
       }
       
-      module.exports = { evaluate, evaluateBody, uniqueBindings };
+      module.exports = { evaluate, evaluateAsync, evaluateBody, uniqueBindings };
       
     },
     "src/store.js": function (require, module, exports) {
@@ -5411,6 +4663,16 @@
           });
         }
       
+        for (const cycle of dependency.shapeConstraintCycles || []) {
+          diagnostics.push({
+            code: 'shape-rule-cycle',
+            severity: 'error',
+            rules: cycle.rules,
+            shape: cycle.shape,
+            message: `Closed SHACL shape dependency cycle through ${cycle.rules.map((name) => displayRuleName(name, program.prefixes || {})).join(' -> ')} for <${cycle.shape}>${cycle.predicate ? ` using ${compactIRI(cycle.predicate, program.prefixes || {})}` : ''}`,
+          });
+        }
+      
         return {
           warnings: diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
           errors: diagnostics.filter((diagnostic) => diagnostic.severity === 'error'),
@@ -5446,6 +4708,8 @@
             hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
             headHasBlankNode: ruleHeadHasBlankNode(rule),
             createsTerms: ruleCreatesTerms(rule, options),
+            target: rule.target || null,
+            shapeDependencies: rule.target ? resolveShapeDependencies(rule.target.shape, options) : null,
           };
         });
       
@@ -5455,20 +4719,25 @@
           const key = `${from.index}->${to.index}:${label}`;
           const negated = kind === 'negated';
           const termGeneration = kind === 'term-generation';
+          const shapeConstraint = kind === 'shape';
           const existing = edgeMap.get(key);
           if (existing) {
             existing.negated = existing.negated || negated;
             existing.termGeneration = existing.termGeneration || termGeneration;
-            existing.negative = existing.negated || existing.termGeneration;
+            existing.shapeConstraint = existing.shapeConstraint || shapeConstraint;
+            if (shapeConstraint && !existing.shape && from.target) existing.shape = from.target.shape;
+            existing.negative = existing.negated || existing.termGeneration || existing.shapeConstraint;
             return;
           }
           edgeMap.set(key, {
             from: from.index,
             to: to.index,
-            negative: negated || termGeneration,
+            negative: negated || termGeneration || shapeConstraint,
             negated,
             termGeneration,
+            shapeConstraint,
             predicate,
+            shape: shapeConstraint && from.target ? from.target.shape : null,
           });
         }
       
@@ -5484,6 +4753,23 @@
           for (const pattern of from.negativePatterns) {
             for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
               if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], 'negated', dependencyPredicateLabel(pattern));
+            }
+          }
+        }
+      
+        for (const from of rules) {
+          if (!from.target || !from.shapeDependencies) continue;
+          const dependencies = from.shapeDependencies;
+          const wanted = new Set(dependencies.predicates || []);
+          for (const producer of rules) {
+            if (!producer.headTemplates || producer.headTemplates.length === 0) continue;
+            const hasVariablePredicate = producer.headTemplates.some((template) => !template.p || template.p.type !== 'iri');
+            if (dependencies.wildcard || hasVariablePredicate) {
+              addEdge(from, producer, 'shape', null);
+              continue;
+            }
+            for (const predicate of wanted) {
+              if (producer.headPredicates.has(predicate)) addEdge(from, producer, 'shape', predicate);
             }
           }
         }
@@ -5512,6 +4798,22 @@
           });
         }
       
+        const shapeConstraintCycles = [];
+        const seenShapeCycles = new Set();
+        for (const edge of edges) {
+          if (!edge.shapeConstraint) continue;
+          if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
+          const component = components[componentOf.get(edge.from)];
+          const key = `${component.slice().sort((a, b) => a - b).join(',')}|${edge.shape || ''}|${edge.predicate || '*'}`;
+          if (seenShapeCycles.has(key)) continue;
+          seenShapeCycles.add(key);
+          shapeConstraintCycles.push({
+            predicate: edge.predicate,
+            shape: edge.shape || (rules[edge.from].target && rules[edge.from].target.shape) || '',
+            rules: component.map((ruleIndex) => rules[ruleIndex].name),
+          });
+        }
+      
         const layers = stratificationLayers(rules.length, components, componentOf, edges);
       
         return {
@@ -5526,13 +4828,26 @@
             hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
             headHasBlankNode: rule.headHasBlankNode,
             createsTerms: rule.createsTerms,
+            target: rule.target,
+            shapeDependencies: rule.shapeDependencies,
           })),
           edges,
           components: components.map((component) => component.map((ruleIndex) => rules[ruleIndex].name)),
           layers: layers.map((layer) => layer.map((ruleIndex) => rules[ruleIndex].name)),
           layerIndexes: layers,
           unstratifiedCycles,
+          shapeConstraintCycles,
         };
+      }
+      
+      function resolveShapeDependencies(shapeIRI, options = {}) {
+        if (!shapeIRI) return null;
+        if (options.shapeEngine && typeof options.shapeEngine.dependencies === 'function') {
+          return options.shapeEngine.dependencies(shapeIRI);
+        }
+        if (typeof options.shapeDependencies === 'function') return options.shapeDependencies(shapeIRI);
+        if (options.shapeDependencies && typeof options.shapeDependencies === 'object') return options.shapeDependencies[shapeIRI] || null;
+        return null;
       }
       
       function buildHeadTemplateIndex(rules) {
@@ -6723,6 +6038,10 @@
           diagnostics: result.diagnostics || [],
           triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
           proof: options.proof ? result.trace : undefined,
+          validation: result.validationReport ? {
+            conforms: result.validationReport.conforms,
+            results: Array.isArray(result.validationReport.results) ? result.validationReport.results.length : undefined,
+          } : undefined,
         };
         if (result.query) json.query = jsonSafeValue(result.query);
         if (result.analysis && options.analysis) json.analysis = result.analysis;
@@ -6836,6 +6155,44 @@
         return result;
       }
       
+      async function runQueryAsync(source, querySource = null, options = {}) {
+        const { compileAsync } = require('./api.js');
+        const { evaluateAsync } = require('./engine.js');
+        const compiled = await compileAsync(source, options);
+        const { program, diagnostics, analysis } = compiled;
+      
+        let querySpec;
+        if (querySource) querySpec = parseQuery(querySource, { ...options, prefixes: program.prefixes, baseIRI: program.baseIRI });
+        else throw new Error('No query supplied. Use --query or --query-file with a raw body pattern.');
+      
+        const direct = queryProgram(program, querySpec, options);
+        if (direct) {
+          return {
+            baseIRI: program.baseIRI,
+            version: program.version || null,
+            imports: program.imports || [],
+            prefixes: program.prefixes,
+            input: program.data.slice(),
+            inferred: [],
+            closure: program.data.slice(),
+            iterations: 0,
+            layers: [],
+            ruleApplications: 0,
+            perRule: [],
+            trace: [],
+            diagnostics,
+            analysis,
+            query: direct,
+          };
+        }
+      
+        const runOptions = queryRunOptions(program, querySpec, { ...compiled.options, ...options });
+        const result = await evaluateAsync(program, { ...runOptions, shapeEngine: compiled.shapeEngine, analysis });
+        result.diagnostics = diagnostics;
+        result.query = queryResult(result, querySpec, runOptions);
+        return result;
+      }
+      
       function queryRunOptions(program, querySpec, options = {}) {
         const mode = options.queryMode || 'auto';
         if (mode === 'forward') return { ...options, hybrid: false };
@@ -6874,7 +6231,7 @@
         return out;
       }
       
-      module.exports = { runQuery, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery, parseQuery, normalizeSelect, projectBindings };
+      module.exports = { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery, parseQuery, normalizeSelect, projectBindings };
       
     },
     "src/output.js": function (require, module, exports) {
@@ -6887,8 +6244,367 @@
       module.exports = { resultTriples };
       
     },
+    "src/shacl.js": function (require, module, exports) {
+      'use strict';
+      
+      const { parseRdfDocument } = require('./rdfSyntax.js');
+      const { iri, termKey, RDF_TYPE, RDF_FIRST, RDF_REST, RDF_NIL } = require('./term.js');
+      
+      const SH = 'http://www.w3.org/ns/shacl#';
+      const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+      const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
+      
+      const SH_TARGET_NODE = `${SH}targetNode`;
+      const SH_TARGET_CLASS = `${SH}targetClass`;
+      const SH_TARGET_SUBJECTS_OF = `${SH}targetSubjectsOf`;
+      const SH_TARGET_OBJECTS_OF = `${SH}targetObjectsOf`;
+      const SH_TARGET = `${SH}target`;
+      const SH_PATH = `${SH}path`;
+      const SH_INVERSE_PATH = `${SH}inversePath`;
+      const SH_ALTERNATIVE_PATH = `${SH}alternativePath`;
+      const SH_ZERO_OR_MORE_PATH = `${SH}zeroOrMorePath`;
+      const SH_ONE_OR_MORE_PATH = `${SH}oneOrMorePath`;
+      const SH_ZERO_OR_ONE_PATH = `${SH}zeroOrOnePath`;
+      const SH_CLASS = `${SH}class`;
+      const SH_CLOSED = `${SH}closed`;
+      const SH_SPARQL = `${SH}sparql`;
+      const SH_NODE = `${SH}node`;
+      const SH_PROPERTY = `${SH}property`;
+      const SH_NOT = `${SH}not`;
+      const SH_AND = `${SH}and`;
+      const SH_OR = `${SH}or`;
+      const SH_XONE = `${SH}xone`;
+      const SH_QUALIFIED_VALUE_SHAPE = `${SH}qualifiedValueShape`;
+      const SH_EQUALS = `${SH}equals`;
+      const SH_DISJOINT = `${SH}disjoint`;
+      const SH_LESS_THAN = `${SH}lessThan`;
+      const SH_LESS_THAN_OR_EQUALS = `${SH}lessThanOrEquals`;
+      const RDFS_CLASS = `${RDFS}Class`;
+      const RDFS_SUBCLASS_OF = `${RDFS}subClassOf`;
+      
+      const SHAPE_LINK_PREDICATES = new Set([
+        SH_NODE,
+        SH_PROPERTY,
+        SH_NOT,
+        SH_QUALIFIED_VALUE_SHAPE,
+      ]);
+      const SHAPE_LIST_PREDICATES = new Set([SH_AND, SH_OR, SH_XONE]);
+      const DATA_PREDICATE_PARAMS = new Set([SH_EQUALS, SH_DISJOINT, SH_LESS_THAN, SH_LESS_THAN_OR_EQUALS]);
+      
+      async function createShaclShapeEngine(shapes, options = {}) {
+        const document = typeof shapes === 'string'
+          ? await parseRdfDocument(shapes, {
+            filename: options.shapesFilename || options.filename || '<shapes.ttl>',
+            baseIRI: options.shapesBaseIRI || options.baseIRI || null,
+            contentType: options.shapesContentType,
+          })
+          : normalizeShapesDocument(shapes);
+      
+        const [{ default: Validator }, dataModelModule, datasetModule, sparqlModule] = await Promise.all([
+          import('shacl-engine/Validator.js'),
+          import('@rdfjs/data-model'),
+          import('@rdfjs/dataset'),
+          options.shaclSparql === false ? Promise.resolve(null) : import('shacl-engine/sparql.js'),
+        ]);
+        const dataFactory = dataModelModule.default || dataModelModule;
+        const datasetFactory = datasetModule.default || datasetModule;
+        // shacl-engine's report materializer calls factory.dataset(), while the
+        // standalone @rdfjs/data-model factory intentionally implements only the
+        // RDF/JS DataFactory surface. Compose the two without mutating either
+        // dependency's singleton export.
+        const factory = Object.create(dataFactory);
+        factory.dataset = datasetFactory.dataset.bind(datasetFactory);
+        const shapesDataset = document.dataset || datasetFactory.dataset(document.quads || []);
+        const validatorOptions = { factory, ...(options.shaclValidatorOptions || {}) };
+        if (sparqlModule) {
+          if (!validatorOptions.validations) validatorOptions.validations = sparqlModule.validations;
+          if (!validatorOptions.targetResolvers) validatorOptions.targetResolvers = sparqlModule.targetResolvers;
+        }
+        const validator = new Validator(shapesDataset, validatorOptions);
+      
+        return new ShaclShapeEngine({ document, validator, factory, datasetFactory, options });
+      }
+      
+      class ShaclShapeEngine {
+        constructor({ document, validator, factory, datasetFactory, options }) {
+          this.document = document;
+          this.validator = validator;
+          this.factory = factory;
+          this.datasetFactory = datasetFactory;
+          this.options = options || {};
+          this.graph = new ShapeGraph(document.triples || []);
+          this._dependencyCache = new Map();
+        }
+      
+        dependencies(shapeIRI) {
+          if (this._dependencyCache.has(shapeIRI)) return this._dependencyCache.get(shapeIRI);
+          const result = shapeDependencies(this.graph, iri(shapeIRI));
+          this._dependencyCache.set(shapeIRI, result);
+          return result;
+        }
+      
+        async validate(graph, options = {}) {
+          const dataset = this.datasetFactory.dataset((graph || []).map((triple) => internalTripleToQuad(triple, this.factory)));
+          const selectedShapes = options.shapeIRIs && options.shapeIRIs.length
+            ? options.shapeIRIs.map((shapeIRI) => ({ terms: [this.factory.namedNode(shapeIRI)] }))
+            : undefined;
+          return this.validator.validate({ dataset }, selectedShapes);
+        }
+      
+        async eligibleFocusNodes(shapeIRI, context = {}) {
+          const dataDataset = this.datasetFactory.dataset((context.graph || []).map((triple) => internalTripleToQuad(triple, this.factory)));
+          const shapeTerm = this.factory.namedNode(shapeIRI);
+          const targets = resolveCoreTargets(this.graph, iri(shapeIRI), context.graph || []);
+      
+          if (this.graph.objects(iri(shapeIRI), SH_TARGET).length > 0) {
+            if (typeof this.options.customTargetResolver === 'function') {
+              const extra = await this.options.customTargetResolver(shapeIRI, context);
+              for (const node of extra || []) targets.set(termKey(normalizeInternalNode(node)), normalizeInternalNode(node));
+            } else {
+              throw new Error(`Shape <${shapeIRI}> uses sh:target; provide customTargetResolver for custom/SPARQL targets`);
+            }
+          }
+      
+          const eligible = [];
+          for (const internalNode of targets.values()) {
+            const focus = internalTermToRdfJs(internalNode, this.factory);
+            const report = await this.validator.validate(
+              { dataset: dataDataset, terms: [focus] },
+              [{ terms: [shapeTerm] }],
+            );
+            if (report.conforms) eligible.push(internalNode);
+          }
+          return eligible;
+        }
+      }
+      
+      function normalizeShapesDocument(shapes) {
+        if (!shapes) throw new Error('SHACL shapes are required');
+        if (Array.isArray(shapes.triples) && Array.isArray(shapes.quads)) return shapes;
+        if (shapes.dataset && typeof shapes.dataset[Symbol.iterator] === 'function') {
+          const quads = Array.from(shapes.dataset);
+          const { rdfJsTermToTerm } = require('./rdfSyntax.js');
+          return {
+            baseIRI: shapes.baseIRI || null,
+            prefixes: { ...(shapes.prefixes || {}) },
+            triples: quads.map((quad) => ({ s: rdfJsTermToTerm(quad.subject), p: rdfJsTermToTerm(quad.predicate), o: rdfJsTermToTerm(quad.object) })),
+            quads,
+            imports: [],
+            dataset: shapes.dataset,
+          };
+        }
+        throw new Error('shapes must be RDF source text, a parsed RDF document, or { dataset }');
+      }
+      
+      function resolveCoreTargets(shapeGraph, shape, dataTriples) {
+        const out = new Map();
+        const add = (node) => out.set(termKey(node), node);
+      
+        for (const node of shapeGraph.objects(shape, SH_TARGET_NODE)) add(node);
+        for (const classTerm of shapeGraph.objects(shape, SH_TARGET_CLASS)) {
+          for (const triple of dataTriples) {
+            if (isIri(triple.p, RDF_TYPE) && classMatches(triple.o, classTerm, dataTriples)) add(triple.s);
+          }
+        }
+        for (const predicate of shapeGraph.objects(shape, SH_TARGET_SUBJECTS_OF)) {
+          if (predicate.type !== 'iri') continue;
+          for (const triple of dataTriples) if (isIri(triple.p, predicate.value)) add(triple.s);
+        }
+        for (const predicate of shapeGraph.objects(shape, SH_TARGET_OBJECTS_OF)) {
+          if (predicate.type !== 'iri') continue;
+          for (const triple of dataTriples) if (isIri(triple.p, predicate.value)) add(triple.o);
+        }
+      
+        // SHACL implicit class target: a shape that is itself an rdfs:Class targets its instances.
+        if (shapeGraph.objects(shape, RDF_TYPE).some((term) => isIri(term, RDFS_CLASS))) {
+          for (const triple of dataTriples) {
+            if (isIri(triple.p, RDF_TYPE) && classMatches(triple.o, shape, dataTriples)) add(triple.s);
+          }
+        }
+        return out;
+      }
+      
+      function classMatches(actualClass, targetClass, dataTriples) {
+        if (sameTerm(actualClass, targetClass)) return true;
+        if (!actualClass || actualClass.type !== 'iri' || !targetClass || targetClass.type !== 'iri') return false;
+        const seen = new Set([actualClass.value]);
+        const queue = [actualClass.value];
+        while (queue.length > 0) {
+          const current = queue.shift();
+          for (const triple of dataTriples) {
+            if (!isIri(triple.p, RDFS_SUBCLASS_OF) || !triple.s || triple.s.type !== 'iri' || triple.s.value !== current || !triple.o || triple.o.type !== 'iri') continue;
+            if (triple.o.value === targetClass.value) return true;
+            if (!seen.has(triple.o.value)) {
+              seen.add(triple.o.value);
+              queue.push(triple.o.value);
+            }
+          }
+        }
+        return false;
+      }
+      
+      function shapeDependencies(graph, rootShape) {
+        const predicates = new Set();
+        let wildcard = false;
+        const seenShapes = new Set();
+        const seenPaths = new Set();
+      
+        function visitShape(shape) {
+          const key = termKey(shape);
+          if (seenShapes.has(key)) return;
+          seenShapes.add(key);
+      
+          for (const classTerm of graph.objects(shape, SH_TARGET_CLASS)) {
+            if (classTerm) { predicates.add(RDF_TYPE); predicates.add(RDFS_SUBCLASS_OF); }
+          }
+          if (graph.objects(shape, RDF_TYPE).some((term) => isIri(term, RDFS_CLASS))) { predicates.add(RDF_TYPE); predicates.add(RDFS_SUBCLASS_OF); }
+          for (const predicate of graph.objects(shape, SH_TARGET_SUBJECTS_OF)) if (predicate.type === 'iri') predicates.add(predicate.value);
+          for (const predicate of graph.objects(shape, SH_TARGET_OBJECTS_OF)) if (predicate.type === 'iri') predicates.add(predicate.value);
+          if (graph.objects(shape, SH_TARGET).length > 0) wildcard = true;
+          if (truthyLiteral(graph.objects(shape, SH_CLOSED)[0])) wildcard = true;
+          if (graph.objects(shape, SH_SPARQL).length > 0) wildcard = true;
+          if (graph.objects(shape, SH_CLASS).length > 0) { predicates.add(RDF_TYPE); predicates.add(RDFS_SUBCLASS_OF); }
+      
+          for (const path of graph.objects(shape, SH_PATH)) visitPath(path);
+          for (const parameter of DATA_PREDICATE_PARAMS) {
+            for (const predicate of graph.objects(shape, parameter)) if (predicate.type === 'iri') predicates.add(predicate.value);
+          }
+          for (const link of SHAPE_LINK_PREDICATES) for (const nested of graph.objects(shape, link)) visitShape(nested);
+          for (const link of SHAPE_LIST_PREDICATES) {
+            for (const listHead of graph.objects(shape, link)) {
+              for (const nested of graph.list(listHead)) visitShape(nested);
+            }
+          }
+        }
+      
+        function visitPath(path) {
+          const key = termKey(path);
+          if (seenPaths.has(key)) return;
+          seenPaths.add(key);
+          if (path.type === 'iri') {
+            predicates.add(path.value);
+            return;
+          }
+          for (const nested of graph.objects(path, SH_INVERSE_PATH)) visitPath(nested);
+          for (const nested of graph.objects(path, SH_ZERO_OR_MORE_PATH)) visitPath(nested);
+          for (const nested of graph.objects(path, SH_ONE_OR_MORE_PATH)) visitPath(nested);
+          for (const nested of graph.objects(path, SH_ZERO_OR_ONE_PATH)) visitPath(nested);
+          for (const listHead of graph.objects(path, SH_ALTERNATIVE_PATH)) for (const nested of graph.list(listHead)) visitPath(nested);
+          if (graph.isListHead(path)) for (const nested of graph.list(path)) visitPath(nested);
+        }
+      
+        visitShape(rootShape);
+        return { predicates: Array.from(predicates).sort(), wildcard };
+      }
+      
+      class ShapeGraph {
+        constructor(triples) {
+          this.triples = triples || [];
+          this.bySubject = new Map();
+          for (const triple of this.triples) {
+            const key = termKey(triple.s);
+            if (!this.bySubject.has(key)) this.bySubject.set(key, []);
+            this.bySubject.get(key).push(triple);
+          }
+        }
+      
+        objects(subject, predicate) {
+          return (this.bySubject.get(termKey(subject)) || [])
+            .filter((triple) => isIri(triple.p, predicate))
+            .map((triple) => triple.o);
+        }
+      
+        isListHead(term) {
+          return isIri(term, RDF_NIL) || this.objects(term, RDF_FIRST).length === 1;
+        }
+      
+        list(head) {
+          const out = [];
+          const seen = new Set();
+          let node = head;
+          while (!isIri(node, RDF_NIL)) {
+            const key = termKey(node);
+            if (seen.has(key)) throw new Error('Cycle in SHACL RDF list');
+            seen.add(key);
+            const first = this.objects(node, RDF_FIRST);
+            const rest = this.objects(node, RDF_REST);
+            if (first.length !== 1 || rest.length !== 1) throw new Error('Malformed SHACL RDF list');
+            out.push(first[0]);
+            node = rest[0];
+          }
+          return out;
+        }
+      }
+      
+      function truthyLiteral(term) {
+        if (!term || term.type !== 'literal') return false;
+        return term.value === true || term.value === 'true' || term.value === 1 || term.value === '1';
+      }
+      
+      function sameTerm(a, b) {
+        return termKey(a) === termKey(b);
+      }
+      
+      function isIri(term, value) {
+        return !!term && term.type === 'iri' && term.value === value;
+      }
+      
+      function normalizeInternalNode(node) {
+        if (node && node.type) return node;
+        if (typeof node === 'string') return iri(node);
+        if (node && node.termType) {
+          const { rdfJsTermToTerm } = require('./rdfSyntax.js');
+          return rdfJsTermToTerm(node);
+        }
+        throw new Error('Unsupported SHACL focus node');
+      }
+      
+      function internalTripleToQuad(triple, factory) {
+        return factory.quad(
+          internalTermToRdfJs(triple.s, factory),
+          internalTermToRdfJs(triple.p, factory),
+          internalTermToRdfJs(triple.o, factory),
+          triple.graph ? internalTermToRdfJs(triple.graph, factory) : factory.defaultGraph(),
+        );
+      }
+      
+      function internalTermToRdfJs(term, factory) {
+        if (!term) return factory.defaultGraph();
+        if (term.type === 'iri') return factory.namedNode(term.value);
+        if (term.type === 'blank') return factory.blankNode(term.value);
+        if (term.type === 'var') return factory.variable(term.value);
+        if (term.type === 'triple') return factory.quad(
+          internalTermToRdfJs(term.s, factory),
+          internalTermToRdfJs(term.p, factory),
+          internalTermToRdfJs(term.o, factory),
+        );
+        if (term.type === 'literal') {
+          const lexical = typeof term.value === 'boolean' ? (term.value ? 'true' : 'false') : String(term.value);
+          if (term.lang) {
+            // RDF/JS 1.2 factories may support directional language literals; fall back to normal language literals.
+            if (term.langDir) {
+              try { return factory.literal(lexical, { language: term.lang, direction: term.langDir }); } catch (_) { /* fall through */ }
+            }
+            return factory.literal(lexical, term.lang);
+          }
+          return term.datatype ? factory.literal(lexical, factory.namedNode(term.datatype)) : factory.literal(lexical);
+        }
+        throw new Error(`Unsupported Eyeleng term type ${term.type || typeof term}`);
+      }
+      
+      module.exports = {
+        createShaclShapeEngine,
+        ShaclShapeEngine,
+        shapeDependencies,
+        resolveCoreTargets,
+        internalTermToRdfJs,
+        internalTripleToQuad,
+        constants: { SH, SH_TARGET_NODE, SH_TARGET_CLASS, SH_TARGET_SUBJECTS_OF, SH_TARGET_OBJECTS_OF, SH_TARGET, SH_PATH },
+      };
+      
+    },
   };
-  const __mappings = {"src/tokenizer.js":{},"src/assignments.js":{},"src/term.js":{},"src/rdfSyntax.js":{"./tokenizer.js":"src/tokenizer.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/builtins.js":{"./term.js":"src/term.js"},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./rdfSyntax.js":"src/rdfSyntax.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdfSyntax.js":"src/rdfSyntax.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js","./backward.js":"src/backward.js"},"src/format.js":{"./term.js":"src/term.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/api.js":{"./parser.js":"src/parser.js","./rdfSyntax.js":"src/rdfSyntax.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
+  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdfSyntax.js":{"./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdfSyntax.js":"src/rdfSyntax.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js","./backward.js":"src/backward.js"},"src/format.js":{"./term.js":"src/term.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/shacl.js":{"./rdfSyntax.js":"src/rdfSyntax.js","./term.js":"src/term.js"},"src/api.js":{"./parser.js":"src/parser.js","./rdfSyntax.js":"src/rdfSyntax.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js","./shacl.js":"src/shacl.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
   const __cache = {};
   function __require(id) {
     if (!id.startsWith("src/")) return __nativeRequire(id);

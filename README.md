@@ -3,16 +3,16 @@
 [![npm version](https://img.shields.io/npm/v/eyeleng.svg)](https://www.npmjs.com/package/eyeleng)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20342577-blue.svg)](https://doi.org/10.5281/zenodo.20342577)
 
-The `leng` in `eyeleng` stands for **Logic Engine Next Generation**. Eyeleng's main purpose is **automatic hybrid reasoning**: it combines forward materialization with tabled backward proving and automatically chooses how rules should be evaluated.
+The `leng` in `eyeleng` stands for **Logic Engine Next Generation**. Eyeleng is a compact JavaScript implementation of SHACL 1.2 Rules, aligned with the W3C Working Draft published 10 August 2026. Its main purpose is **automatic hybrid reasoning**: it combines forward materialization with tabled backward proving and automatically chooses how rules should be evaluated.
 
-Eyeleng is a compact JavaScript implementation of SHACL 1.2 Rules, aligned with the W3C Working Draft published 10 August 2026, with two rule front-ends:
+It supports two rule front-ends:
 
 - **SRL** — the Shape Rules Language syntax used by the SHACL 1.2 Rules draft.
 - **RDF Rules** — a Turtle/RDF syntax for rule sets.
 
-Eyeleng is a compact automatic hybrid reasoner over RDF-style triples. It uses forward chaining for ordinary finite materialization while its default execution mode applies conservative hybrid planning: selected function-like predicates can be proved just in time by a tabled backward prover when they are demanded by a query or another rule body. It is deliberately small, dependency-free at runtime, readable as ordinary JavaScript, and usable from the CLI, Node.js, and the browser playground.
+Ordinary finite consequences are materialized with forward chaining. When a query or rule body demands a function-like predicate, the default planner can instead prove it just in time with a tabled backward prover. The implementation is deliberately small, readable as ordinary JavaScript, and usable from the CLI, Node.js, and the browser playground.
 
-Eyeleng implements the rules/reasoning surface. It is **not** a SHACL validation engine and does not emit SHACL validation reports.
+Eyeleng remains primarily a rules engine. Standards-based RDF parsing is delegated to `rdf-parse`, while SHACL conformance for `FOR ?v IN <shape>` is delegated to `shacl-engine`. The fully saturated closure can also be validated explicitly with `runAndValidateAsync(...)` or `--validate --shapes FILE`; validation is a separate post-rule phase.
 
 ## Why Eyeleng?
 
@@ -40,7 +40,7 @@ Choose Eyeleng when you want to:
 - let the engine choose between materialization and goal-directed evaluation;
 - use tabling for recursive, function-like computations without publishing their intermediate facts;
 - combine stratified negation, dependency analysis, RDF 1.2 syntax, and rule execution in one compact engine;
-- run the same dependency-free implementation from a CLI, Node.js, or a browser.
+- use the same RDF/JS-based implementation from a CLI, Node.js, or a browser build.
 
 In short: **Eyeleng aims to carry the practical reasoning power demonstrated by the EYE family into SHACL 1.2 Rules, with automatic hybrid execution as the default rather than explicit reasoning direction as a language-level choice.**
 
@@ -75,7 +75,7 @@ It derives:
 :Socrates a :Mortal .
 ```
 
-Open the [Playground](https://eyereasoner.github.io/eyeleng/playground) for a self-contained browser UI with URL loading, autosave, share links, diagnostics, queries, and SRL/RDF Rules syntax selection.
+Open the [Playground](https://eyereasoner.github.io/eyeleng/playground) for a browser UI with URL loading, autosave, share links, diagnostics, queries, and SRL/RDF Rules syntax selection. Run `npm install && npm run build` to bundle the RDF and SHACL dependencies for browser use.
 
 ## How automatic hybrid reasoning works
 
@@ -152,7 +152,7 @@ Implemented syntax includes:
 - language tags, base-direction literals, and common XML Schema datatypes
 - SRL and RDF Rules syntax front-ends
 
-The RDF parsing path is shared with the W3C RDF syntax harness, so SRL `DATA { ... }` uses the same grammar-hardened RDF parser surface as Turtle/TriG input.
+External RDF input is parsed by [`rdf-parse`](https://github.com/rubensworks/rdf-parse.js/) into RDF/JS quads. SRL itself, including `DATA { ... }`, remains parsed by the SRL grammar so Eyeleng-specific generalized terms stay available there. The W3C RDF syntax harness therefore exercises `rdf-parse` directly rather than a second Eyeleng RDF grammar.
 
 ### SHACL-targeted rules (`FOR`)
 
@@ -169,20 +169,20 @@ IF FOR ?this IN :AdultShape { ?this :active true }
 THEN { ?this :seen true }
 ```
 
-The draft describes the focus variable as pre-bound to each target focus node that conforms to the referenced shape. Eyeleng is not a SHACL validation engine, so the embedding application supplies that eligible node set with `focusNodeResolver`. The resolver is called once per targeted rule when its stratum begins; the returned set is frozen for that stratum.
+The focus variable is pre-bound to target focus nodes that conform to the referenced shape. Pass a SHACL shapes graph to the async API (or `--shapes` on the CLI) and Eyeleng uses `shacl-engine` to compute that eligible set. The set is evaluated against the graph at the start of the rule stratum and then frozen for that stratum.
 
 ```js
-const result = run(source, {
-  focusNodeResolver(shapeIRI, context) {
-    // Compute target focus nodes that conform to shapeIRI using your SHACL
-    // processor, local graph service, or remote endpoint. `context.graph`
-    // contains the RDF graph visible when this stratum begins.
-    return ['http://example/Alice', 'http://example/Carol'];
-  }
+const { runAsync } = require('eyeleng');
+
+const result = await runAsync(source, {
+  shapes: shapesTurtle,
+  shapesFilename: 'shapes.ttl'
 });
 ```
 
-Resolver results may be Eyeleng terms, RDF/JS terms, or absolute IRI strings. Targeted rules are deliberately excluded from backward-rule planning until the backward prover has an equivalent SHACL targeting gate.
+`focusNodeResolver` remains available as an integration override for external validators or remote shape services. A custom `shapeEngine` may provide both `dependencies(shapeIRI)` and `eligibleFocusNodes(shapeIRI, context)`.
+
+Shape dependencies become closed stratification edges: rules that can change predicates read by a shape run first, and cycles from a targeted rule back into its own shape dependencies are rejected. Targeted rules remain excluded from backward planning until the prover has an equivalent SHACL targeting gate.
 
 ## Builtins and expressions
 
@@ -201,15 +201,12 @@ The goal is useful SHACL Rules/SRL behavior, not complete SPARQL expression cove
 
 ## RDF 1.2 features
 
-Eyeleng includes grammar-hardened RDF 1.1/1.2 parsing support in `src/rdfSyntax.js` and W3C manifest runners in `src/rdfManifest.js` / `src/rdfEntailment.js`.
+Eyeleng does not maintain a second standards-RDF grammar. `src/rdfSyntax.js` adapts `rdf-parse` RDF/JS quads to Eyeleng's program model, so supported concrete syntaxes follow the installed `rdf-parse` version.
 
-Covered surfaces include:
+SRL remains a distinct language and continues to parse its own `DATA { ... }` blocks, including Eyeleng's generalized SRL term surface.
 
-- N-Triples and N-Quads
-- Turtle and TriG
-- RDF 1.2 triple terms
-- reifiers and annotation blocks
-- language-direction literals
+The W3C harness in `src/rdfManifest.js` and `src/rdfEntailment.js` additionally covers:
+
 - graph isomorphism for blank nodes
 - simple, RDF, and RDFS entailment checks for RDF-MT / RDF 1.2 Semantics manifests
 
@@ -224,7 +221,7 @@ npm run w3c:rdf:json
 npm run w3c:rdf:earl
 ```
 
-`npm test` includes the W3C harnesses. When W3C URLs are reachable, progress is printed test by test. In offline environments, remote W3C checks are reported as unreachable unless `EYELENG_W3C_REQUIRED=1` is set. The `*:earl` scripts also print test progress, but write the EARL Turtle only to `reports/` instead of printing the report to the terminal.
+`npm test` includes the W3C harnesses and prints progress test by test. Set `EYELENG_W3C_REQUIRED=0` to allow remote checks to be skipped when the W3C URLs are unavailable. The `*:earl` scripts print progress but write the EARL Turtle only to `reports/`.
 
 The official Eyeleng EARL 1.0 report for the W3C SHACL 1.2 Rules manifest is in [reports/w3c-shacl12-rules-earl.ttl](./reports/w3c-shacl12-rules-earl.ttl).
 
@@ -255,7 +252,7 @@ The replay data includes message streams, envelopes, offsets, next-envelope link
 ## CLI
 
 ```text
-Usage: eyeleng [options] [file-or-url.n3|- ...]
+Usage: eyeleng [options] [file-or-url|- ...]
 ```
 
 With no input arguments, Eyeleng prints help. Pass `-` to read from standard input; local files and HTTP(S) URLs can be combined as positional inputs.
@@ -294,11 +291,15 @@ Important options:
 --include-message-facts include payload facts while parsing RDF Message Logs
 --syntax MODE         use srl, rdf, or auto syntax detection (default auto)
 --ruleset TERM        in RDF syntax, run only the selected srl:RuleSet
+--shapes FILE         SHACL shapes graph used by FOR ?v IN <shape>
+--validate            validate the saturated closure against --shapes
 --version             print version
 -h, --help            print help
 ```
 
 ## Public API
+
+### Synchronous SRL API
 
 Typical API use:
 
@@ -354,24 +355,53 @@ const result = run(source, {
 });
 ```
 
-SHACL-targeted rules:
+### Asynchronous RDF and SHACL API
+
+RDF Rules and built-in SHACL targeting use the asynchronous API because `rdf-parse` is stream-based:
 
 ```js
-const result = run(source, {
-  focusNodeResolver(shapeIRI, { graph, groundGraph, variable, rule }) {
-    return conformingTargets(shapeIRI, graph);
-  }
+const { runAsync } = require('./src/index.js');
+
+const result = await runAsync(rdfRulesSource, {
+  syntax: 'rdf',
+  filename: 'rules.ttl',
+  shapes: shapesSource,
+  shapesFilename: 'shapes.ttl'
 });
 ```
 
-The API returns structured parsed programs, diagnostics, inferred triples, closure triples, traces, stats, and query bindings.
+For SRL-only source, `parse`, `compile`, `run`, and `runToString` remain synchronous. External validators can be integrated with `focusNodeResolver`, or with a `shapeEngine` that also declares shape dependencies for stratification.
+
+To perform the rule→shape composition discussed for SHACL 1.2, validate only after the complete rule closure has saturated:
+
+```js
+const { runAndValidateAsync } = require('./src/index.js');
+
+const result = await runAndValidateAsync(ruleSource, {
+  shapes: shapesSource,
+  shapesFilename: 'shapes.ttl'
+});
+
+console.log(result.validationReport.conforms);
+```
+
+The equivalent CLI command is:
+
+```sh
+./eyeleng.js --shapes shapes.ttl --validate rules.srl
+```
+
+A non-conforming validation report makes the CLI exit with status 1.
+
+The API returns structured parsed programs, diagnostics, inferred triples, closure triples, traces, stats, query bindings, and—when requested—a SHACL validation report.
 
 ## Project layout
 
 ```text
 src/tokenizer.js      source text -> tokens
 src/parser.js         SRL parser -> program object
-src/rdfSyntax.js      RDF 1.1/1.2 N-Triples/N-Quads/Turtle/TriG syntax
+src/rdfSyntax.js      rdf-parse adapter + RDF Rules graph-to-program mapping
+src/shacl.js          shacl-engine adapter, targets, and shape dependencies
 src/rdfManifest.js    W3C RDF manifest runner
 src/rdfEntailment.js  simple/RDF/RDFS entailment checks
 src/rdfMessages.js    RDF Message Log replay support
@@ -385,7 +415,7 @@ src/query.js          external raw-body query operation
 src/format.js         text and JSON output
 src/api.js            public JavaScript API and import merging
 src/cli.js            command-line interface
-tools/bundle.js       self-contained bundle generator
+tools/bundle.js       CLI/browser bundle generator
 test/*.test.js        executable regression and conformance tests
 examples/*.srl        runnable SRL examples
 examples/*.ttl        RDF Rules / Turtle examples
@@ -421,12 +451,14 @@ Examples live in [examples/](./examples/):
 
 Eyeleng intentionally remains a compact reasoner:
 
-- it does not implement SHACL validation or validation reports
-- `FOR ?v IN <shape>` execution therefore requires a host-supplied `focusNodeResolver` that computes conforming target focus nodes
-- it does not aim to be a full RDF database
-- RDF Rules syntax support is a front-end for rule execution, not a shapes-validation layer
-- property paths and SPARQL expressions are practical subsets
-- W3C manifests are used as executable alignment tests, but implementation status should be read from the current test reports
+- SHACL semantics are delegated to `shacl-engine`; Eyeleng does not reimplement them.
+- Built-in `FOR` focus-node discovery covers SHACL Core targets. Custom or SPARQL targets require `customTargetResolver` for targeted rules.
+- Shape dependency extraction is conservative: closed shapes, SPARQL constraints, and custom targets become wildcard dependencies.
+- The default composition is **rules saturate → shapes validate**. Arbitrary Rule→Shape→Rule interleaving is not supported as language syntax.
+- Eyeleng is not a full RDF database.
+- RDF Rules syntax is a front-end for rule execution.
+- Property paths and SPARQL expressions are practical subsets.
+- W3C manifests are executable alignment tests; consult the current reports for implementation status.
 
 ## Extending Eyeleng safely
 

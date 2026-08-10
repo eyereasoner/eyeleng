@@ -242,7 +242,7 @@ function listTriples(headTerm, items, data, makeBlank) {
   return headTerm || cells[0];
 }
 
-function parseRdfMessageLog(source, options = {}) {
+async function parseRdfMessageLog(source, options = {}) {
   const text = String(source || '');
   const directives = collectDirectiveLines(text);
   const chunks = splitRdfMessageLog(text);
@@ -281,7 +281,7 @@ function parseRdfMessageLog(source, options = {}) {
     const chunk = rewriteMessageBlankLabels(rawChunk, i + 1);
     const hasBody = messageChunkHasRdf(chunk);
     const bodySource = `${directives.join('')}\n${stripDirectiveLines(chunk)}`;
-    const parsed = hasBody ? parseRdfDocument(bodySource, { ...options, filename: `${options.filename || '<message>'}#m${i + 1}`, baseIRI: options.baseIRI }) : { triples: [], prefixes: {} };
+    const parsed = hasBody ? await parseRdfDocument(bodySource, { ...options, filename: `${options.filename || '<message>'}#m${i + 1}`, baseIRI: options.baseIRI }) : { triples: [], prefixes: {} };
     Object.assign(prefixes, parsed.prefixes || {});
     const payloadTriples = parsed.triples || [];
     const tripleTerms = payloadTriples.map((t) => tripleTerm(t.s, t.p, t.o));

@@ -79,6 +79,44 @@ function runQuery(source, querySource = null, options = {}) {
   return result;
 }
 
+async function runQueryAsync(source, querySource = null, options = {}) {
+  const { compileAsync } = require('./api.js');
+  const { evaluateAsync } = require('./engine.js');
+  const compiled = await compileAsync(source, options);
+  const { program, diagnostics, analysis } = compiled;
+
+  let querySpec;
+  if (querySource) querySpec = parseQuery(querySource, { ...options, prefixes: program.prefixes, baseIRI: program.baseIRI });
+  else throw new Error('No query supplied. Use --query or --query-file with a raw body pattern.');
+
+  const direct = queryProgram(program, querySpec, options);
+  if (direct) {
+    return {
+      baseIRI: program.baseIRI,
+      version: program.version || null,
+      imports: program.imports || [],
+      prefixes: program.prefixes,
+      input: program.data.slice(),
+      inferred: [],
+      closure: program.data.slice(),
+      iterations: 0,
+      layers: [],
+      ruleApplications: 0,
+      perRule: [],
+      trace: [],
+      diagnostics,
+      analysis,
+      query: direct,
+    };
+  }
+
+  const runOptions = queryRunOptions(program, querySpec, { ...compiled.options, ...options });
+  const result = await evaluateAsync(program, { ...runOptions, shapeEngine: compiled.shapeEngine, analysis });
+  result.diagnostics = diagnostics;
+  result.query = queryResult(result, querySpec, runOptions);
+  return result;
+}
+
 function queryRunOptions(program, querySpec, options = {}) {
   const mode = options.queryMode || 'auto';
   if (mode === 'forward') return { ...options, hybrid: false };
@@ -117,4 +155,4 @@ function projectBindings(bindings, select) {
   return out;
 }
 
-module.exports = { runQuery, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery, parseQuery, normalizeSelect, projectBindings };
+module.exports = { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery, parseQuery, normalizeSelect, projectBindings };

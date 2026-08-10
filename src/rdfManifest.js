@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
-const { parseNQuads, parseN3, termToNQuads, tripleToNQuads, triplesToNQuads } = require('./rdfSyntax.js');
+const { parseRdfDataset, termToNQuads, tripleToNQuads, triplesToNQuads } = require('./rdfSyntax.js');
 const { evaluateEntailmentTest } = require('./rdfEntailment.js');
 
 // ---- W3C RDF manifest runner ----
@@ -322,11 +322,15 @@ function parserForResource(resource, type) {
   return 'unknown';
 }
 
-function parseGraph(source, resource, type) {
+async function parseGraph(source, resource, type) {
   const parser = parserForResource(resource, type);
-  if (parser === 'ntriples' || parser === 'nquads') return parseNQuads(source, { profileId: parser === 'ntriples' ? 'ntriples-graph-v0' : 'nquads-dataset-v0', format: parser });
-  if (parser === 'turtle' || parser === 'trig') return parseN3(source, { profile: parser, filename: resource, base: isUrl(resource) ? resource : pathToFileURL(path.resolve(resource)).href });
-  throw new Error(`No parser selected for ${resource || type}`);
+  if (parser === 'unknown') throw new Error(`No parser selected for ${resource || type}`);
+  return parseRdfDataset(source, {
+    profile: parser,
+    profileId: parser === 'ntriples' ? 'ntriples-graph-v0' : (parser === 'nquads' ? 'nquads-dataset-v0' : `${parser}-dataset-v0`),
+    filename: resource,
+    baseIRI: isUrl(resource) ? resource : pathToFileURL(path.resolve(resource)).href,
+  });
 }
 
 
@@ -513,7 +517,7 @@ async function runSyntaxTest(test) {
   const expectAccept = !NEGATIVE_TYPES.has(test.type);
   try {
     const source = await readResource(test.action);
-    parseGraph(source, test.action, test.type);
+    await parseGraph(source, test.action, test.type);
     return expectAccept
       ? { status: 'pass', message: 'accepted as expected' }
       : { status: 'fail', message: 'negative syntax test was accepted' };
@@ -528,8 +532,8 @@ async function runEvalTest(test) {
   if (!test.action || !test.result) return { status: 'fail', message: 'missing mf:action or mf:result' };
   try {
     const [actionText, resultText] = await Promise.all([readResource(test.action), readResource(test.result)]);
-    const actualProgram = parseGraph(actionText, test.action, test.type);
-    const expectedProgram = parseGraph(resultText, test.result, test.type);
+    const actualProgram = await parseGraph(actionText, test.action, test.type);
+    const expectedProgram = await parseGraph(resultText, test.result, test.type);
     if (graphsIsomorphic(actualProgram.facts || [], expectedProgram.facts || [])) return { status: 'pass', message: 'parsed graph matches expected result graph' };
     const actual = datasetSet(actualProgram);
     const expected = datasetSet(expectedProgram);
@@ -545,12 +549,12 @@ async function runEntailmentTest(test) {
   if (!test.action) return { status: 'fail', message: 'missing mf:action' };
   try {
     const actionText = await readResource(test.action);
-    const actionProgram = parseGraph(actionText, test.action, test.type);
+    const actionProgram = await parseGraph(actionText, test.action, test.type);
     let resultProgram = null;
     if (test.resultKind !== 'false') {
       if (!test.result) return { status: 'fail', message: 'missing mf:result' };
       const resultText = await readResource(test.result);
-      resultProgram = parseGraph(resultText, test.result, test.type);
+      resultProgram = await parseGraph(resultText, test.result, test.type);
     }
     const positive = /PositiveEntailmentTest$/.test(test.type);
     const evaluated = evaluateEntailmentTest(actionProgram.facts || [], resultProgram ? resultProgram.facts || [] : [], {
@@ -719,11 +723,9 @@ function writeRdfEarlReport(result, file = defaultRdfReportPath(), options = {})
 
 module.exports = {
   defaultW3cRdfManifestUrls,
-  parseNQuads,
   termToNQuads,
   tripleToNQuads,
   triplesToNQuads,
-  parseN3,
   loadW3cRdfManifest,
   runW3cRdfManifest,
   runW3cRdfManifests,

@@ -157,7 +157,7 @@ async function runSyntaxOrWellformedTest(test, options = {}) {
 
 async function parseTurtleTriples(url, options = {}) {
   const source = await fetchText(url, options);
-  return eyeleng.parseRdfDocument(source, { filename: url, baseIRI: url }).triples;
+  return (await eyeleng.parseRdfDocument(source, { filename: url, baseIRI: url })).triples;
 }
 
 function sortedTripleKeys(triples) {
@@ -182,9 +182,9 @@ async function runEvalTest(test, options = {}) {
     shacl12Conformance: true,
     strict: true,
   };
-  const compiled = eyeleng.compile(rulesSource, compileOptions);
+  const compiled = await eyeleng.compileAsync(rulesSource, compileOptions);
   const program = { ...compiled.program, data: [...compiled.program.data, ...dataTriples] };
-  const result = eyeleng.evaluate(program, { analysis: compiled.analysis, shacl12Conformance: true });
+  const result = await eyeleng.evaluateAsync(program, { analysis: compiled.analysis, shacl12Conformance: true });
 
   const externalInput = new Set(dataTriples.map(tripleKey));
   const actualTriples = result.closure.filter((triple) => !externalInput.has(tripleKey(triple)));

@@ -81,6 +81,10 @@ function toJSON(result, options = {}) {
     diagnostics: result.diagnostics || [],
     triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
     proof: options.proof ? result.trace : undefined,
+    validation: result.validationReport ? {
+      conforms: result.validationReport.conforms,
+      results: Array.isArray(result.validationReport.results) ? result.validationReport.results.length : undefined,
+    } : undefined,
   };
   if (result.query) json.query = jsonSafeValue(result.query);
   if (result.analysis && options.analysis) json.analysis = result.analysis;

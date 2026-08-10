@@ -2,7 +2,7 @@
 
 const { test, main } = require('./harness.js').createHarness('API');
 const assert = require('node:assert/strict');
-const { parse, compile, run, runToString, runQuery } = require('../src/index.js');
+const { parse, compile, run, runToString, runAsync, runAndValidateAsync, runToStringAsync, runQuery } = require('../src/index.js');
 const { tripleKey } = require('../src/term.js');
 
 test('parse reads prefixes, data, and rules', () => {
@@ -712,7 +712,7 @@ RULE { [] :p :o } WHERE { ?s :p :o }
   );
 });
 
-test('RDF Message Logs expose Eyeling-style envelopes and payload triples', () => {
+test('RDF Message Logs expose Eyeling-style envelopes and payload triples', async () => {
   const messages = `VERSION "1.2-messages"
 PREFIX : <http://example/messages#>
 
@@ -736,13 +736,13 @@ RULE { ?envelope :mentionsSensor ?sensor } WHERE {
 RULE { ?envelope :isHeartbeat true } WHERE {
   ?envelope eymsg:payloadKind eymsg:empty .
 }`;
-  const result = run(rules, {
+  const result = await runAsync(rules, {
     importResolver(target) {
       assert.equal(target, 'urn:messages');
       return { source: messages, options: { baseIRI: 'urn:messages' } };
     },
   });
-  const out = runToString(rules, {
+  const out = await runToStringAsync(rules, {
     importResolver(target) {
       assert.equal(target, 'urn:messages');
       return { source: messages, options: { baseIRI: 'urn:messages' } };
@@ -755,7 +755,7 @@ RULE { ?envelope :isHeartbeat true } WHERE {
 });
 
 
-test('DATA blocks use the shared RDF parser surface', () => {
+test('DATA blocks retain the RDF-style SRL term surface', () => {
   const output = runToString(`
 PREFIX : <http://example/>
 DATA {
@@ -804,6 +804,7 @@ test('SRL rejects invalid base directions, subject a, and empty annotations', ()
     'RULE { a :p "abc" } WHERE { ?a ?b ?c }',
     'RULE { } WHERE { :s :p :o ~:r {| |} }',
     'RULE { :s :p :o ~:r {| |} } WHERE { ?a ?b ?c }',
+    'DATA { :s :p :o ~ ?r {| :p :z |} }',
   ];
   for (const pattern of invalidPatterns) {
     assert.throws(() => parse(`PREFIX : <http://example/>\n${pattern}`), Error, pattern);
@@ -843,7 +844,6 @@ RULE { ?x :twoStep ?y } WHERE { ?x :q/:q ?y }
   );
 });
 
-main();
 
 
 test('WHERE DATA matches only the immutable ground-data graph', () => {
@@ -959,3 +959,94 @@ RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE { }
   assert.equal(result.query.bindings.length, 1);
   assert.equal(result.query.bindings[0].who.value, 'http://example/Alice');
 });
+
+test('shape dependencies place producers before targeted rules', async () => {
+  const source = `
+PREFIX : <http://example/>
+DATA { :Alice :birthYear 2006 . }
+RULE :deriveAge { ?x :age 20 } WHERE { ?x :birthYear 2006 }
+RULE :adult { ?this :adult true } FOR ?this IN :AdultShape WHERE { }
+`;
+  const shapeEngine = {
+    dependencies(shape) {
+      assert.equal(shape, 'http://example/AdultShape');
+      return { predicates: ['http://example/age'], wildcard: false };
+    },
+    async eligibleFocusNodes(shape, context) {
+      assert.equal(shape, 'http://example/AdultShape');
+      const hasAge = context.graph.some((triple) => triple.p.value === 'http://example/age');
+      return hasAge ? ['http://example/Alice'] : [];
+    },
+  };
+  const result = await runAsync(source, { shapeEngine });
+  assert.deepEqual(result.layers, [['http://example/deriveAge'], ['http://example/adult']]);
+  assert(result.inferred.some((triple) => triple.p.value === 'http://example/adult'));
+});
+
+test('closed shape dependencies reject rule/shape cycles', async () => {
+  const source = `
+PREFIX : <http://example/>
+RULE :adult { ?this :age 20 } FOR ?this IN :AdultShape WHERE { }
+`;
+  const shapeEngine = {
+    dependencies() { return { predicates: ['http://example/age'], wildcard: false }; },
+    async eligibleFocusNodes() { return ['http://example/Alice']; },
+  };
+  await assert.rejects(() => runAsync(source, { shapeEngine }), /Closed SHACL shape dependency cycle/);
+});
+
+
+test('built-in SHACL engine gates FOR targets and returns the final validation report', async () => {
+  const source = `
+PREFIX : <http://example/>
+DATA {
+  :Alice a :Person ; :age 20 .
+  :Bob a :Person ; :age 17 .
+}
+RULE { ?this :adult true } FOR ?this IN :AdultShape WHERE { }
+`;
+  const shapes = `
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix : <http://example/> .
+:AdultShape a sh:NodeShape ;
+  sh:targetClass :Person ;
+  sh:property [ sh:path :age ; sh:minInclusive 18 ] .
+`;
+
+  const result = await runAndValidateAsync(source, {
+    shapes,
+    shapesFilename: 'adult-shapes.ttl',
+  });
+
+  const adults = result.inferred
+    .filter((triple) => triple.p.value === 'http://example/adult')
+    .map((triple) => triple.s.value)
+    .sort();
+  assert.deepEqual(adults, ['http://example/Alice']);
+  assert.equal(result.validationReport.conforms, false);
+  assert(result.validationReport.results.length >= 1);
+});
+
+test('rule-to-shape validation runs only after rule saturation', async () => {
+  const source = `
+PREFIX : <http://example/>
+DATA { :Alice :seed true . }
+RULE { :Alice :derived true } WHERE { :Alice :seed true }
+`;
+  let validated = false;
+  const shapeEngine = {
+    dependencies() { return null; },
+    async eligibleFocusNodes() { return []; },
+    async validate(graph) {
+      validated = true;
+      assert(graph.some((triple) => triple.p.value === 'http://example/derived'));
+      return { conforms: true, results: [] };
+    },
+  };
+  const result = await runAndValidateAsync(source, { shapeEngine });
+  assert.equal(validated, true);
+  assert.equal(result.validationReport.conforms, true);
+});
+
+
+main();

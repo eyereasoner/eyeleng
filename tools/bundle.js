@@ -116,6 +116,32 @@ function buildCli() {
 }
 
 function buildBrowser() {
+  let esbuild;
+  try {
+    esbuild = require('esbuild');
+  } catch {
+    // Keep source-only checkouts buildable before npm install. This fallback is
+    // sufficient for the synchronous SRL API; installing dependencies enables
+    // the full RDF/SHACL browser bundle.
+    return buildBrowserFallback();
+  }
+
+  const outfile = path.join(root, browserOutput);
+  ensureParentDir(outfile);
+  esbuild.buildSync({
+    entryPoints: [path.join(root, browserEntry)],
+    outfile,
+    bundle: true,
+    platform: 'browser',
+    format: 'iife',
+    globalName: 'eyeleng',
+    target: ['es2020'],
+    footer: { js: 'globalThis.eyeleng = globalThis.Eyeleng = eyeleng;' },
+  });
+  console.log(`wrote ${browserOutput}`);
+}
+
+function buildBrowserFallback() {
   const { modules, mappings } = collectGraph(browserEntry);
   const chunks = [];
   chunks.push("'use strict';");
@@ -131,7 +157,7 @@ function buildBrowser() {
   chunks.push('  const __cache = {};');
   chunks.push('  function __require(id) {');
   chunks.push('    if (__cache[id]) return __cache[id].exports;');
-  chunks.push('    if (!__modules[id]) throw new Error("Bundled module not found: " + id);');
+  chunks.push('    if (!__modules[id]) throw new Error("Bundled dependency not available; run npm install && npm run build: " + id);');
   chunks.push('    const module = { exports: {} };');
   chunks.push('    __cache[id] = module;');
   chunks.push('    const localRequire = function (request) {');
@@ -142,17 +168,39 @@ function buildBrowser() {
   chunks.push('    return module.exports;');
   chunks.push('  }');
   chunks.push(`  const api = __require(${js(browserEntry)});`);
-  chunks.push('  if (typeof module === "object" && module.exports) module.exports = api;');
   chunks.push('  global.eyeleng = api;');
   chunks.push('  global.Eyeleng = api;');
   chunks.push('}(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : this));');
   chunks.push('');
-
   writeFile(browserOutput, chunks);
 }
 
+function buildBrowserModuleWrapper() {
+  const exported = [
+    'parse', 'parseQuery', 'parseInput', 'parseInputAsync', 'parseRdfSyntax', 'parseRdfDocument',
+    'rdfDocumentToProgram', 'compile', 'compileAsync', 'resolveImports', 'resolveImportsAsync',
+    'mergePrograms', 'analyze', 'evaluate', 'evaluateAsync', 'run', 'runAsync', 'runAndValidateAsync',
+    'runToString', 'runToStringAsync', 'runQuery', 'runQueryAsync', 'queryResult', 'formatTriples',
+    'formatBindings', 'sortTriples', 'toJSON', 'formatTrace', 'formatProof',
+  ];
+  const chunks = [
+    "import './eyeleng.browser.js';",
+    '',
+    'function getBrowserApi() {',
+    "  const api = typeof globalThis !== 'undefined' ? globalThis.eyeleng : undefined;",
+    "  if (!api) throw new Error('Eyeleng browser bundle is not initialized');",
+    '  return api;',
+    '}',
+    '',
+  ];
+  for (const name of exported) chunks.push(`export function ${name}(...args) { return getBrowserApi().${name}(...args); }`);
+  chunks.push('', 'const eyeleng = {');
+  for (const name of exported) chunks.push(`  ${name},`);
+  chunks.push('};', '', 'export default eyeleng;', '');
+  writeFile('dist/browser/index.mjs', chunks);
+}
+
 function updatePlaygroundBundle() {
-  const { modules, mappings } = collectGraph('src/api.js');
   const fallbackNames = [
     'family.srl',
     'socrates.srl',
@@ -170,14 +218,8 @@ function updatePlaygroundBundle() {
 
   const filename = path.join(root, playgroundOutput);
   let html = fs.readFileSync(filename, 'utf8');
-  html = html.replace(
-    /^    window\.__EYELENG_MODULES__ = .*;$/m,
-    () => `    window.__EYELENG_MODULES__ = ${js(Object.fromEntries(modules.entries()))};`,
-  );
-  html = html.replace(
-    /^    window\.__EYELENG_MAPPINGS__ = .*;$/m,
-    () => `    window.__EYELENG_MAPPINGS__ = ${js(Object.fromEntries(mappings.entries()))};`,
-  );
+  html = html.replace(/^    window\.__EYELENG_MODULES__ = .*;$/m, '    window.__EYELENG_MODULES__ = {};');
+  html = html.replace(/^    window\.__EYELENG_MAPPINGS__ = .*;$/m, '    window.__EYELENG_MAPPINGS__ = {};');
   html = html.replace(
     /^    window\.__EYELENG_EXAMPLES__ = .*;$/m,
     () => `    window.__EYELENG_EXAMPLES__ = ${js(examples)};`,
@@ -193,4 +235,5 @@ function indent(source, spaces) {
 
 buildCli();
 buildBrowser();
+buildBrowserModuleWrapper();
 updatePlaygroundBundle();

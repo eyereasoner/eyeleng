@@ -61,6 +61,16 @@ function analyze(program, options = {}) {
     });
   }
 
+  for (const cycle of dependency.shapeConstraintCycles || []) {
+    diagnostics.push({
+      code: 'shape-rule-cycle',
+      severity: 'error',
+      rules: cycle.rules,
+      shape: cycle.shape,
+      message: `Closed SHACL shape dependency cycle through ${cycle.rules.map((name) => displayRuleName(name, program.prefixes || {})).join(' -> ')} for <${cycle.shape}>${cycle.predicate ? ` using ${compactIRI(cycle.predicate, program.prefixes || {})}` : ''}`,
+    });
+  }
+
   return {
     warnings: diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
     errors: diagnostics.filter((diagnostic) => diagnostic.severity === 'error'),
@@ -96,6 +106,8 @@ function dependencyGraph(program, options = {}) {
       hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
       headHasBlankNode: ruleHeadHasBlankNode(rule),
       createsTerms: ruleCreatesTerms(rule, options),
+      target: rule.target || null,
+      shapeDependencies: rule.target ? resolveShapeDependencies(rule.target.shape, options) : null,
     };
   });
 
@@ -105,20 +117,25 @@ function dependencyGraph(program, options = {}) {
     const key = `${from.index}->${to.index}:${label}`;
     const negated = kind === 'negated';
     const termGeneration = kind === 'term-generation';
+    const shapeConstraint = kind === 'shape';
     const existing = edgeMap.get(key);
     if (existing) {
       existing.negated = existing.negated || negated;
       existing.termGeneration = existing.termGeneration || termGeneration;
-      existing.negative = existing.negated || existing.termGeneration;
+      existing.shapeConstraint = existing.shapeConstraint || shapeConstraint;
+      if (shapeConstraint && !existing.shape && from.target) existing.shape = from.target.shape;
+      existing.negative = existing.negated || existing.termGeneration || existing.shapeConstraint;
       return;
     }
     edgeMap.set(key, {
       from: from.index,
       to: to.index,
-      negative: negated || termGeneration,
+      negative: negated || termGeneration || shapeConstraint,
       negated,
       termGeneration,
+      shapeConstraint,
       predicate,
+      shape: shapeConstraint && from.target ? from.target.shape : null,
     });
   }
 
@@ -134,6 +151,23 @@ function dependencyGraph(program, options = {}) {
     for (const pattern of from.negativePatterns) {
       for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
         if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], 'negated', dependencyPredicateLabel(pattern));
+      }
+    }
+  }
+
+  for (const from of rules) {
+    if (!from.target || !from.shapeDependencies) continue;
+    const dependencies = from.shapeDependencies;
+    const wanted = new Set(dependencies.predicates || []);
+    for (const producer of rules) {
+      if (!producer.headTemplates || producer.headTemplates.length === 0) continue;
+      const hasVariablePredicate = producer.headTemplates.some((template) => !template.p || template.p.type !== 'iri');
+      if (dependencies.wildcard || hasVariablePredicate) {
+        addEdge(from, producer, 'shape', null);
+        continue;
+      }
+      for (const predicate of wanted) {
+        if (producer.headPredicates.has(predicate)) addEdge(from, producer, 'shape', predicate);
       }
     }
   }
@@ -162,6 +196,22 @@ function dependencyGraph(program, options = {}) {
     });
   }
 
+  const shapeConstraintCycles = [];
+  const seenShapeCycles = new Set();
+  for (const edge of edges) {
+    if (!edge.shapeConstraint) continue;
+    if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
+    const component = components[componentOf.get(edge.from)];
+    const key = `${component.slice().sort((a, b) => a - b).join(',')}|${edge.shape || ''}|${edge.predicate || '*'}`;
+    if (seenShapeCycles.has(key)) continue;
+    seenShapeCycles.add(key);
+    shapeConstraintCycles.push({
+      predicate: edge.predicate,
+      shape: edge.shape || (rules[edge.from].target && rules[edge.from].target.shape) || '',
+      rules: component.map((ruleIndex) => rules[ruleIndex].name),
+    });
+  }
+
   const layers = stratificationLayers(rules.length, components, componentOf, edges);
 
   return {
@@ -176,13 +226,26 @@ function dependencyGraph(program, options = {}) {
       hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
       headHasBlankNode: rule.headHasBlankNode,
       createsTerms: rule.createsTerms,
+      target: rule.target,
+      shapeDependencies: rule.shapeDependencies,
     })),
     edges,
     components: components.map((component) => component.map((ruleIndex) => rules[ruleIndex].name)),
     layers: layers.map((layer) => layer.map((ruleIndex) => rules[ruleIndex].name)),
     layerIndexes: layers,
     unstratifiedCycles,
+    shapeConstraintCycles,
   };
+}
+
+function resolveShapeDependencies(shapeIRI, options = {}) {
+  if (!shapeIRI) return null;
+  if (options.shapeEngine && typeof options.shapeEngine.dependencies === 'function') {
+    return options.shapeEngine.dependencies(shapeIRI);
+  }
+  if (typeof options.shapeDependencies === 'function') return options.shapeDependencies(shapeIRI);
+  if (options.shapeDependencies && typeof options.shapeDependencies === 'object') return options.shapeDependencies[shapeIRI] || null;
+  return null;
 }
 
 function buildHeadTemplateIndex(rules) {

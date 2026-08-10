@@ -113,6 +113,114 @@ function evaluate(program, options = {}) {
   };
 }
 
+
+async function evaluateAsync(program, options = {}) {
+  const maxIterations = options.maxIterations ?? 10000;
+  const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
+  const store = new TripleStore(program.data);
+  // SHACL 1.2 Rules distinguishes the immutable ground-data graph (base graph
+  // plus DATA blocks) from the growing evaluation graph. Snapshot it before
+  // any rules run so WHERE DATA and NOT DATA never see inferred triples.
+  const groundStore = new TripleStore(program.data);
+  const inputKeys = new Set(program.data.map(tripleKey));
+  const inferred = [];
+  const trace = options.trace || options.prove ? [] : null;
+  let iterations = 0;
+  let ruleApplications = 0;
+  const perRule = program.rules.map((rule, index) => ({
+    name: rule.name || `rule#${index + 1}`,
+    applications: 0,
+    added: 0,
+    runOnce: !!rule.runOnce,
+    backward: false,
+  }));
+
+  const analysis = options.analysis || analyze(program, options);
+  if (analysis.errors && analysis.errors.length > 0 && !options.ignoreAnalysisErrors) {
+    throw new Error(`Analysis failed: ${analysis.errors.map((error) => error.message).join('; ')}`);
+  }
+  const layerIndexes = analysis.dependency && analysis.dependency.layerIndexes
+    ? analysis.dependency.layerIndexes
+    : [program.rules.map((_, index) => index)];
+  const recursiveLayerFlags = computeRecursiveLayerFlags(
+    layerIndexes,
+    analysis.dependency ? analysis.dependency.edges : [],
+  );
+  const relaxedRecursiveRunOnce = options.relaxedRecursion === false
+    ? new Set()
+    : recursiveTermGenerationRuleIndexes(analysis);
+  const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+  const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
+    ? preferredBackwardPredicates(program, options)
+    : new Set();
+  const hybridBackwardRules = new Set();
+  if (hybridBackwardPredicates.size > 0) {
+    for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
+      if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
+    }
+  }
+  const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
+  for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
+  const baseContext = {
+    ...evalOptions,
+    maxIterations,
+    inputKeys,
+    inferred,
+    trace,
+    perRule,
+    layer: 0,
+    iteration: 0,
+    startingIterations: 0,
+    recursiveLayer: false,
+    hybridBackwardPredicates,
+    hybridBackwardRules,
+    hybridStats,
+    groundStore,
+    targetBindingCache: new Map(),
+  };
+
+  for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
+    const layer = layerIndexes[layerIndex];
+    baseContext.layer = layerIndex + 1;
+    await prepareTargetBindingsForLayerAsync(program, store, layer, baseContext);
+    const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
+    const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
+    const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
+
+    if (runOnce.length > 0) {
+      iterations += 1;
+      for (const ruleIndex of runOnce) {
+        baseContext.iteration = iterations;
+        const added = applyRuleOnce(program, store, ruleIndex, baseContext);
+        ruleApplications += added.applications;
+      }
+    }
+
+    baseContext.startingIterations = iterations;
+    baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
+    const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
+    iterations = ordinaryResult.iterations;
+    ruleApplications += ordinaryResult.ruleApplications;
+  }
+
+  return {
+    baseIRI: program.baseIRI,
+    version: program.version || null,
+    imports: program.imports || [],
+    prefixes: program.prefixes,
+    input: program.data.slice(),
+    inferred,
+    closure: store.values(),
+    iterations,
+    layers: layerIndexes.map((layer) => layer.map((ruleIndex) => perRule[ruleIndex].name)),
+    ruleApplications,
+    perRule,
+    trace: trace || [],
+    hybridStats,
+    groundStore,
+  };
+}
+
 function runRulesToFixpoint(program, store, ruleIndexes, context) {
   if (ruleIndexes.length === 0) return { iterations: context.startingIterations, ruleApplications: 0 };
 
@@ -233,6 +341,67 @@ function* evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings
   }
 }
 
+async function prepareTargetBindingsForLayerAsync(program, store, ruleIndexes, context) {
+  for (const ruleIndex of ruleIndexes) {
+    if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
+      await targetBindingsForRuleAsync(program, store, ruleIndex, context);
+    }
+  }
+}
+
+async function targetBindingsForRuleAsync(program, store, ruleIndex, context) {
+  const cached = context.targetBindingCache && context.targetBindingCache.get(ruleIndex);
+  if (cached) return cached;
+
+  const rule = program.rules[ruleIndex];
+  const target = rule && rule.target;
+  if (!target) return [{}];
+
+  let resolved;
+  if (context.shapeEngine && typeof context.shapeEngine.eligibleFocusNodes === 'function') {
+    resolved = await context.shapeEngine.eligibleFocusNodes(target.shape, {
+      variable: target.variable,
+      rule,
+      ruleIndex,
+      layer: context.layer,
+      graph: store.values(),
+      groundGraph: context.groundStore.values(),
+      program,
+    });
+  } else if (typeof context.focusNodeResolver === 'function') {
+    resolved = await context.focusNodeResolver(target.shape, {
+      variable: target.variable,
+      rule,
+      ruleIndex,
+      layer: context.layer,
+      graph: store.values(),
+      groundGraph: context.groundStore.values(),
+      program,
+    });
+  } else {
+    throw new Error(`${rule.name || `rule#${ruleIndex + 1}`} uses FOR ?${target.variable} IN <${target.shape}>; provide shapes/shapeEngine or a focusNodeResolver(shape, context)`);
+  }
+
+  return cacheTargetBindings(resolved, target, ruleIndex, context);
+}
+
+function cacheTargetBindings(resolved, target, ruleIndex, context) {
+  if (resolved == null || typeof resolved[Symbol.iterator] !== 'function') {
+    throw new Error(`Focus-node resolution for <${target.shape}> must return an iterable of RDF focus nodes`);
+  }
+  const bindings = [];
+  const seen = new Set();
+  for (const node of resolved) {
+    const term = normalizeFocusNode(node);
+    const key = termKey(term);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    bindings.push({ [target.variable]: term });
+  }
+  if (context.targetBindingCache) context.targetBindingCache.set(ruleIndex, bindings);
+  return bindings;
+}
+
 function prepareTargetBindingsForLayer(program, store, ruleIndexes, context) {
   for (const ruleIndex of ruleIndexes) {
     if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
@@ -263,22 +432,7 @@ function targetBindingsForRule(program, store, ruleIndex, context) {
     groundGraph: context.groundStore.values(),
     program,
   });
-  if (resolved == null || typeof resolved[Symbol.iterator] !== 'function') {
-    throw new Error(`focusNodeResolver for <${target.shape}> must return an iterable of RDF focus nodes`);
-  }
-
-  const bindings = [];
-  const seen = new Set();
-  for (const node of resolved) {
-    const term = normalizeFocusNode(node);
-    const key = termKey(term);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    bindings.push({ [target.variable]: term });
-  }
-
-  if (context.targetBindingCache) context.targetBindingCache.set(ruleIndex, bindings);
-  return bindings;
+  return cacheTargetBindings(resolved, target, ruleIndex, context);
 }
 
 function normalizeFocusNode(node) {
@@ -623,4 +777,4 @@ function uniqueBindings(bindings) {
   return out;
 }
 
-module.exports = { evaluate, evaluateBody, uniqueBindings };
+module.exports = { evaluate, evaluateAsync, evaluateBody, uniqueBindings };

@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { fileURLToPath, pathToFileURL } = require('node:url');
 const {
-  compile,
-  evaluate,
+  compileAsync,
+  evaluateAsync,
   parseQuery,
   queryResult,
   queryProgram,
@@ -36,7 +36,7 @@ function readPackageVersion() {
 const VERSION = readPackageVersion();
 
 function legacyHelp() {
-  return `eyeleng ${VERSION}\n\nA dependency-free JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Force aggressive hybrid orientation for function-like rules\n  --no-hybrid           Disable automatic hybrid forward/backward execution\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
+  return `eyeleng ${VERSION}\n\nA JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Force aggressive hybrid orientation for function-like rules\n  --no-hybrid           Disable automatic hybrid forward/backward execution\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --shapes FILE         SHACL shapes graph for FOR ?v IN <shape> constraints\n  --validate            After rule saturation, validate the final graph against --shapes\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
 }
 
 function help() {
@@ -69,6 +69,8 @@ function parseArgs(argv) {
     imports: true,
     syntax: 'auto',
     ruleSet: null,
+    shapes: null,
+    validate: false,
     rdfMessages: false,
     includeMessageFacts: false,
   };
@@ -96,6 +98,12 @@ function parseArgs(argv) {
       i += 1;
       if (i >= argv.length) throw new Error('--ruleset requires an RDF term');
       options.ruleSet = argv[i];
+    } else if (arg === '--shapes') {
+      i += 1;
+      if (i >= argv.length) throw new Error('--shapes requires a file or URL');
+      options.shapes = argv[i];
+    } else if (arg === '--validate') {
+      options.validate = true;
     } else if (arg === '--query-mode') {
       i += 1;
       if (i >= argv.length) throw new Error('--query-mode requires auto, forward, or backward');
@@ -154,7 +162,7 @@ async function readInput(files, fetchImpl = globalThis.fetch) {
 
 function createFileImportResolver() {
   return function importResolver(target) {
-    if (!target.startsWith('file:')) throw new Error(`Cannot import remote URL ${target}; this self-contained CLI only loads file: imports`);
+    if (!target.startsWith('file:')) throw new Error(`Cannot import remote URL ${target}; this CLI only loads file: imports`);
     const filename = fileURLToPath(target);
     return {
       source: fs.readFileSync(filename, 'utf8'),
@@ -180,7 +188,7 @@ function printDependencies(analysis, prefixes, stderr) {
   for (const edge of edges) {
     const from = formatRuleName(analysis.dependency.rules[edge.from].name, prefixes);
     const to = formatRuleName(analysis.dependency.rules[edge.to].name, prefixes);
-    const kind = edge.negated ? 'NOT' : (edge.termGeneration ? 'generates' : 'uses');
+    const kind = edge.shapeConstraint ? 'shape' : (edge.negated ? 'NOT' : (edge.termGeneration ? 'generates' : 'uses'));
     stderr.write(`eyeleng: deps: ${from} --${kind} ${edge.predicate ? compactIRI(edge.predicate, prefixes) : '*'}--> ${to}\n`);
   }
   if (analysis.dependency.layers && analysis.dependency.layers.length > 0) {
@@ -210,9 +218,13 @@ async function main(argv = process.argv.slice(2), io = process) {
       return 0;
     }
     const input = await readInput(files);
-    const compiled = compile(input.source, {
+    const shapesInput = options.shapes ? await readInput([options.shapes]) : null;
+    const compiled = await compileAsync(input.source, {
       filename: input.filename,
       baseIRI: input.baseIRI,
+      shapes: shapesInput ? shapesInput.source : null,
+      shapesFilename: shapesInput ? shapesInput.filename : null,
+      shapesBaseIRI: shapesInput ? shapesInput.baseIRI : null,
       strict: false,
       throwOnDiagnostics: false,
       resolveImports: options.imports,
@@ -239,7 +251,7 @@ async function main(argv = process.argv.slice(2), io = process) {
       : null;
 
     let result;
-    if (querySpec) {
+    if (querySpec && !options.validate) {
       const directQuery = queryProgram(compiled.program, querySpec, options);
       if (directQuery) {
         result = {
@@ -264,10 +276,16 @@ async function main(argv = process.argv.slice(2), io = process) {
       const runOptions = querySpec
         ? queryRunOptions(compiled.program, querySpec, options)
         : { ...options, hybrid: options.hybrid };
-      result = evaluate(compiled.program, { ...runOptions, analysis: compiled.analysis });
+      result = await evaluateAsync(compiled.program, { ...compiled.options, ...runOptions, analysis: compiled.analysis });
       result.diagnostics = compiled.diagnostics;
       result.analysis = compiled.analysis;
       if (querySpec) result.query = queryResult(result, querySpec, runOptions);
+    }
+
+    if (options.validate) {
+      if (!compiled.shapeEngine) throw new Error('--validate requires --shapes');
+      result.validationReport = await compiled.shapeEngine.validate(result.closure, options);
+      io.stderr.write(`eyeleng: shacl conforms=${result.validationReport.conforms}${Array.isArray(result.validationReport.results) ? ` results=${result.validationReport.results.length}` : ''}\n`);
     }
 
     if (options.json) {
@@ -293,6 +311,7 @@ async function main(argv = process.argv.slice(2), io = process) {
         if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyeleng: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
       }
     }
+    if (options.validate && result.validationReport && !result.validationReport.conforms) return 1;
     return 0;
   } catch (error) {
     io.stderr.write(`eyeleng: ${error.message}\n`);

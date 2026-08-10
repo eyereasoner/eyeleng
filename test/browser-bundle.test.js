@@ -44,27 +44,15 @@ test('playground inline scripts are syntactically valid', () => {
   assert.ok(checked > 0, 'expected at least one inline playground script');
 });
 
-test('playground embedded API exposes proof formatting', () => {
+test('playground uses the generated browser API bundle', () => {
   const html = fs.readFileSync(path.join(root, 'playground.html'), 'utf8');
-  const scripts = Array.from(html.matchAll(/<script(?<attrs>[^>]*)>(?<source>[\s\S]*?)<\/script>/g));
-  const bundleScript = scripts.find((match) => /__EYELENG_MODULES__/.test(match.groups.source));
-  assert.ok(bundleScript, 'expected an embedded playground API bundle');
-  const context = vm.createContext({ window: {} });
-  vm.runInContext(bundleScript.groups.source, context);
-  const modules = context.window.__EYELENG_MODULES__;
-  const mappings = context.window.__EYELENG_MAPPINGS__;
-  const cache = {};
-  function requireModule(id) {
-    if (cache[id]) return cache[id].exports;
-    const module = { exports: {} };
-    cache[id] = module;
-    const localRequire = (request) => requireModule((mappings[id] && mappings[id][request]) || request);
-    new Function('require', 'module', 'exports', modules[id])(localRequire, module, module.exports);
-    return module.exports;
-  }
-  assert.equal(typeof requireModule('src/api.js').formatProof, 'function');
+  assert.match(html, /<script\s+src=["']dist\/browser\/eyeleng\.browser\.js["']><\/script>/);
+  assert.match(html, /const eyeleng = window\.eyeleng/);
+  const bundle = fs.readFileSync(path.join(root, 'dist', 'browser', 'eyeleng.browser.js'), 'utf8');
+  const context = vm.createContext({});
+  vm.runInContext(bundle, context, { filename: 'eyeleng.browser.js' });
+  assert.equal(typeof context.eyeleng.formatProof, 'function');
 });
-
 
 test('playground loads version from package.json at runtime', () => {
   const html = fs.readFileSync(path.join(root, 'playground.html'), 'utf8');
