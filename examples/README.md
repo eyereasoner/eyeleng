@@ -1,13 +1,10 @@
-# W3C SHACL 1.2 Rules draft examples
+# SHACL 1.2 Rules examples
 
-Eyeleng—where `leng` stands for **Logic Engine Next Generation**—is built for automatic hybrid reasoning, combining forward materialization with tabled backward proving.
-
-This directory contains runnable examples, including files mirrored from the SHACL 1.2 Rules draft.
-It also includes SRL adaptations of selected eyeling N3 examples.
+This directory contains runnable SRL and RDF Rules examples, including files based on the SHACL 1.2 Rules draft.
 
 - `.srl` files exercise the Shape Rules Language syntax.
 - `.ttl` files exercise the RDF Rules syntax front-end.
 
 All `.srl` and `.ttl` files in this directory are run by `test/examples.test.js`; most have golden TriG outputs in `examples/output/*.trig`.
 
-For a minimal starting point, `socrates.srl` derives the classic conclusion that Socrates is mortal from the facts that Socrates is human and every human is mortal.
+For a minimal starting point, `socrates.srl` derives that Socrates is mortal from the fact that Socrates is human and a rule stating that humans are mortal.
