@@ -1,7 +1,7 @@
 'use strict';
 
 const { parse, parseQuery } = require('./parser.js');
-const { parseRdfSyntax, parseRdfDocument, rdfDocumentToProgram, looksLikeRdfRules } = require('./rdfSyntax.js');
+const { parseRdfDocument } = require('./rdf.js');
 const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js');
 const { evaluate, evaluateAsync } = require('./engine.js');
 const { analyze } = require('./analyze.js');
@@ -11,8 +11,8 @@ const { resultTriples } = require('./output.js');
 
 function parseInput(source, options = {}) {
   if (typeof source !== 'string') return source;
-  if (looksLikeRdfMessageLog(source, options) || looksLikeRdfRules(source, options)) {
-    throw new Error('RDF input parsing is asynchronous with rdf-parse; use parseInputAsync(), compileAsync(), runAsync(), or the CLI');
+  if (looksLikeRdfMessageLog(source, options)) {
+    throw new Error('RDF Message Log parsing is asynchronous with rdf-parse; use parseInputAsync(), compileAsync(), runAsync(), or the CLI');
   }
   return parse(source, options);
 }
@@ -20,12 +20,24 @@ function parseInput(source, options = {}) {
 async function parseInputAsync(source, options = {}) {
   if (typeof source !== 'string') return source;
   if (looksLikeRdfMessageLog(source, options)) return await parseRdfMessageLog(source, options);
-  return looksLikeRdfRules(source, options) ? await parseRdfSyntax(source, options) : parse(source, options);
+  return parse(source, options);
 }
 
 function compile(source, options = {}) {
   const parsed = parseInput(source, options);
-  const program = options.resolveImports === false ? parsed : resolveImports(parsed, options);
+  const resolved = resolveProgramImportsSync(parsed, options);
+  const program = attachBaseGraph(resolved, options.baseGraph);
+  return analyzeCompiled(program, options);
+}
+
+async function compileAsync(source, options = {}) {
+  const parsed = await parseInputAsync(source, options);
+  const resolved = await resolveProgramImportsAsync(parsed, options);
+  const program = attachBaseGraph(resolved, options.baseGraph);
+  return { ...analyzeCompiled(program, options), options };
+}
+
+function analyzeCompiled(program, options) {
   const analysis = analyze(program, options);
   const diagnostics = analysis.diagnostics;
   const fatal = analysis.errors.length > 0 || (options.strict && analysis.warnings.length > 0);
@@ -36,103 +48,79 @@ function compile(source, options = {}) {
   return { program, diagnostics, analysis };
 }
 
-async function compileAsync(source, options = {}) {
-  const asyncOptions = await withShapeEngine(options);
-  const parsed = await parseInputAsync(source, asyncOptions);
-  const program = asyncOptions.resolveImports === false ? parsed : await resolveImportsAsync(parsed, asyncOptions);
-  const analysis = analyze(program, asyncOptions);
-  const diagnostics = analysis.diagnostics;
-  const fatal = analysis.errors.length > 0 || (asyncOptions.strict && analysis.warnings.length > 0);
-  if (fatal && asyncOptions.throwOnDiagnostics !== false) {
-    const details = diagnostics.map((diagnostic) => diagnostic.message).join('; ');
-    throw new Error(`${analysis.errors.length > 0 ? 'Analysis failed' : 'Strict mode failed'}: ${details}`);
-  }
-  return { program, diagnostics, analysis, shapeEngine: asyncOptions.shapeEngine || null, options: asyncOptions };
+function attachBaseGraph(program, baseGraph) {
+  return { ...cloneProgram(program), baseData: Array.isArray(baseGraph) ? baseGraph.slice() : (program.baseData || []).slice() };
 }
 
-async function withShapeEngine(options = {}) {
-  if (!options.shapes || options.shapeEngine) return options;
-  const { createShaclShapeEngine } = require('./shacl.js');
-  const shapeEngine = await createShaclShapeEngine(options.shapes, options);
-  return { ...options, shapeEngine };
+async function resolveProgramImportsAsync(program, options) {
+  if (!program.imports || program.imports.length === 0) return cloneProgram(program);
+  if (options.resolveImports === false || !options.importResolver) {
+    throw new Error('This rule set contains IMPORTS, but no supported import resolver is enabled');
+  }
+  return resolveImportsAsync(program, options);
+}
+
+function resolveProgramImportsSync(program, options) {
+  if (!program.imports || program.imports.length === 0) return cloneProgram(program);
+  if (options.resolveImports === false || !options.importResolver) {
+    throw new Error('This rule set contains IMPORTS, but no supported import resolver is enabled');
+  }
+  return resolveImports(program, options);
 }
 
 async function resolveImportsAsync(program, options = {}, seen = new Set()) {
-  if (!program.imports || program.imports.length === 0) return cloneProgram(program);
-  const importResolver = options.importResolver;
-  if (!importResolver) return cloneProgram(program);
-
   let merged = emptyProgram(program);
   const localKey = program.baseIRI || options.filename || '<input>';
   if (localKey) seen.add(localKey);
-
-  for (const target of program.imports) {
+  for (const target of program.imports || []) {
     if (seen.has(target)) continue;
     seen.add(target);
-    const resolved = await importResolver(target, { from: program.baseIRI || options.filename || null, seen });
+    const resolved = await options.importResolver(target, { from: program.baseIRI || options.filename || null, seen });
     if (!resolved) throw new Error(`IMPORTS resolver returned no source for ${target}`);
     const importSource = typeof resolved === 'string' ? resolved : resolved.source;
     const importOptions = typeof resolved === 'string' ? {} : (resolved.options || {});
-    const parsedImport = await parseInputAsync(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
-    const imported = await resolveImportsAsync(parsedImport, { ...options, ...importOptions, importResolver }, seen);
+    // IMPORTS incorporates rule sets only (SPARQL 1.2 RL §4.5).
+    // Do not auto-detect RDF/message data here: base data is a separate
+    // evaluation input and must not be smuggled into the resolved rule set.
+    const parsedImport = parse(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
+    const imported = await resolveImportsAsync(parsedImport, { ...options, ...importOptions }, seen);
     merged = mergePrograms(merged, imported);
   }
-
-  return mergePrograms(merged, program);
+  return mergePrograms(merged, { ...program, imports: [] });
 }
 
 function resolveImports(program, options = {}, seen = new Set()) {
-  if (!program.imports || program.imports.length === 0) return cloneProgram(program);
-  const importResolver = options.importResolver;
-  if (!importResolver) return cloneProgram(program);
-
   let merged = emptyProgram(program);
   const localKey = program.baseIRI || options.filename || '<input>';
   if (localKey) seen.add(localKey);
-
-  for (const target of program.imports) {
+  for (const target of program.imports || []) {
     if (seen.has(target)) continue;
     seen.add(target);
-    const resolved = importResolver(target, { from: program.baseIRI || options.filename || null, seen });
-    if (!resolved) throw new Error(`IMPORTS resolver returned no source for ${target}`);
+    const resolved = options.importResolver(target, { from: program.baseIRI || options.filename || null, seen });
+    if (!resolved || (resolved && typeof resolved.then === 'function')) throw new Error(`Synchronous IMPORTS resolver returned no source for ${target}; use compileAsync() for async resolvers`);
     const importSource = typeof resolved === 'string' ? resolved : resolved.source;
     const importOptions = typeof resolved === 'string' ? {} : (resolved.options || {});
-    const parsedImport = parseInput(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
-    const imported = resolveImports(parsedImport, { ...options, ...importOptions, importResolver }, seen);
+    // IMPORTS incorporates rule sets only (SPARQL 1.2 RL §4.5).
+    const parsedImport = parse(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
+    const imported = resolveImports(parsedImport, { ...options, ...importOptions }, seen);
     merged = mergePrograms(merged, imported);
   }
-
-  return mergePrograms(merged, program);
+  return mergePrograms(merged, { ...program, imports: [] });
 }
 
 function emptyProgram(program = {}) {
-  return {
-    baseIRI: program.baseIRI || null,
-    version: program.version || null,
-    imports: [],
-    prefixes: { ...(program.prefixes || {}) },
-    data: [],
-    rules: [],
-  };
+  return { baseIRI: program.baseIRI || null, version: program.version || null, imports: [], prefixes: { ...(program.prefixes || {}) }, baseData: [], data: [], rules: [] };
 }
-
 function cloneProgram(program) {
-  return {
-    baseIRI: program.baseIRI || null,
-    version: program.version || null,
-    imports: (program.imports || []).slice(),
-    prefixes: { ...(program.prefixes || {}) },
-    data: (program.data || []).slice(),
-    rules: (program.rules || []).slice(),
-  };
+  return { baseIRI: program.baseIRI || null, version: program.version || null, imports: (program.imports || []).slice(), prefixes: { ...(program.prefixes || {}) }, baseData: (program.baseData || []).slice(), data: (program.data || []).slice(), rules: (program.rules || []).slice() };
 }
-
 function mergePrograms(left, right) {
   return {
     baseIRI: right.baseIRI || left.baseIRI || null,
     version: right.version || left.version || null,
     imports: Array.from(new Set([...(left.imports || []), ...(right.imports || [])])),
     prefixes: { ...(left.prefixes || {}), ...(right.prefixes || {}) },
+    baseData: [...(left.baseData || []), ...(right.baseData || [])],
     data: [...(left.data || []), ...(right.data || [])],
     rules: [...(left.rules || []), ...(right.rules || [])],
   };
@@ -141,79 +129,28 @@ function mergePrograms(left, right) {
 function run(source, options = {}) {
   const { program, diagnostics, analysis } = compile(source, options);
   const result = evaluate(program, { ...options, analysis });
-  result.diagnostics = diagnostics;
-  result.analysis = analysis;
-  return result;
+  result.diagnostics = diagnostics; result.analysis = analysis; return result;
 }
-
 function runToString(source, options = {}) {
   const { program, diagnostics, analysis } = compile(source, options);
-  const result = evaluate(program, { ...options, analysis });
-  result.diagnostics = diagnostics;
-  result.analysis = analysis;
-  const triples = resultTriples(result, program, options);
-  return formatTriples(triples, result.prefixes);
+  const result = evaluate(program, { ...options, analysis }); result.diagnostics = diagnostics; result.analysis = analysis;
+  return formatTriples(resultTriples(result, program, options), result.prefixes);
 }
-
 async function runAsync(source, options = {}) {
   const compiled = await compileAsync(source, options);
   const result = await evaluateAsync(compiled.program, { ...compiled.options, analysis: compiled.analysis });
-  result.diagnostics = compiled.diagnostics;
-  result.analysis = compiled.analysis;
-  if (compiled.shapeEngine && options.validateShapes) {
-    result.validationReport = await compiled.shapeEngine.validate(result.closure, options);
-  }
-  return result;
+  result.diagnostics = compiled.diagnostics; result.analysis = compiled.analysis; return result;
 }
-
-async function runAndValidateAsync(source, options = {}) {
-  if (!options.shapes && !options.shapeEngine) throw new Error('runAndValidateAsync requires shapes or shapeEngine');
-  return runAsync(source, { ...options, validateShapes: true });
-}
-
 async function runToStringAsync(source, options = {}) {
   const compiled = await compileAsync(source, options);
   const result = await evaluateAsync(compiled.program, { ...compiled.options, analysis: compiled.analysis });
-  result.diagnostics = compiled.diagnostics;
-  result.analysis = compiled.analysis;
-  const triples = resultTriples(result, compiled.program, options);
-  return formatTriples(triples, result.prefixes);
+  result.diagnostics = compiled.diagnostics; result.analysis = compiled.analysis;
+  return formatTriples(resultTriples(result, compiled.program, options), result.prefixes);
 }
 
 module.exports = {
-  parse,
-  parseQuery,
-  parseInput,
-  parseInputAsync,
-  parseRdfSyntax,
-  parseRdfDocument,
-  parseRdfMessageLog,
-  looksLikeRdfMessageLog,
-  rdfDocumentToProgram,
-  compile,
-  compileAsync,
-  resolveImports,
-  resolveImportsAsync,
-  mergePrograms,
-  analyze,
-  evaluate,
-  evaluateAsync,
-  run,
-  runAsync,
-  runAndValidateAsync,
-  runToString,
-  runToStringAsync,
-  runQuery,
-  runQueryAsync,
-  queryResult,
-  queryProgram,
-  queryRunOptions,
-  shouldUseHybridForQuery,
-  formatTriples,
-  formatBindings,
-  sortTriples,
-  toJSON,
-  formatTrace,
-  formatProof,
-  resultTriples,
+  parse, parseQuery, parseInput, parseInputAsync, parseRdfDocument, parseRdfMessageLog, looksLikeRdfMessageLog,
+  compile, compileAsync, resolveImports, resolveImportsAsync, mergePrograms, analyze, evaluate, evaluateAsync,
+  run, runAsync, runToString, runToStringAsync, runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions,
+  shouldUseHybridForQuery, formatTriples, formatBindings, sortTriples, toJSON, formatTrace, formatProof, resultTriples,
 };

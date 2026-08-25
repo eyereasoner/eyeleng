@@ -30,10 +30,10 @@ class Parser {
     this.version = null;
     this.imports = [];
     this.bnodeCounter = 0;
+    this.bodyBnodeLabels = null;
     this.prefixes = {
       rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-      sh: 'http://www.w3.org/ns/shacl#',
-      srl: 'http://www.w3.org/ns/shacl-rules#',
+      srl: 'http://www.w3.org/ns/sparql-rl#',
       xsd: 'http://www.w3.org/2001/XMLSchema#',
       ...options.prefixes,
     };
@@ -58,10 +58,8 @@ class Parser {
         rules.push(this.parseRule());
       } else if (this.matchWord('IF')) {
         rules.push(this.parseIfThenRule());
-      } else if (this.checkDeclarationKeyword()) {
-        rules.push(...this.parseDeclaration());
       } else {
-        throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE; got ${this.peek().value}`);
+        throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF; got ${this.peek().value}`);
       }
     }
     return {
@@ -96,7 +94,7 @@ class Parser {
     const token = this.expectType('string');
     if (this.strictGrammar()) {
       if (token.long) throw this.error('VERSION must use a short string literal', token);
-      if (token.value !== '1.2') throw this.error('VERSION must be the SHACL Rules version label \"1.2\"', token);
+      if (token.value !== '1.2') throw this.error('VERSION must be the SPARQL-RL version label \"1.2\"', token);
     }
     this.version = token.value;
   }
@@ -116,7 +114,7 @@ class Parser {
     this.expectWord('WHERE');
     const groundData = this.matchWord('DATA');
     this.expectValue('{');
-    const body = this.parseBodyBlockAlreadyOpen();
+    const body = this.parseRuleBodyWithBlankNodeScope();
     return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
   }
 
@@ -126,75 +124,37 @@ class Parser {
     const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
     const groundData = this.matchWord('DATA');
     this.expectValue('{');
-    const body = this.parseBodyBlockAlreadyOpen();
+    const body = this.parseRuleBodyWithBlankNodeScope();
     this.expectWord('THEN');
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
     return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
   }
 
+  parseRuleBodyWithBlankNodeScope() {
+    const previous = this.bodyBnodeLabels;
+    this.bodyBnodeLabels = new Map();
+    try {
+      return this.parseBodyBlockAlreadyOpen();
+    } finally {
+      this.bodyBnodeLabels = previous;
+    }
+  }
+
+  bodyBlankNodeVariable(label) {
+    if (!this.bodyBnodeLabels) this.bodyBnodeLabels = new Map();
+    if (!this.bodyBnodeLabels.has(label)) {
+      this.bnodeCounter += 1;
+      this.bodyBnodeLabels.set(label, variable(`__b${this.bnodeCounter}`));
+    }
+    return this.bodyBnodeLabels.get(label);
+  }
+
   parseForClauseAfterFor() {
     const focusVariable = this.expectType('variable');
     this.expectWord('IN');
     const shape = this.parseIRIValue();
-    return { variable: focusVariable.value, shape: shape.value };
-  }
-
-  checkDeclarationKeyword() {
-    return this.checkType('word') && ['TRANSITIVE', 'SYMMETRIC', 'INVERSE'].includes(this.peek().value.toUpperCase());
-  }
-
-  parseDeclaration() {
-    if (this.matchWord('TRANSITIVE')) {
-      this.expectValue('(');
-      const pred = this.parseIRIValue();
-      this.expectValue(')');
-      this.consumeOptionalDot();
-      return [{
-        name: `TRANSITIVE(${pred.lexical})`,
-        head: [{ s: variable('x'), p: iri(pred.value), o: variable('z') }],
-        body: [
-          { type: 'triple', triple: { s: variable('x'), p: iri(pred.value), o: variable('y') } },
-          { type: 'triple', triple: { s: variable('y'), p: iri(pred.value), o: variable('z') } },
-        ],
-        runOnce: false,
-      }];
-    }
-    if (this.matchWord('SYMMETRIC')) {
-      this.expectValue('(');
-      const pred = this.parseIRIValue();
-      this.expectValue(')');
-      this.consumeOptionalDot();
-      return [{
-        name: `SYMMETRIC(${pred.lexical})`,
-        head: [{ s: variable('y'), p: iri(pred.value), o: variable('x') }],
-        body: [{ type: 'triple', triple: { s: variable('x'), p: iri(pred.value), o: variable('y') } }],
-        runOnce: false,
-      }];
-    }
-    if (this.matchWord('INVERSE')) {
-      this.expectValue('(');
-      const left = this.parseIRIValue();
-      this.expectValue(',');
-      const right = this.parseIRIValue();
-      this.expectValue(')');
-      this.consumeOptionalDot();
-      return [
-        {
-          name: `INVERSE(${left.lexical},${right.lexical})#1`,
-          head: [{ s: variable('y'), p: iri(right.value), o: variable('x') }],
-          body: [{ type: 'triple', triple: { s: variable('x'), p: iri(left.value), o: variable('y') } }],
-          runOnce: false,
-        },
-        {
-          name: `INVERSE(${left.lexical},${right.lexical})#2`,
-          head: [{ s: variable('y'), p: iri(left.value), o: variable('x') }],
-          body: [{ type: 'triple', triple: { s: variable('x'), p: iri(right.value), o: variable('y') } }],
-          runOnce: false,
-        },
-      ];
-    }
-    throw this.error(`Expected declaration, got ${this.peek().value}`);
+    return { variable: focusVariable.value, iri: shape.value };
   }
 
   parseIRIValue() {
@@ -421,8 +381,7 @@ class Parser {
       } else if (this.matchWord('SET')) {
         clauses.push(this.parseSetClause());
       } else if (this.matchWord('BIND')) {
-        if (this.strictGrammar()) throw this.error('BIND is not part of the SHACL 1.2 Rules grammar; use SET');
-        clauses.push(this.parseBindClause());
+        throw this.error('BIND is not part of the SPARQL 1.2 RL grammar; use SET');
       } else if (this.matchWord('NOT')) {
         const groundData = this.matchWord('DATA');
         this.expectValue('{');
@@ -483,7 +442,10 @@ class Parser {
       }
       if (token.value === 'true') return literal(true, XSD_BOOLEAN);
       if (token.value === 'false') return literal(false, XSD_BOOLEAN);
-      if (token.value.startsWith('_:')) return blankNode(token.value.slice(2));
+      if (token.value.startsWith('_:')) {
+        const label = token.value.slice(2);
+        return options.context === 'body' ? this.bodyBlankNodeVariable(label) : blankNode(label);
+      }
       return iri(this.expandPrefixedName(token.value, token));
     }
     throw this.error(`Expected term, got ${token.value}`, token);
@@ -704,7 +666,7 @@ class Parser {
   peek() { return this.tokens[this.pos]; }
   peekN(n) { return this.tokens[this.pos + n] || this.tokens[this.tokens.length - 1]; }
   previous() { return this.tokens[this.pos - 1]; }
-  strictGrammar() { return !!this.options.strictGrammar; }
+  strictGrammar() { return this.options.strictGrammar !== false; }
   error(message, token = this.peek()) { return new SyntaxErrorWithLocation(message, token && token.filename ? token : { ...token, filename: this.options.filename || '<input>' }); }
 }
 
@@ -817,7 +779,7 @@ function parse(source, options = {}) {
 
 function parseQuery(source, options = {}) {
   if (/^\s*(QUERY|SELECT)\b/i.test(source)) {
-    throw new Error('QUERY/SELECT concrete syntax is not part of the SHACL Rules SRL grammar; pass a raw body pattern instead');
+    throw new Error('QUERY/SELECT concrete syntax is not part of the SPARQL-RL rule-set grammar; pass a raw body pattern instead');
   }
   const trimmed = String(source).trim();
   const text = trimmed.startsWith('{') ? `RULE { } WHERE ${trimmed}` : `RULE { } WHERE { ${source} }`;

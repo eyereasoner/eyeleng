@@ -2,7 +2,7 @@
 
 const { test, main } = require('./harness.js').createHarness('API');
 const assert = require('node:assert/strict');
-const { parse, compile, run, runToString, runAsync, runAndValidateAsync, runToStringAsync, runQuery } = require('../src/index.js');
+const { parse, compile, run, runToString, runAsync, runToStringAsync, runQuery, parseRdfMessageLog } = require('../src/index.js');
 const { tripleKey } = require('../src/term.js');
 
 test('parse reads prefixes, data, and rules', () => {
@@ -79,49 +79,27 @@ PREFIX : <http://example/>
 DATA { :Socrates a :Man . }
 RULE { ?x a :Mortal } WHERE { ?x a :Man }
 `);
-  assert.equal(result.input.length, 1);
-  assert.equal(result.inferred.length, 1);
+  assert.equal(result.input.length, 0);
+  assert.equal(result.data.length, 1);
+  assert.equal(result.inferred.length, 2);
   assert.equal(result.closure.length, 2);
 });
 
 
 
-test('deterministic SET rules can feed later run-once rules', () => {
+test('run-once SET rules can feed later general rules', () => {
   const source = `
 PREFIX : <http://example/>
-DATA {
-  :a :p :b .
-  :b :p :c .
-  :query :max 1 .
-}
-RULE {
-  ?route a :Path ; :last ?next ; :depth 0 ; :label ?label .
-}
-WHERE {
+DATA { :a :p :b . }
+RULE { :calc :label ?label } WHERE {
   :a :p ?next .
   SET(?label := CONCAT("a -> ", STR(?next)))
-  SET(?route := BNODE(?label))
 }
-RULE {
-  ?nextRoute a :Path ; :last ?next ; :depth ?nextDepth ; :label ?nextLabel .
-}
-WHERE {
-  ?route a :Path ; :last ?last ; :depth ?depth ; :label ?label .
-  :query :max ?max .
-  FILTER(?depth < ?max) .
-  ?last :p ?next .
-  SET(?nextDepth := ?depth + 1)
-  SET(?nextLabel := CONCAT(?label, " -> ", STR(?next)))
-  SET(?nextRoute := BNODE(?nextLabel))
-}
-RULE { :answer :path ?label }
-WHERE { ?route a :Path ; :last :c ; :label ?label . }
+RULE { :answer :path ?label } WHERE { :calc :label ?label }
 `;
   const output = runToString(source);
-  assert.match(output, /:answer :path "a -> http:\/\/example\/b -> http:\/\/example\/c" \./);
-  assert.match(output, /a :Path/);
-  const result = run(source);
-  assert.ok(result.inferred.length > 1);
+  assert.match(output, /:calc :label "a -> http:\/\/example\/b" \./);
+  assert.match(output, /:answer :path "a -> http:\/\/example\/b" \./);
 });
 
 test('BASE resolves relative IRIs and default prefix', () => {
@@ -249,56 +227,14 @@ RULE { ?x :ready true } WHERE { ?x :nextScore 42 }
 
 
 
-test('hybrid backward tabling completes sibling recursive goals before replaying answers', () => {
+test('hybrid execution respects non-recursive run-once assignment rules', () => {
   const result = run(`
-PREFIX : <http://example/fib/>
-DATA {
-  :n0 :index 0 ; :fibPairF 0 ; :fibPairG 1 .
-  :n1 :index 1 .
-  :n2 :index 2 .
-  :n5 :index 5 .
-  :n10 a :FibCase ; :index 10 .
-}
-RULE { ?node :fibPairF ?c ; :fibPairG ?d }
-WHERE {
-  ?node :index ?n .
-  FILTER(?n > 0)
-  SET(?half := FLOOR(?n / 2))
-  SET(?halfNode := IRI(CONCAT("http://example/fib/n", STR(?half))))
-  ?halfNode :fibPairF ?a ; :fibPairG ?b .
-  SET(?twob := ?b * 2)
-  SET(?twobminusa := ?twob - ?a)
-  SET(?c := ?a * ?twobminusa)
-  SET(?aa := ?a * ?a)
-  SET(?bb := ?b * ?b)
-  SET(?d := ?aa + ?bb)
-  SET(?parity := ?n - (?half * 2))
-  FILTER(?parity = 0)
-}
-RULE { ?node :fibPairF ?d ; :fibPairG ?next }
-WHERE {
-  ?node :index ?n .
-  FILTER(?n > 0)
-  SET(?half := FLOOR(?n / 2))
-  SET(?halfNode := IRI(CONCAT("http://example/fib/n", STR(?half))))
-  ?halfNode :fibPairF ?a ; :fibPairG ?b .
-  SET(?twob := ?b * 2)
-  SET(?twobminusa := ?twob - ?a)
-  SET(?c := ?a * ?twobminusa)
-  SET(?aa := ?a * ?a)
-  SET(?bb := ?b * ?b)
-  SET(?d := ?aa + ?bb)
-  SET(?parity := ?n - (?half * 2))
-  FILTER(?parity = 1)
-  SET(?next := ?c + ?d)
-}
-RULE { ?node :fib ?value } WHERE { ?node a :FibCase ; :fibPairF ?value }
+PREFIX : <http://example/>
+DATA { :alice :score 41 . }
+RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
+RULE { ?x :ready true } WHERE { ?x :nextScore 42 }
 `, { hybrid: true });
-  const keys = result.closure.map(tripleKey).join('\n');
-  assert.match(keys, /I:http:\/\/example\/fib\/n10 I:http:\/\/example\/fib\/fib L:55\^\^http:\/\/www\.w3\.org\/2001\/XMLSchema#integer@--/);
-  assert.equal(result.perRule[0].backward, true);
-  assert.equal(result.perRule[1].backward, true);
-  assert.ok(result.hybridStats.memoHits > 0);
+  assert(result.closure.some((triple) => triple.p.value === 'http://example/ready'));
 });
 
 test('hybrid query mode runs forward rules with backward body calls', () => {
@@ -308,7 +244,7 @@ PREFIX : <http://example/>
 DATA { :alice :score 41 . :bob :score 2 . }
 RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
 RULE { ?x :ready ?score } WHERE { ?x :nextScore ?score . FILTER(?score = 42) }
-`, '?who :ready ?score', { queryMode: 'hybrid' });
+`, '?who :ready ?score', { queryMode: 'hybrid', hybrid: true });
   assert.equal(result.query.mode, 'hybrid');
   assert.ok(result.hybridStats.goals > 0);
   const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
@@ -332,7 +268,7 @@ RULE { [] :unrelated :x } WHERE { :seed :seen :x }
   assert.doesNotMatch(output, /bob/);
 });
 
-test('auto query mode falls back to hybrid when a demanded predicate has unsupported rules', () => {
+test('auto query mode falls back to forward when a demanded predicate needs a run-once rule', () => {
   const { runQuery, formatBindings } = require('../src/index.js');
   const result = runQuery(`
 PREFIX : <http://example/>
@@ -341,10 +277,8 @@ RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
 RULE { ?x :ready ?score } WHERE { ?x :nextScore ?score . FILTER(?score = 42) }
 RULE { [] :ready 999 } WHERE { :seed :seen :x }
 `, '?who :ready ?score');
-  assert.equal(result.query.mode, 'hybrid');
-  assert.ok(result.hybridStats.goals > 0);
-  assert.equal(result.perRule[0].backward, true);
-  assert.doesNotMatch(result.closure.map(tripleKey).join('\n'), /nextScore/);
+  assert.equal(result.query.mode, 'forward');
+  assert.match(result.closure.map(tripleKey).join('\n'), /nextScore/);
   const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
   assert.match(output, /\?score = 42; \?who = :alice/);
 });
@@ -355,14 +289,14 @@ test('parseQuery accepts raw body text and rejects non-SRL QUERY/SELECT syntax',
   assert.equal(raw.body.length, 1);
   const braced = parseQuery('{ ?x :p :y }', { prefixes: { '': 'http://example/' } });
   assert.equal(braced.body.length, 1);
-  assert.throws(() => parseQuery('QUERY ?x WHERE { ?x :p :y }'), /not part of the SHACL Rules SRL grammar/);
-  assert.throws(() => parseQuery('SELECT ?x WHERE { ?x :p :y }'), /not part of the SHACL Rules SRL grammar/);
+  assert.throws(() => parseQuery('QUERY ?x WHERE { ?x :p :y }'), /not part of the SPARQL-RL rule-set grammar/);
+  assert.throws(() => parseQuery('SELECT ?x WHERE { ?x :p :y }'), /not part of the SPARQL-RL rule-set grammar/);
 });
 
 test('top-level QUERY, SELECT, and N3 implication are not accepted as SRL', () => {
-  assert.throws(() => parse('PREFIX : <http://example/> QUERY ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
-  assert.throws(() => parse('PREFIX : <http://example/> SELECT ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
-  assert.throws(() => parse('PREFIX : <http://example/> { ?x :p :y } => { ?x :q :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE/);
+  assert.throws(() => parse('PREFIX : <http://example/> QUERY ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF/);
+  assert.throws(() => parse('PREFIX : <http://example/> SELECT ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF/);
+  assert.throws(() => parse('PREFIX : <http://example/> { ?x :p :y } => { ?x :q :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF/);
 });
 
 test('IF THEN rule form works', () => {
@@ -374,19 +308,6 @@ IF { ?x a :Man } THEN { ?x a :Mortal }
   assert.match(output, /:Socrates a :Mortal \./);
 });
 
-test('declaration abbreviations expand to rules', () => {
-  const output = runToString(`
-PREFIX : <http://example/>
-DATA { :alice :parentOf :bob . :bob :parentOf :carol . :alice :spouseOf :dora . :alice :hasChild :bob . }
-TRANSITIVE(:parentOf)
-SYMMETRIC(:spouseOf)
-INVERSE(:hasChild, :childOf)
-`);
-  assert.match(output, /:alice :parentOf :carol \./);
-  assert.match(output, /:dora :spouseOf :alice \./);
-  assert.match(output, /:bob :childOf :alice \./);
-});
-
 test('analysis rejects recursive negation through dependency graph', () => {
   const source = `
 PREFIX : <http://example/>
@@ -395,9 +316,9 @@ RULE { ?x :in true } WHERE { ?x :person true . NOT { ?x :out true } }
 RULE { ?x :out true } WHERE { ?x :person true . NOT { ?x :in true } }
 `;
   const { compile } = require('../src/index.js');
-  assert.throws(() => compile(source), /Unstratified negation/);
+  assert.throws(() => compile(source), /recursive closed dependency|Stratification condition/i);
   const unchecked = compile(source, { throwOnDiagnostics: false });
-  assert.equal(unchecked.analysis.errors[0].code, 'unstratified-negation');
+  assert.equal(unchecked.analysis.errors[0].code, 'unstratified-closed-dependency');
 });
 
 test('VERSION, blank nodes, single-quoted strings, and IN/NOT IN expressions parse and run', () => {
@@ -453,7 +374,7 @@ test('IMPORTS can be resolved by the API without duplicate cycles', () => {
 });
 
 
-test('optional rule IRIs are accepted by the SHACL 1.2 grammar', () => {
+test('optional rule IRIs are accepted by the SPARQL 1.2 RL grammar', () => {
   const program = parse('PREFIX : <http://example/> RULE :named { ?x :q ?y } WHERE { ?x :p ?y }');
   assert.equal(program.rules[0].name, 'http://example/named');
 });
@@ -559,9 +480,9 @@ DATA { :a :source :blocked . }
 RULE { ?x ?p true } WHERE { ?x :source ?p . NOT { ?x :blocked true } }
 RULE { ?x :blocked true } WHERE { ?x ?anyPredicate true }
 `;
-  assert.throws(() => compile(source), /Unstratified negation/);
+  assert.throws(() => compile(source), /recursive closed dependency|Stratification condition/i);
   const checked = compile(source, { throwOnDiagnostics: false });
-  assert.equal(checked.analysis.errors[0].code, 'unstratified-negation');
+  assert.equal(checked.analysis.errors[0].code, 'unstratified-closed-dependency');
 });
 
 test('RDF 1.2 reifiers expand through rdf:reifies and can be bound', () => {
@@ -621,7 +542,7 @@ test('strict grammar mode rejects non-grammar extensions and loose tokens', () =
   assert.throws(() => parse(`
 PREFIX : <http://example/>
 RULE { :s :p ?x } WHERE { :s :q ?y BIND(?y AS ?x) }
-`, options), /BIND is not part of the SHACL 1.2 Rules grammar/);
+`, options), /BIND is not part of the SPARQL 1.2 RL grammar/);
   assert.throws(() => parse(`
 PREFIX : <http://example/>
 RULE { :s :p "bad\\q" } WHERE { :s :q ?x }
@@ -634,7 +555,7 @@ RULE { :bad%ZZ :p ?x } WHERE { :s :q ?x }
 VERSION "2.0"
 PREFIX : <http://example/>
 RULE { :s :p ?x } WHERE { :s :q ?x }
-`, options), /VERSION must be the SHACL Rules version label/);
+`, options), /VERSION must be the SPARQL-RL version label/);
   assert.throws(() => parse(`
 VERSION """1.2"""
 PREFIX : <http://example/>
@@ -648,7 +569,7 @@ RULE { :s :p ?x } WHERE { :s :q ?x SET(?z := STR(?x)) }
 });
 
 
-test('relaxed mode permits recursive deterministic assignments with max-iteration safety', () => {
+test('recursive SET rules are rejected as closed recursive dependencies', () => {
   const source = `
 PREFIX : <http://example/>
 DATA { :counter :value 0 . :limit :max 3 . }
@@ -659,13 +580,9 @@ RULE { :counter :value ?next } WHERE {
   SET(?next := ?value + 1)
 }
 `;
-  const compiled = compile(source, { shacl12Conformance: true, throwOnDiagnostics: false });
-  assert.equal(compiled.analysis.warnings[0].code, 'recursive-assignment-rule');
-  assert.throws(() => compile(source, { shacl12Conformance: true, strict: true }), /termination is not guaranteed/);
-  const output = runToString(source, { shacl12Conformance: true, maxIterations: 20 });
-  assert.match(output, /:counter :value 1 \./);
-  assert.match(output, /:counter :value 2 \./);
-  assert.match(output, /:counter :value 3 \./);
+  assert.throws(() => compile(source), /recursive closed dependency|Stratification condition/i);
+  const unchecked = compile(source, { throwOnDiagnostics: false });
+  assert.equal(unchecked.analysis.errors[0].code, 'unstratified-closed-dependency');
 });
 
 test('head blank nodes are deterministically skolemized with all universal bindings', () => {
@@ -700,16 +617,13 @@ RULE { [] :witnessFor ?s } WHERE { ?s :p :o }
   assert.equal(new Set(witnessSubjects).size, 2);
 });
 
-test('recursive existential rules may not terminate with all-universal skolemization', () => {
+test('recursive blank-node-head rules violate the stratification condition', () => {
   const source = `
 PREFIX : <http://example.org/#>
 DATA { :s :p :o . }
 RULE { [] :p :o } WHERE { ?s :p :o }
 `;
-  assert.throws(
-    () => run(source, { maxIterations: 5, throwOnDiagnostics: false }),
-    /Reached maxIterations=5/,
-  );
+  assert.throws(() => compile(source), /recursive closed dependency|Stratification condition/i);
 });
 
 test('RDF Message Logs expose Eyeling-style envelopes and payload triples', async () => {
@@ -728,7 +642,6 @@ _:reading :sensor :s2 ; :value 22 .
 `;
   const rules = `PREFIX : <http://example/messages#>
 PREFIX eymsg: <https://eyereasoner.github.io/eyeling/vocab/message#>
-IMPORTS <urn:messages>
 RULE { ?envelope :mentionsSensor ?sensor } WHERE {
   ?envelope eymsg:payloadGraph ?payload .
   ?payload eymsg:payloadTriple <<(?reading :sensor ?sensor)>> .
@@ -736,18 +649,9 @@ RULE { ?envelope :mentionsSensor ?sensor } WHERE {
 RULE { ?envelope :isHeartbeat true } WHERE {
   ?envelope eymsg:payloadKind eymsg:empty .
 }`;
-  const result = await runAsync(rules, {
-    importResolver(target) {
-      assert.equal(target, 'urn:messages');
-      return { source: messages, options: { baseIRI: 'urn:messages' } };
-    },
-  });
-  const out = await runToStringAsync(rules, {
-    importResolver(target) {
-      assert.equal(target, 'urn:messages');
-      return { source: messages, options: { baseIRI: 'urn:messages' } };
-    },
-  });
+  const messageLog = await parseRdfMessageLog(messages, { baseIRI: 'urn:messages' });
+  const result = await runAsync(rules, { baseGraph: messageLog.baseData });
+  const out = await runToStringAsync(rules, { baseGraph: messageLog.baseData });
   assert.equal(result.prefixes.eymsg, 'https://eyereasoner.github.io/eyeling/vocab/message#');
   assert.match(out, /:mentionsSensor :s1 \./);
   assert.match(out, /:mentionsSensor :s2 \./);
@@ -812,20 +716,17 @@ test('SRL rejects invalid base directions, subject a, and empty annotations', ()
 });
 
 
-test('strict conformance allows recursive constant BIND aliases', () => {
-  assert.doesNotThrow(() => compile(`
+test('BIND is rejected and recursive SET dependencies are closed', () => {
+  assert.throws(() => parse(`
 PREFIX : <http://example.org/#>
 RULE { ?s ?p ?o } WHERE { ?s :p ?o . BIND(:p AS ?p) }
-`, { shacl12Conformance: true, strict: true }));
-});
+`), /BIND is not part of the SPARQL 1.2 RL grammar/);
 
-test('strict conformance rejects recursive computed assignments', () => {
   assert.throws(() => compile(`
 PREFIX : <http://example.org/#>
 RULE { ?x :p ?v1 } WHERE { ?x :p ?v . SET(?v1 := ?v + 1) }
-`, { shacl12Conformance: true, strict: true }), /creates terms in a recursive dependency cycle/);
+`), /recursive closed dependency|Stratification condition/i);
 });
-
 
 test('auto backward query ignores unsupported rules outside the demanded slice', () => {
   const source = `
@@ -870,7 +771,7 @@ RULE { ?x :allowed :yes } WHERE { ?x :seed :x . NOT DATA { ?x :blocked :yes } }
   assert(keys.some((key) => key.includes('http://example/allowed')));
 });
 
-test('SHACL 1.2 FOR clauses parse in both current SRL rule forms', () => {
+test('FOR clauses remain recognized by the current grammar', () => {
   const program = parse(`
 PREFIX : <http://example/>
 RULE :r1 { ?this :status :adult } FOR ?this IN :AdultShape WHERE { ?this :age ?age }
@@ -879,173 +780,22 @@ IF :r2 FOR ?focus IN :PersonShape { ?focus :active true } THEN { ?focus :seen tr
 
   assert.deepEqual(program.rules[0].target, {
     variable: 'this',
-    shape: 'http://example/AdultShape',
+    iri: 'http://example/AdultShape',
   });
   assert.deepEqual(program.rules[1].target, {
     variable: 'focus',
-    shape: 'http://example/PersonShape',
+    iri: 'http://example/PersonShape',
   });
 });
 
-test('FOR focus variables are pre-bound for rule well-formedness and evaluation', () => {
+test('FOR clauses are rejected for evaluation until the W3C model defines their semantics', () => {
   const source = `
 PREFIX : <http://example/>
-RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE {
-  FILTER(isIRI(?this))
-}
+RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE { ?this :age ?age }
 `;
-
-  const compiled = compile(source, { strictGrammar: true });
-  assert.equal(compiled.analysis.errors.length, 0);
-
-  let resolverCalls = 0;
-  const output = runToString(source, {
-    strictGrammar: true,
-    focusNodeResolver(shape, context) {
-      resolverCalls += 1;
-      assert.equal(shape, 'http://example/AdultShape');
-      assert.equal(context.variable, 'this');
-      assert.equal(context.layer, 1);
-      return ['http://example/Alice', 'http://example/Alice', 'http://example/Bob'];
-    },
-  });
-
-  assert.equal(resolverCalls, 1);
-  assert.match(output, /:Alice :eligible true \./);
-  assert.match(output, /:Bob :eligible true \./);
-});
-
-test('FOR target sets are frozen once per stratum', () => {
-  const source = `
-PREFIX : <http://example/>
-DATA { :Alice :parent :Bob . :Bob :parent :Carol . }
-RULE { ?this :ancestor ?parent } FOR ?this IN :PersonShape WHERE { ?this :parent ?parent }
-RULE { ?this :ancestor ?ancestor } FOR ?this IN :PersonShape WHERE {
-  ?this :parent ?parent .
-  ?parent :ancestor ?ancestor
-}
-`;
-
-  let resolverCalls = 0;
-  const output = runToString(source, {
-    focusNodeResolver() {
-      resolverCalls += 1;
-      return ['http://example/Alice', 'http://example/Bob'];
-    },
-  });
-
-  assert.equal(resolverCalls, 2);
-  assert.match(output, /:Alice :ancestor :Carol \./);
-});
-
-test('targeted rules require a focus-node integration hook at runtime', () => {
-  assert.throws(() => run(`
-PREFIX : <http://example/>
-RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE { }
-`), /provide a focusNodeResolver/);
-});
-
-test('queries fall back to forward evaluation for targeted rules', () => {
-  const result = runQuery(`
-PREFIX : <http://example/>
-RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE { }
-`, '?who :eligible true', {
-    focusNodeResolver() {
-      return ['http://example/Alice'];
-    },
-  });
-
-  assert.equal(result.query.mode, 'forward');
-  assert.equal(result.query.bindings.length, 1);
-  assert.equal(result.query.bindings[0].who.value, 'http://example/Alice');
-});
-
-test('shape dependencies place producers before targeted rules', async () => {
-  const source = `
-PREFIX : <http://example/>
-DATA { :Alice :birthYear 2006 . }
-RULE :deriveAge { ?x :age 20 } WHERE { ?x :birthYear 2006 }
-RULE :adult { ?this :adult true } FOR ?this IN :AdultShape WHERE { }
-`;
-  const shapeEngine = {
-    dependencies(shape) {
-      assert.equal(shape, 'http://example/AdultShape');
-      return { predicates: ['http://example/age'], wildcard: false };
-    },
-    async eligibleFocusNodes(shape, context) {
-      assert.equal(shape, 'http://example/AdultShape');
-      const hasAge = context.graph.some((triple) => triple.p.value === 'http://example/age');
-      return hasAge ? ['http://example/Alice'] : [];
-    },
-  };
-  const result = await runAsync(source, { shapeEngine });
-  assert.deepEqual(result.layers, [['http://example/deriveAge'], ['http://example/adult']]);
-  assert(result.inferred.some((triple) => triple.p.value === 'http://example/adult'));
-});
-
-test('closed shape dependencies reject rule/shape cycles', async () => {
-  const source = `
-PREFIX : <http://example/>
-RULE :adult { ?this :age 20 } FOR ?this IN :AdultShape WHERE { }
-`;
-  const shapeEngine = {
-    dependencies() { return { predicates: ['http://example/age'], wildcard: false }; },
-    async eligibleFocusNodes() { return ['http://example/Alice']; },
-  };
-  await assert.rejects(() => runAsync(source, { shapeEngine }), /Closed SHACL shape dependency cycle/);
-});
-
-
-test('built-in SHACL engine gates FOR targets and returns the final validation report', async () => {
-  const source = `
-PREFIX : <http://example/>
-DATA {
-  :Alice a :Person ; :age 20 .
-  :Bob a :Person ; :age 17 .
-}
-RULE { ?this :adult true } FOR ?this IN :AdultShape WHERE { }
-`;
-  const shapes = `
-@prefix sh: <http://www.w3.org/ns/shacl#> .
-@prefix : <http://example/> .
-:AdultShape a sh:NodeShape ;
-  sh:targetClass :Person ;
-  sh:property [ sh:path :age ; sh:minInclusive 18 ] .
-`;
-
-  const result = await runAndValidateAsync(source, {
-    shapes,
-    shapesFilename: 'adult-shapes.ttl',
-  });
-
-  const adults = result.inferred
-    .filter((triple) => triple.p.value === 'http://example/adult')
-    .map((triple) => triple.s.value)
-    .sort();
-  assert.deepEqual(adults, ['http://example/Alice']);
-  assert.equal(result.validationReport.conforms, false);
-  assert(result.validationReport.results.length >= 1);
-});
-
-test('rule-to-shape validation runs only after rule saturation', async () => {
-  const source = `
-PREFIX : <http://example/>
-DATA { :Alice :seed true . }
-RULE { :Alice :derived true } WHERE { :Alice :seed true }
-`;
-  let validated = false;
-  const shapeEngine = {
-    dependencies() { return null; },
-    async eligibleFocusNodes() { return []; },
-    async validate(graph) {
-      validated = true;
-      assert(graph.some((triple) => triple.p.value === 'http://example/derived'));
-      return { conforms: true, results: [] };
-    },
-  };
-  const result = await runAndValidateAsync(source, { shapeEngine });
-  assert.equal(validated, true);
-  assert.equal(result.validationReport.conforms, true);
+  assert.throws(() => compile(source), /does not define FOR execution semantics/);
+  const unchecked = compile(source, { throwOnDiagnostics: false });
+  assert.equal(unchecked.analysis.errors[0].code, 'for-clause-no-evaluation-semantics');
 });
 
 

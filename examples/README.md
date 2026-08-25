@@ -1,10 +1,13 @@
-# SHACL 1.2 Rules examples
+# SPARQL 1.2 RL examples
 
-This directory contains runnable SRL and RDF Rules examples, including files based on the SHACL 1.2 Rules draft.
+These examples are executable `.srl` rule sets for Eyeleng's SPARQL 1.2 RL implementation.
 
-- `.srl` files exercise the Shape Rules Language syntax.
-- `.ttl` files exercise the RDF Rules syntax front-end.
+Embedded `DATA { ... }` blocks contribute facts to the inference graph. For an external RDF 1.2 base graph, use the CLI `--data FILE` option or pass `baseGraph` through the API after parsing it with `parseRdfDocument`.
 
-All `.srl` and `.ttl` files in this directory are run by `test/examples.test.js`; most have golden TriG outputs in `examples/output/*.trig`.
+For the RDF Message Log example, run:
 
-For a minimal starting point, `socrates.srl` derives that Socrates is mortal from the fact that Socrates is human and a rule stating that humans are mortal.
+```sh
+node eyeleng.js --data examples/rdf-messages.trig examples/rdf-messages.srl
+```
+
+The message log is base data. `IMPORTS` is reserved for SPARQL-RL rule sets.

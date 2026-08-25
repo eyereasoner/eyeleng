@@ -15,6 +15,9 @@ const {
   formatBindings,
   toJSON,
   resultTriples,
+  parseRdfDocument,
+  parseRdfMessageLog,
+  looksLikeRdfMessageLog,
 } = require('./api.js');
 const { compactIRI } = require('./term.js');
 
@@ -35,21 +38,8 @@ function readPackageVersion() {
 
 const VERSION = readPackageVersion();
 
-function legacyHelp() {
-  return `eyeleng ${VERSION}\n\nA JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Force aggressive hybrid orientation for function-like rules\n  --no-hybrid           Disable automatic hybrid forward/backward execution\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --shapes FILE         SHACL shapes graph for FOR ?v IN <shape> constraints\n  --validate            After rule saturation, validate the final graph against --shapes\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
-}
-
 function help() {
-  return legacyHelp().replace(
-    '  --trace               Print derivation trace to stderr, or include it in JSON',
-    '  --prove               Print proof explanations',
-  ).replace(
-    'Usage:\n  eyeleng [options] [file ...]',
-    'Usage: eyeleng [options] [file-or-url.n3|- ...]',
-  ).replace(
-    'With no file arguments, eyeleng reads from stdin.',
-    'With no input arguments, eyeleng prints this help. Use - to read from stdin.',
-  );
+  return `eyeleng ${VERSION}\n\nSPARQL 1.2 RL (SRL) rule engine with RDF 1.2 base-graph input via rdf-parse.\n\nUsage: eyeleng [options] rules.srl\n\nOptions:\n  --data FILE            Add an RDF 1.2 document to the immutable base graph (repeatable)\n  --all                  Print base graph plus inference graph\n  --json                 Print JSON instead of compact triples/bindings\n  --prove                Print proof explanations\n  --stats                Print iteration and triple counts to stderr\n  --check                Parse, check well-formedness, and stratify only\n  --strict               Treat warnings as errors\n  --deps                 Print open/closed rule dependencies during --check\n  --query TEXT           Run a raw SRL body pattern\n  --query-file FILE      Read a raw SRL body pattern from a file\n  --query-mode MODE      Use auto, forward, or backward query planning (default auto)\n  --hybrid               Opt into Eyeleng's hybrid forward/backward optimization\n  --max-iterations N     Stop after N fixpoint iterations within a stratum\n  --no-imports           Reject rule sets containing IMPORTS\n  --rdf-messages         Treat --data input as an RDF Message Log (ancillary feature)\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --version              Print version\n  -h, --help             Print this help\n\nThe rule-set media type is application/sparql-rl and the conventional extension is .srl.\n`;
 }
 
 function parseArgs(argv) {
@@ -64,13 +54,10 @@ function parseArgs(argv) {
     query: null,
     queryFile: null,
     queryMode: 'auto',
-    hybrid: 'auto',
+    hybrid: false,
     maxIterations: 10000,
     imports: true,
-    syntax: 'auto',
-    ruleSet: null,
-    shapes: null,
-    validate: false,
+    dataFiles: [],
     rdfMessages: false,
     includeMessageFacts: false,
   };
@@ -89,21 +76,10 @@ function parseArgs(argv) {
     else if (arg === '--no-hybrid') options.hybrid = false;
     else if (arg === '--rdf-messages') options.rdfMessages = true;
     else if (arg === '--include-message-facts') options.includeMessageFacts = true;
-    else if (arg === '--syntax') {
+    else if (arg === '--data') {
       i += 1;
-      if (i >= argv.length) throw new Error('--syntax requires srl, rdf, or auto');
-      options.syntax = argv[i];
-      if (!['srl', 'rdf', 'auto'].includes(options.syntax)) throw new Error('--syntax requires srl, rdf, or auto');
-    } else if (arg === '--ruleset') {
-      i += 1;
-      if (i >= argv.length) throw new Error('--ruleset requires an RDF term');
-      options.ruleSet = argv[i];
-    } else if (arg === '--shapes') {
-      i += 1;
-      if (i >= argv.length) throw new Error('--shapes requires a file or URL');
-      options.shapes = argv[i];
-    } else if (arg === '--validate') {
-      options.validate = true;
+      if (i >= argv.length) throw new Error('--data requires an RDF file or URL');
+      options.dataFiles.push(argv[i]);
     } else if (arg === '--query-mode') {
       i += 1;
       if (i >= argv.length) throw new Error('--query-mode requires auto, forward, or backward');
@@ -188,7 +164,7 @@ function printDependencies(analysis, prefixes, stderr) {
   for (const edge of edges) {
     const from = formatRuleName(analysis.dependency.rules[edge.from].name, prefixes);
     const to = formatRuleName(analysis.dependency.rules[edge.to].name, prefixes);
-    const kind = edge.shapeConstraint ? 'shape' : (edge.negated ? 'NOT' : (edge.termGeneration ? 'generates' : 'uses'));
+    const kind = edge.closed ? 'closed' : 'open';
     stderr.write(`eyeleng: deps: ${from} --${kind} ${edge.predicate ? compactIRI(edge.predicate, prefixes) : '*'}--> ${to}\n`);
   }
   if (analysis.dependency.layers && analysis.dependency.layers.length > 0) {
@@ -218,20 +194,30 @@ async function main(argv = process.argv.slice(2), io = process) {
       return 0;
     }
     const input = await readInput(files);
-    const shapesInput = options.shapes ? await readInput([options.shapes]) : null;
+    const baseGraph = [];
+    for (const dataSpec of options.dataFiles) {
+      const dataInput = await readInput([dataSpec]);
+      if (looksLikeRdfMessageLog(dataInput.source, { rdfMessages: options.rdfMessages })) {
+        const messageLog = await parseRdfMessageLog(dataInput.source, {
+          filename: dataInput.filename,
+          baseIRI: dataInput.baseIRI,
+          includeMessageFacts: options.includeMessageFacts,
+        });
+        baseGraph.push(...(messageLog.baseData || []));
+      } else {
+        const document = await parseRdfDocument(dataInput.source, { filename: dataInput.filename, baseIRI: dataInput.baseIRI, version: '1.2' });
+        baseGraph.push(...document.triples);
+      }
+    }
     const compiled = await compileAsync(input.source, {
       filename: input.filename,
       baseIRI: input.baseIRI,
-      shapes: shapesInput ? shapesInput.source : null,
-      shapesFilename: shapesInput ? shapesInput.filename : null,
-      shapesBaseIRI: shapesInput ? shapesInput.baseIRI : null,
+      baseGraph,
+      strictGrammar: true,
       strict: false,
       throwOnDiagnostics: false,
       resolveImports: options.imports,
       importResolver: options.imports ? createFileImportResolver() : null,
-      syntax: options.syntax === 'auto' ? undefined : options.syntax,
-      ruleSet: options.ruleSet,
-      rdfMessages: options.rdfMessages,
       includeMessageFacts: options.includeMessageFacts,
     });
     const fatal = hasFatalDiagnostics(compiled.analysis, options.strict);
@@ -251,15 +237,16 @@ async function main(argv = process.argv.slice(2), io = process) {
       : null;
 
     let result;
-    if (querySpec && !options.validate) {
+    if (querySpec) {
       const directQuery = queryProgram(compiled.program, querySpec, options);
       if (directQuery) {
         result = {
           baseIRI: compiled.program.baseIRI,
           prefixes: compiled.program.prefixes,
-          input: compiled.program.data.slice(),
-          inferred: [],
-          closure: compiled.program.data.slice(),
+          input: (compiled.program.baseData || []).slice(),
+          data: (compiled.program.data || []).slice(),
+          inferred: (compiled.program.data || []).filter((triple) => !(compiled.program.baseData || []).some((base) => require('./term.js').tripleKey(base) === require('./term.js').tripleKey(triple))),
+          closure: [...(compiled.program.baseData || []), ...(compiled.program.data || [])],
           iterations: 0,
           layers: [],
           ruleApplications: 0,
@@ -280,12 +267,6 @@ async function main(argv = process.argv.slice(2), io = process) {
       result.diagnostics = compiled.diagnostics;
       result.analysis = compiled.analysis;
       if (querySpec) result.query = queryResult(result, querySpec, runOptions);
-    }
-
-    if (options.validate) {
-      if (!compiled.shapeEngine) throw new Error('--validate requires --shapes');
-      result.validationReport = await compiled.shapeEngine.validate(result.closure, options);
-      io.stderr.write(`eyeleng: shacl conforms=${result.validationReport.conforms}${Array.isArray(result.validationReport.results) ? ` results=${result.validationReport.results.length}` : ''}\n`);
     }
 
     if (options.json) {
@@ -311,7 +292,6 @@ async function main(argv = process.argv.slice(2), io = process) {
         if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyeleng: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
       }
     }
-    if (options.validate && result.validationReport && !result.validationReport.conforms) return 1;
     return 0;
   } catch (error) {
     io.stderr.write(`eyeleng: ${error.message}\n`);

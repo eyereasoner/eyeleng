@@ -1,4 +1,4 @@
-# A compact smoke test for the full BuiltInCall production in the SHACL 1.2 Rules SRL grammar.
+# A compact smoke test for the full BuiltInCall production in the SPARQL 1.2 RL grammar.
 BASE <http://example/base/>
 PREFIX : <http://example/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>

@@ -111,7 +111,7 @@ async function runQueryAsync(source, querySource = null, options = {}) {
   }
 
   const runOptions = queryRunOptions(program, querySpec, { ...compiled.options, ...options });
-  const result = await evaluateAsync(program, { ...runOptions, shapeEngine: compiled.shapeEngine, analysis });
+  const result = await evaluateAsync(program, { ...runOptions, analysis });
   result.diagnostics = diagnostics;
   result.query = queryResult(result, querySpec, runOptions);
   return result;

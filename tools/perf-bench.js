@@ -14,9 +14,6 @@ const DEFAULT_ABSOLUTE_TOLERANCE_MS = 1000;
 
 const defaultCases = [
   { name: 'deep-taxonomy-100000.srl', file: 'examples/deep-taxonomy-100000.srl', repeat: 1 },
-  { name: 'fibonacci.srl', file: 'examples/fibonacci.srl', repeat: 1 },
-  { name: 'fft32-numeric.srl', file: 'examples/fft32-numeric.srl', repeat: 3 },
-  { name: 'path-discovery.srl', file: 'examples/path-discovery.srl', repeat: 5 },
 ];
 
 function parseArgs(argv) {
@@ -99,7 +96,6 @@ function runOptions(filename) {
     filename,
     baseIRI: pathToFileURL(filename).href,
     importResolver,
-    syntax: filename.endsWith('.ttl') ? 'rdf' : undefined,
     now: new Date('2026-05-15T12:34:56Z'),
   };
 }

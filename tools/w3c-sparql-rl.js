@@ -4,13 +4,13 @@
 const path = require('node:path');
 const { colors: C } = require('../test/harness.js');
 const {
-  defaultShacl12RulesManifestUrl,
-  runShacl12RulesManifest,
-  formatShacl12RulesProgressLine,
-  formatShacl12RulesManifestResult,
-  writeShacl12RulesEarlReport,
+  defaultSparqlRlManifestUrl,
+  runSparqlRlManifest,
+  formatSparqlRlProgressLine,
+  formatSparqlRlManifestResult,
+  writeSparqlRlEarlReport,
   defaultReportPath,
-} = require('../src/shacl12RulesManifest.js');
+} = require('../src/sparqlRlManifest.js');
 
 function argValue(argv, name) {
   const index = argv.indexOf(name);
@@ -35,23 +35,23 @@ async function main(argv = process.argv.slice(2)) {
     if (argv[index - 1] === '--output') return false;
     return true;
   });
-  const manifest = manifests[0] || process.env.EYELENG_SHACL12_RULES_MANIFEST || defaultShacl12RulesManifestUrl;
+  const manifest = manifests[0] || process.env.EYELENG_SPARQL_RL_MANIFEST || defaultSparqlRlManifestUrl;
 
-  if (!quiet) log(`${C.y}==${C.n} W3C SHACL 1.2 Rules manifest: ${manifest}`);
-  const result = await runShacl12RulesManifest(manifest, {
+  if (!quiet) log(`${C.y}==${C.n} W3C SPARQL 1.2 RL manifest: ${manifest}`);
+  const result = await runSparqlRlManifest(manifest, {
     onProgress(item, index) {
-      if (!quiet) log(formatShacl12RulesProgressLine(item, index, { colors: C }));
+      if (!quiet) log(formatSparqlRlProgressLine(item, index, { colors: C }));
     },
   });
 
   if (!noReport) {
-    const reportPath = writeShacl12RulesEarlReport(result, output);
+    const reportPath = writeSparqlRlEarlReport(result, output);
     if (!quiet) log(`${C.dim}EARL report: ${path.relative(path.join(__dirname, '..'), reportPath)}${C.n}`);
   }
 
   if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  else if (!earl) process.stdout.write(`${formatShacl12RulesManifestResult(result, { colors: C })}\n`);
-  return result.counts.fail === 0 ? 0 : 1;
+  else if (!earl) process.stdout.write(`${formatSparqlRlManifestResult(result, { colors: C })}\n`);
+  return result.ok ? 0 : 1;
 }
 
 main().then((code) => { process.exitCode = code; }, (err) => {

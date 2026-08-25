@@ -14,7 +14,7 @@ test('browser ES module wrapper runs Eyeleng', () => {
     import eyeleng from ${JSON.stringify(path.join(root, 'dist', 'browser', 'index.mjs'))};
     const source = 'PREFIX : <http://example/> DATA { :Socrates a :Man . } RULE { ?x a :Mortal } WHERE { ?x a :Man }';
     const output = eyeleng.runToString(source).trim();
-    if (output !== ':Socrates a :Mortal .') throw new Error(output);
+    if (output !== ':Socrates a :Man .\\n:Socrates a :Mortal .') throw new Error(output);
   `;
   const result = spawnSync(process.execPath, ['--input-type=module', '--eval', script], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -28,7 +28,7 @@ test('browser global bundle exposes Eyeleng without ES modules', () => {
   assert.equal(typeof context.eyeleng.runToString, 'function');
 
   const source = 'PREFIX : <http://example/> DATA { :Socrates a :Man . } RULE { ?x a :Mortal } WHERE { ?x a :Man }';
-  assert.equal(context.eyeleng.runToString(source).trim(), ':Socrates a :Mortal .');
+  assert.equal(context.eyeleng.runToString(source).trim(), ':Socrates a :Man .\n:Socrates a :Mortal .');
 });
 
 test('playground inline scripts are syntactically valid', () => {

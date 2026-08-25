@@ -1,3 +1,32 @@
+_:b1 a odrl:Duty .
+_:b1 odrl:action odrl:inform .
+_:b1 odrl:constraint _:b2 .
+_:b2 a odrl:Constraint .
+_:b2 odrl:leftOperand tosl:noticeDays .
+_:b2 odrl:operator odrl:gteq .
+_:b2 odrl:rightOperand 3 .
+:Agreement1 :policy :Policy1 .
+:Agreement1 a :Agreement .
+:Agreement1 dct:title "Example Agreement" .
+:ClauseC1 :clauseId "C1" .
+:ClauseC1 :text "Provider may remove the user account (and associated data) at its discretion." .
+:ClauseC1 a :Clause .
+:ClauseC2 :clauseId "C2" .
+:ClauseC2 :text "Provider may change terms by informing users at least 3 days in advance." .
+:ClauseC2 a :Clause .
+:ClauseC3 :clauseId "C3" .
+:ClauseC3 :text "Provider may share user data with partners for business purposes." .
+:ClauseC3 a :Clause .
+:ClauseC4 :clauseId "C4" .
+:ClauseC4 :text "Users are not permitted to export their data." .
+:ClauseC4 a :Clause .
+:ConsumerExample :hasNeed :Need_ChangeOnlyWithPriorNotice .
+:ConsumerExample :hasNeed :Need_DataCannotBeRemoved .
+:ConsumerExample :hasNeed :Need_DataPortability .
+:ConsumerExample :hasNeed :Need_NoSharingWithoutConsent .
+:ConsumerExample a :ConsumerProfile .
+:ConsumerExample a odrl:Party .
+:ConsumerExample dct:title "Example consumer profile" .
 :DeleteAccountNoSafeguardsRiskC1 :aboutClause :ClauseC1 .
 :DeleteAccountNoSafeguardsRiskC1 :riskLevelLabel "HighRisk" .
 :DeleteAccountNoSafeguardsRiskC1 :score 100 .
@@ -45,6 +74,19 @@
 :MitigateShareConsentC3 a dpv:RiskMitigationMeasure .
 :MitigateShareConsentC3 dct:description "Add an explicit consent constraint before data sharing." .
 :MitigateShareConsentC3 dpv:mitigatesRisk :ShareNoConsentRiskC3 .
+:Need_ChangeOnlyWithPriorNotice :importance 15 .
+:Need_ChangeOnlyWithPriorNotice :minNoticeDays 14 .
+:Need_ChangeOnlyWithPriorNotice a :Need .
+:Need_ChangeOnlyWithPriorNotice dct:description "Agreement may change only with prior notice (>= 14 days)." .
+:Need_DataCannotBeRemoved :importance 20 .
+:Need_DataCannotBeRemoved a :Need .
+:Need_DataCannotBeRemoved dct:description "Provider must not remove the consumer account/data." .
+:Need_DataPortability :importance 10 .
+:Need_DataPortability a :Need .
+:Need_DataPortability dct:description "Consumer must be able to export their data." .
+:Need_NoSharingWithoutConsent :importance 12 .
+:Need_NoSharingWithoutConsent a :Need .
+:Need_NoSharingWithoutConsent dct:description "No data sharing without explicit consent." .
 :NoPortabilityRiskC4 :aboutClause :ClauseC4 .
 :NoPortabilityRiskC4 :riskLevelLabel "ModerateRisk" .
 :NoPortabilityRiskC4 :score 70 .
@@ -87,10 +129,43 @@
 :NoticeTooShortSourceC2 a risk:RiskSource .
 :NoticeTooShortSourceC2 dct:description "Notice for changing terms is shorter than consumer requirement." .
 :NoticeTooShortSourceC2 dct:source :PermChangeTerms .
+:PermChangeTerms :clause :ClauseC2 .
+:PermChangeTerms a odrl:Permission .
+:PermChangeTerms odrl:action tosl:changeTerms .
+:PermChangeTerms odrl:assignee :ConsumerExample .
+:PermChangeTerms odrl:assigner :Provider .
+:PermChangeTerms odrl:duty _:b1 .
+:PermChangeTerms odrl:target :AgreementText .
+:PermDeleteAccount :clause :ClauseC1 .
+:PermDeleteAccount a odrl:Permission .
+:PermDeleteAccount odrl:action tosl:removeAccount .
+:PermDeleteAccount odrl:assignee :ConsumerExample .
+:PermDeleteAccount odrl:assigner :Provider .
+:PermDeleteAccount odrl:target :UserAccount .
+:PermShareData :clause :ClauseC3 .
+:PermShareData a odrl:Permission .
+:PermShareData odrl:action tosl:shareData .
+:PermShareData odrl:assignee :ConsumerExample .
+:PermShareData odrl:assigner :Provider .
+:PermShareData odrl:target :UserData .
+:Policy1 a odrl:Policy .
+:Policy1 odrl:permission :PermChangeTerms .
+:Policy1 odrl:permission :PermDeleteAccount .
+:Policy1 odrl:permission :PermShareData .
+:Policy1 odrl:prohibition :ProhibitExportData .
+:ProcessContext1 a dpv:Process .
+:ProcessContext1 dct:source :Agreement1 .
+:ProcessContext1 dct:title "Service operation under Agreement1" .
 :ProcessContext1 dpv:hasRisk :DeleteAccountNoSafeguardsRiskC1 .
 :ProcessContext1 dpv:hasRisk :NoPortabilityRiskC4 .
 :ProcessContext1 dpv:hasRisk :NoticeTooShortRiskC2 .
 :ProcessContext1 dpv:hasRisk :ShareNoConsentRiskC3 .
+:ProhibitExportData :clause :ClauseC4 .
+:ProhibitExportData a odrl:Prohibition .
+:ProhibitExportData odrl:action tosl:exportData .
+:ProhibitExportData odrl:assignee :ConsumerExample .
+:ProhibitExportData odrl:assigner :Provider .
+:ProhibitExportData odrl:target :UserData .
 :ReportLine00 log:outputString "\n=== Ranked DPV Risk Report ===\nAgreement: Example Agreement\nProfile: Example consumer profile\n" .
 :ReportLine01A_Risk log:outputString "score=100 (HighRisk, HighSeverity) clause C1\n Risk: account/data removal is permitted without notice safeguards (no notice constraint and no duty to inform). Clause C1: Provider may remove the user account (and associated data) at its discretion.\n" .
 :ReportLine01B_MitigationA log:outputString " - mitigation for clause C1: Add a notice constraint (minimum noticeDays) before account removal.\n" .

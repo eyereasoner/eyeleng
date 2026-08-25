@@ -1,21 +1,13 @@
 'use strict';
 
-// Most SET expressions are deterministic and can safely participate in the
-// ordinary fixpoint loop.  Only genuinely fresh generators need run-once
-// evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
-// creating new terms forever.
-function assignmentsNeedRunOnce(clauses = [], options = {}) {
-  if (options.shacl12Conformance) {
-    return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
-  }
-  const hasSet = clauses.some((clause) => clause.type === 'set');
-  const hasNegation = clauses.some((clause) => clause.type === 'not');
-  return (hasSet && hasNegation)
-    || clauses.some((clause) => (clause.type === 'set' || clause.type === 'bind') && expressionIsVolatile(clause.expr));
+// SPARQL 1.2 RL run-once rules are exactly rules with an assignment element
+// or a blank node in the rule head. See SPARQL-RL §4.4.
+function assignmentsNeedRunOnce(clauses = []) {
+  return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
 }
 
-function ruleNeedsRunOnce(head = [], body = [], options = {}) {
-  return assignmentsNeedRunOnce(body, options) || head.some(tripleHasBlankNode);
+function ruleNeedsRunOnce(head = [], body = []) {
+  return assignmentsNeedRunOnce(body) || head.some(tripleHasBlankNode);
 }
 
 function tripleHasBlankNode(triple) {
@@ -31,33 +23,4 @@ function termHasBlankNode(term) {
   return false;
 }
 
-function expressionIsVolatile(expr) {
-  if (!expr) return false;
-  switch (expr.type) {
-    case 'call': {
-      const name = localName(expr.name).toLowerCase();
-      if (name === 'uuid' || name === 'struuid') return true;
-      if (name === 'bnode' && (!expr.args || expr.args.length === 0)) return true;
-      return (expr.args || []).some(expressionIsVolatile);
-    }
-    case 'binary':
-      return expressionIsVolatile(expr.left) || expressionIsVolatile(expr.right);
-    case 'unary':
-      return expressionIsVolatile(expr.expr);
-    case 'list':
-      return (expr.items || []).some(expressionIsVolatile);
-    default:
-      return false;
-  }
-}
-
-function localName(name) {
-  const text = String(name || '');
-  const hash = text.lastIndexOf('#');
-  const slash = text.lastIndexOf('/');
-  const colon = text.lastIndexOf(':');
-  const index = Math.max(hash, slash, colon);
-  return index >= 0 ? text.slice(index + 1) : text;
-}
-
-module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, expressionIsVolatile, tripleHasBlankNode, termHasBlankNode };
+module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, tripleHasBlankNode, termHasBlankNode };

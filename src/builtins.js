@@ -17,12 +17,14 @@ const {
   valueToTerm,
   inferDatatype,
   XSD_STRING,
+  XSD_BOOLEAN,
   RDF_NS,
   XSD_INTEGER,
   XSD_DECIMAL,
   XSD_DOUBLE,
 } = require('./term.js');
 
+const XSD_NS = 'http://www.w3.org/2001/XMLSchema#';
 const XSD_DATETIME = 'http://www.w3.org/2001/XMLSchema#dateTime';
 const XSD_DAYTIME_DURATION = 'http://www.w3.org/2001/XMLSchema#dayTimeDuration';
 const RDF_LANGSTRING = `${RDF_NS}langString`;
@@ -31,7 +33,7 @@ const NUMERIC_DATATYPES = new Set([XSD_INTEGER, XSD_DECIMAL, XSD_DOUBLE]);
 const MAX_SAFE_INTEGER_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
 const MIN_SAFE_INTEGER_BIGINT = BigInt(Number.MIN_SAFE_INTEGER);
 
-// This table is intentionally shaped by the SHACL 1.2 Rules grammar production BuiltInCall.
+// This table is intentionally shaped by the SPARQL 1.2 RL grammar production BuiltInCall.
 // Keys are the canonical spellings used by the draft; lookup is case-insensitive so examples
 // may use SPARQL-style uppercase or lowercase spellings while still being checked against the
 // grammar's finite set of built-ins.
@@ -143,7 +145,44 @@ function evalCallExpression(expr, binding, options) {
     const condition = evalExpression(expr.args[0], binding, options);
     return evalExpression(booleanValue(condition) ? expr.args[1] : expr.args[2], binding, options);
   }
+  if (isXsdCast(expr.name)) {
+    if (expr.args.length !== 1) throw new Error(`${expr.name} expects 1 argument, got ${expr.args.length}`);
+    return castXsd(expr.name, evalExpression(expr.args[0], binding, options));
+  }
   return callBuiltin(expr.name, expr.args.map((arg) => evalExpression(arg, binding, options)), binding, options);
+}
+
+function isXsdCast(name) {
+  return typeof name === 'string' && name.startsWith(XSD_NS) && new Set([
+    XSD_STRING, XSD_BOOLEAN, XSD_INTEGER, XSD_DECIMAL, XSD_DOUBLE,
+  ]).has(name);
+}
+
+function castXsd(datatype, value) {
+  const primitive = value && value.type ? termToPrimitive(value) : value;
+  if (datatype === XSD_STRING) return literal(termToString(valueToTermIfNeeded(value)), XSD_STRING);
+  if (datatype === XSD_BOOLEAN) {
+    if (typeof primitive === 'boolean') return literal(primitive, XSD_BOOLEAN);
+    if (typeof primitive === 'number' || typeof primitive === 'bigint') return literal(Number(primitive) !== 0 && !Number.isNaN(Number(primitive)), XSD_BOOLEAN);
+    const lexical = String(primitive).trim();
+    if (lexical === 'true' || lexical === '1') return literal(true, XSD_BOOLEAN);
+    if (lexical === 'false' || lexical === '0') return literal(false, XSD_BOOLEAN);
+    throw new Error(`Cannot cast ${lexical} to xsd:boolean`);
+  }
+  if (datatype === XSD_INTEGER) {
+    if (typeof primitive === 'bigint') return literal(primitive, XSD_INTEGER);
+    if (typeof primitive === 'boolean') return literal(primitive ? 1 : 0, XSD_INTEGER);
+    const numeric = Number(primitive);
+    if (!Number.isFinite(numeric)) throw new Error(`Cannot cast ${primitive} to xsd:integer`);
+    const integer = Math.trunc(numeric);
+    return literal(integer, XSD_INTEGER);
+  }
+  if (datatype === XSD_DECIMAL || datatype === XSD_DOUBLE) {
+    const numeric = Number(primitive);
+    if (Number.isNaN(numeric)) throw new Error(`Cannot cast ${primitive} to ${datatype}`);
+    return literal(numeric, datatype);
+  }
+  throw new Error(`Unsupported XSD cast ${datatype}`);
 }
 
 function evalBinary(op, left, right) {
@@ -169,7 +208,11 @@ function evalBinary(op, left, right) {
   }
   if (op === '-') return subtractNumeric(lp, rp);
   if (op === '*') return multiplyNumeric(lp, rp);
-  if (op === '/') return Number(lp) / Number(rp);
+  if (op === '/') {
+    if (!isNumericPrimitive(lp) || !isNumericPrimitive(rp)) throw new Error('Numeric division requires numeric operands');
+    if (Number(rp) === 0) throw new Error('Division by zero');
+    return Number(lp) / Number(rp);
+  }
   throw new Error(`Unsupported binary operator ${op}`);
 }
 

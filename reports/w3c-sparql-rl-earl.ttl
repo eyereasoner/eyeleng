@@ -1,0 +1,3491 @@
+# EARL 1.0 test result report for Eyeleng running the W3C SPARQL 1.2 RL test suite.
+# Generated from the manifest at https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl .
+
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix earl: <http://www.w3.org/ns/earl#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix srt:  <http://www.w3.org/ns/sparql-rl-tests#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<#report>
+    a earl:TestResult ;
+    dct:title "Eyeleng W3C SPARQL 1.2 RL EARL report"@en ;
+    dct:description "Generated Eyeleng EARL 1.0 report for the W3C SPARQL 1.2 RL test manifest. 189/204 tests passed."@en ;
+    dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime ;
+    earl:outcome earl:failed .
+
+<https://github.com/eyereasoner/eyeleng>
+    a earl:Software, doap:Project, foaf:Agent ;
+    dct:title "Eyeleng"@en ;
+    doap:name "eyeleng" ;
+    foaf:homepage <https://github.com/eyereasoner/eyeleng> .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_1>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-ruleset-structure-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_2>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-ruleset-structure-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_3>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-ruleset-structure-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_3> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_4>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-ruleset-structure-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_4> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_5>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-ruleset-structure-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_5> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_6>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-ruleset-structure-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_6> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_7>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-07.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_7> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_8>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-08.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_8> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_9>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-09.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_9> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_10>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-10.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_10> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_11>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-11.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_11> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_12>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-12.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_12> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_13>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-13.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_13> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_14>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-14.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_14> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_15>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-15.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_15> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_16>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-16.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_16> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_17>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-paths-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_17> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_18>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-paths-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_18> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_19>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-paths-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_19> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_20>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-elements-filter-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_20> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_21>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-elements-filter-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_21> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_22>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-elements-filter-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_22> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_23>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-elements-not-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_23> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_24>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-elements-not-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_24> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_25>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-elements-not-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_25> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_26>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-rule-elements-not-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_26> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_27>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-reification-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_27> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_28>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-reification-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_28> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_29>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-reification-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_29> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_30>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-reification-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_30> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_31>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-reification-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_31> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_32>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-reification-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_32> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_33>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-reification-07.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_33> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_34>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-reification-08.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_34> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_35>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_35> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_36>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_36> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_37>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_37> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_38>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_38> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_39>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_39> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_40>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_40> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_41>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-07.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_41> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_42>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-08.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_42> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_43>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-09.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_43> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_44>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-10.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_44> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_45>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-11.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_45> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_46>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-12.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_46> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_47>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-13.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_47> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_48>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-14.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_48> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_49>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-15.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_49> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_50>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-16.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_50> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_51>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-17.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_51> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_52>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-18.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_52> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_53>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-19.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_53> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_54>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-20.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_54> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_55>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-data-21.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_55> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_56>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_56> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_57>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_57> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_58>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_58> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_59>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_59> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_60>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_60> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_61>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_61> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_62>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-07.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_62> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_63>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-08.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_63> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_64>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-09.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_64> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_65>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-10.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_65> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_66>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-11.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_66> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_67>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-12.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_67> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_68>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-13.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_68> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_69>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-14.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_69> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_70>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-15.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_70> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_71>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-16.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_71> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_72>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-17.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_72> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_73>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-18.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_73> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_74>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-19.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_74> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_75>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-20.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_75> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_76>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-21.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_76> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_77>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-22.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_77> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_78>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-23.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_78> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_79>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-24.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_79> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_80>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-25.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_80> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_81>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-26.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_81> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_82>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-template-27.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_82> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_83>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_83> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_84>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_84> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_85>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_85> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_86>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_86> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_87>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_87> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_88>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_88> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_89>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-07.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_89> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_90>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-08.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_90> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_91>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-09.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_91> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_92>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-10.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_92> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_93>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-11.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_93> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_94>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-12.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_94> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_95>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-13.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_95> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_96>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-14.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_96> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_97>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-15.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_97> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_98>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-16.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_98> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_99>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-17.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_99> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_100>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-18.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_100> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_101>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-19.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_101> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_102>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-20.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_102> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_103>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-21.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_103> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_104>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-22.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_104> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_105>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-23.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_105> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_106>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-24.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_106> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_107>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-25.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_107> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_108>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-26.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_108> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_109>
+    a earl:TestCase, srt:RulesPositiveSyntaxTest ;
+    dct:title "syntax/syntax-pattern-27.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_109> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_110>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_110> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_111>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_111> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_112>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_112> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_113>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_113> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_114>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_114> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_115>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-bad-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_115> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_116>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_116> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_117>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_117> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_118>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-rule-terms-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_118> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_119>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_119> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_120>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_120> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_121>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_121> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_122>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_122> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_123>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_123> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_124>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_124> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_125>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-07.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_125> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_126>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-08.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_126> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_127>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-09.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_127> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_128>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-10.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_128> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_129>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-data-bad-11.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_129> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_130>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_130> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_131>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_131> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_132>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_132> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_133>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_133> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_134>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_134> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_135>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-template-bad-06.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_135> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_136>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-pattern-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_136> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_137>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-pattern-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_137> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_138>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-pattern-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_138> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_139>
+    a earl:TestCase, srt:RulesNegativeSyntaxTest ;
+    dct:title "syntax/syntax-pattern-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_139> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_1>
+    a earl:TestCase, srt:RulesPositiveWellFormednessTest ;
+    dct:title "wellformed/wellformed-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_2>
+    a earl:TestCase, srt:RulesPositiveWellFormednessTest ;
+    dct:title "wellformed/wellformed-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_3>
+    a earl:TestCase, srt:RulesPositiveWellFormednessTest ;
+    dct:title "wellformed/wellformed-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_3> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#1\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compile (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:30:10)\n    at runSyntaxOrWellformedTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:191:38)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_4>
+    a earl:TestCase, srt:RulesPositiveWellFormednessTest ;
+    dct:title "wellformed/wellformed-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_4> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#1\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compile (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:30:10)\n    at runSyntaxOrWellformedTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:191:38)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_5>
+    a earl:TestCase, srt:RulesNegativeWellFormednessTest ;
+    dct:title "wellformed/wellformed-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_5> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_6>
+    a earl:TestCase, srt:RulesNegativeWellFormednessTest ;
+    dct:title "wellformed/wellformed-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_6> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_7>
+    a earl:TestCase, srt:RulesNegativeWellFormednessTest ;
+    dct:title "wellformed/wellformed-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_7> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_8>
+    a earl:TestCase, srt:RulesNegativeWellFormednessTest ;
+    dct:title "wellformed/wellformed-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_8> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_1>
+    a earl:TestCase, srt:RulesPositiveStratificationTest ;
+    dct:title "stratification/stratification-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_2>
+    a earl:TestCase, srt:RulesPositiveStratificationTest ;
+    dct:title "stratification/stratification-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_3>
+    a earl:TestCase, srt:RulesPositiveStratificationTest ;
+    dct:title "stratification/stratification-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_3> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_4>
+    a earl:TestCase, srt:RulesPositiveStratificationTest ;
+    dct:title "stratification/stratification-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_4> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_5>
+    a earl:TestCase, srt:RulesPositiveStratificationTest ;
+    dct:title "stratification/stratification-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_5> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_6>
+    a earl:TestCase, srt:RulesNegativeStratificationTest ;
+    dct:title "stratification/stratification-bad-01.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_6> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_7>
+    a earl:TestCase, srt:RulesNegativeStratificationTest ;
+    dct:title "stratification/stratification-bad-02.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_7> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_8>
+    a earl:TestCase, srt:RulesNegativeStratificationTest ;
+    dct:title "stratification/stratification-bad-03.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_8> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_9>
+    a earl:TestCase, srt:RulesNegativeStratificationTest ;
+    dct:title "stratification/stratification-bad-04.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_9> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_10>
+    a earl:TestCase, srt:RulesNegativeStratificationTest ;
+    dct:title "stratification/stratification-bad-05.srl"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_10> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-basic-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-02>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-basic-02"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-02> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-basic-bnodes-pattern-1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-2>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-basic-bnodes-pattern-2"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-3>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-basic-bnodes-pattern-3"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-3> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m []\n\u001b[31m-\u001b[39m [\n\u001b[31m-\u001b[39m   'I:http://example/x I:http://example/p L:\"match\"^^@--'\n\u001b[31m-\u001b[39m ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-4>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-basic-bnodes-pattern-4"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-4> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m []\n\u001b[31m-\u001b[39m [\n\u001b[31m-\u001b[39m   'I:http://example/s1 I:http://example/q I:http://example/o'\n\u001b[31m-\u001b[39m ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-data-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-data-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-data-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-data-02>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-data-02"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-data-02> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-bnodes-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'B:sk_572cf50094daada7cd27dcf6e4ae7bed I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b17_b I:http://example/q L:\"Rule\"^^@--',\n\u001b[39m    'I:http://example/s I:http://example/p I:http://example/o'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-02>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-bnodes-02"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-02> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'B:sk_38cffe2c0b1d0cf3d08aa80e33ee58dd I:http://example/q L:\"Rule\"^^@--',\n\u001b[32m+\u001b[39m   'B:sk_572cf50094daada7cd27dcf6e4ae7bed I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b19_b0 I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b19_b1 I:http://example/q L:\"Rule\"^^@--',\n\u001b[39m    'I:http://example/s I:http://example/p I:http://example/o'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-03>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-bnodes-03"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-03> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'B:sk_7eecf386a0116074dfecd046b47a7298 I:http://example/q L:\"Rule\"^^@--',\n\u001b[32m+\u001b[39m   'B:sk_8299921cf5d7699673e5c94492357b9a I:http://example/q L:\"Rule\"^^@--',\n\u001b[32m+\u001b[39m   'B:sk_cc98445bd06762d73bddbd1ffa6ba9db I:http://example/q L:\"Rule\"^^@--',\n\u001b[32m+\u001b[39m   'B:sk_d9ef7acd37856de9a63db8f1baa0d5ed I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b21_b0 I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b21_b1 I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b21_b2 I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b21_b3 I:http://example/q L:\"Rule\"^^@--',\n\u001b[39m    'I:http://example/s I:http://example/p I:http://example/o1',\n\u001b[39m    'I:http://example/s I:http://example/p I:http://example/o2'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-04>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-bnodes-04"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-04> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "Error: GET https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/eval/eval-bnodes-04-results.ttl failed: 404 \n    at fetchText (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:46:29)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async parseTurtleTriples (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:196:18)\n    at async Promise.all (index 2)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:210:55)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-subclass-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-rdfs-subclassof-1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-subclass-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-subproperty-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-rdfs-subproperty-1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-subproperty-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-domain-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-rdfs-domain-1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-domain-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-domain-2>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-rdfs-domain-2"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-domain-2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-range-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-rdfs-range-1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-range-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-range-2>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-rdfs-range-2"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-range-2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02a>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-negation-02a"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02a> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02b>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-negation-02b"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02b> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-filter-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-filter-1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-filter-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-filter-error-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-filter-error-1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-filter-error-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'I:http://example/x0 I:http://example/out L:0^^http://www.w3.org/2001/XMLSchema#integer@--',\n\u001b[39m    'I:http://example/x2 I:http://example/out L:2^^http://www.w3.org/2001/XMLSchema#integer@--'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-assign-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-02>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-assign-02"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-02> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-03>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-assign-03"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-03> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-error-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-assign-error-1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-error-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'I:http://example/x0 I:http://example/in L:0^^http://www.w3.org/2001/XMLSchema#integer@--',\n\u001b[32m+\u001b[39m   'I:http://example/x0 I:http://example/out L:null^^http://www.w3.org/2001/XMLSchema#decimal@--',\n\u001b[39m    'I:http://example/x2 I:http://example/in L:2^^http://www.w3.org/2001/XMLSchema#integer@--',\n\u001b[39m    'I:http://example/x2 I:http://example/out L:0.5^^http://www.w3.org/2001/XMLSchema#decimal@--'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-neg-data-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-02>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-neg-data-02"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-02> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-03>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-neg-data-03"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-03> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-04>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-neg-data-04"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-04> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-05>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-neg-data-05"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-05> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-06>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-neg-data-06"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-06> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-where-data-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-02>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-where-data-02"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-02> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-03>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-where-data-03"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-03> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/link-path-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval2/Link path 1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/link-path-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/link-path-2>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval2/Link path 2"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/link-path-2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval2/Eval-assign-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "Error: GET https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/eval2/eval-assign-01-results.ttl failed: 404 \n    at fetchText (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:46:29)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async parseTurtleTriples (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:196:18)\n    at async Promise.all (index 2)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:210:55)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-neg-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval2/eval-dft-value-neg-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-neg-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#1\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compileAsync (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:37:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:223:20)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-neg-02>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval2/eval-dft-value-neg-02"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-neg-02> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#2\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compileAsync (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:37:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:223:20)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-where-01>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval2/eval-dft-value-where-01"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-where-01> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#2\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compileAsync (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:37:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:223:20)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-where-02>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval2/eval-dft-value-where-02"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-where-02> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:failed ;
+        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#2\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compileAsync (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:37:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:223:20)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/example-1>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 1"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/example-1> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/example-2>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 2"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/example-2> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/example-3>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 3"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/example-3> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/example-4>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 4"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/example-4> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/example-5>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "examples/Example 5"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/example-5> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+    ] .
+

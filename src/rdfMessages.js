@@ -1,6 +1,6 @@
 'use strict';
 
-const { parseRdfDocument } = require('./rdfSyntax.js');
+const { parseRdfDocument } = require('./rdf.js');
 const {
   iri,
   blankNode,
@@ -305,7 +305,10 @@ async function parseRdfMessageLog(source, options = {}) {
     version: '1.2-messages',
     imports: [],
     prefixes,
-    data,
+    // RDF Message Logs are an ancillary RDF input format. Their envelope
+    // graph is base data, not a SPARQL-RL DATA block / inference graph.
+    baseData: data,
+    data: [],
     rules: [],
   };
 }

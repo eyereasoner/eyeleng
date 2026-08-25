@@ -9,13 +9,19 @@ const { BackwardProver, preferredBackwardPredicates, ruleIsBackwardOriented } = 
 function evaluate(program, options = {}) {
   const maxIterations = options.maxIterations ?? 10000;
   const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
-  const store = new TripleStore(program.data);
-  // SHACL 1.2 Rules distinguishes the immutable ground-data graph (base graph
-  // plus DATA blocks) from the growing evaluation graph. Snapshot it before
-  // any rules run so WHERE DATA and NOT DATA never see inferred triples.
-  const groundStore = new TripleStore(program.data);
-  const inputKeys = new Set(program.data.map(tripleKey));
+  const baseData = (program.baseData || []).slice();
+  const ruleData = (program.data || []).slice();
+  const store = new TripleStore([...baseData, ...ruleData]);
+  // SPARQL-RL ground data is the external base graph only. DATA blocks are
+  // rule-set facts and therefore belong to the inference graph.
+  const groundStore = new TripleStore(baseData);
+  const inputKeys = new Set(baseData.map(tripleKey));
   const inferred = [];
+  const inferredKeys = new Set();
+  for (const triple of ruleData) {
+    const key = tripleKey(triple);
+    if (!inputKeys.has(key) && !inferredKeys.has(key)) { inferred.push(triple); inferredKeys.add(key); }
+  }
   const trace = options.trace || options.prove ? [] : null;
   let iterations = 0;
   let ruleApplications = 0;
@@ -38,10 +44,7 @@ function evaluate(program, options = {}) {
     layerIndexes,
     analysis.dependency ? analysis.dependency.edges : [],
   );
-  const relaxedRecursiveRunOnce = options.relaxedRecursion === false
-    ? new Set()
-    : recursiveTermGenerationRuleIndexes(analysis);
-  const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+  const useHybrid = options.hybrid === true;
   const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
     ? preferredBackwardPredicates(program, options)
     : new Set();
@@ -68,16 +71,14 @@ function evaluate(program, options = {}) {
     hybridBackwardRules,
     hybridStats,
     groundStore,
-    targetBindingCache: new Map(),
   };
 
   for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
     const layer = layerIndexes[layerIndex];
     baseContext.layer = layerIndex + 1;
-    prepareTargetBindingsForLayer(program, store, layer, baseContext);
     const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-    const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
-    const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
+    const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+    const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
 
     if (runOnce.length > 0) {
       iterations += 1;
@@ -100,7 +101,8 @@ function evaluate(program, options = {}) {
     version: program.version || null,
     imports: program.imports || [],
     prefixes: program.prefixes,
-    input: program.data.slice(),
+    input: baseData,
+    data: ruleData,
     inferred,
     closure: store.values(),
     iterations,
@@ -117,13 +119,19 @@ function evaluate(program, options = {}) {
 async function evaluateAsync(program, options = {}) {
   const maxIterations = options.maxIterations ?? 10000;
   const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
-  const store = new TripleStore(program.data);
-  // SHACL 1.2 Rules distinguishes the immutable ground-data graph (base graph
-  // plus DATA blocks) from the growing evaluation graph. Snapshot it before
-  // any rules run so WHERE DATA and NOT DATA never see inferred triples.
-  const groundStore = new TripleStore(program.data);
-  const inputKeys = new Set(program.data.map(tripleKey));
+  const baseData = (program.baseData || []).slice();
+  const ruleData = (program.data || []).slice();
+  const store = new TripleStore([...baseData, ...ruleData]);
+  // SPARQL-RL ground data is the external base graph only. DATA blocks are
+  // rule-set facts and therefore belong to the inference graph.
+  const groundStore = new TripleStore(baseData);
+  const inputKeys = new Set(baseData.map(tripleKey));
   const inferred = [];
+  const inferredKeys = new Set();
+  for (const triple of ruleData) {
+    const key = tripleKey(triple);
+    if (!inputKeys.has(key) && !inferredKeys.has(key)) { inferred.push(triple); inferredKeys.add(key); }
+  }
   const trace = options.trace || options.prove ? [] : null;
   let iterations = 0;
   let ruleApplications = 0;
@@ -146,10 +154,7 @@ async function evaluateAsync(program, options = {}) {
     layerIndexes,
     analysis.dependency ? analysis.dependency.edges : [],
   );
-  const relaxedRecursiveRunOnce = options.relaxedRecursion === false
-    ? new Set()
-    : recursiveTermGenerationRuleIndexes(analysis);
-  const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+  const useHybrid = options.hybrid === true;
   const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
     ? preferredBackwardPredicates(program, options)
     : new Set();
@@ -176,16 +181,14 @@ async function evaluateAsync(program, options = {}) {
     hybridBackwardRules,
     hybridStats,
     groundStore,
-    targetBindingCache: new Map(),
   };
 
   for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
     const layer = layerIndexes[layerIndex];
     baseContext.layer = layerIndex + 1;
-    await prepareTargetBindingsForLayerAsync(program, store, layer, baseContext);
     const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-    const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
-    const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
+    const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+    const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
 
     if (runOnce.length > 0) {
       iterations += 1;
@@ -208,7 +211,8 @@ async function evaluateAsync(program, options = {}) {
     version: program.version || null,
     imports: program.imports || [],
     prefixes: program.prefixes,
-    input: program.data.slice(),
+    input: baseData,
+    data: ruleData,
     inferred,
     closure: store.values(),
     iterations,
@@ -292,7 +296,7 @@ function applyRuleOnce(program, store, ruleIndex, context) {
   if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
     bodyContext.retainedBodyVariables = collectVariables(rule.head);
   }
-  const initialBindings = rule.target ? targetBindingsForRule(program, store, ruleIndex, context) : [{}];
+  const initialBindings = [{}];
   const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
 
   for (const binding of bodyBindings) {
@@ -341,114 +345,6 @@ function* evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings
   }
 }
 
-async function prepareTargetBindingsForLayerAsync(program, store, ruleIndexes, context) {
-  for (const ruleIndex of ruleIndexes) {
-    if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
-      await targetBindingsForRuleAsync(program, store, ruleIndex, context);
-    }
-  }
-}
-
-async function targetBindingsForRuleAsync(program, store, ruleIndex, context) {
-  const cached = context.targetBindingCache && context.targetBindingCache.get(ruleIndex);
-  if (cached) return cached;
-
-  const rule = program.rules[ruleIndex];
-  const target = rule && rule.target;
-  if (!target) return [{}];
-
-  let resolved;
-  if (context.shapeEngine && typeof context.shapeEngine.eligibleFocusNodes === 'function') {
-    resolved = await context.shapeEngine.eligibleFocusNodes(target.shape, {
-      variable: target.variable,
-      rule,
-      ruleIndex,
-      layer: context.layer,
-      graph: store.values(),
-      groundGraph: context.groundStore.values(),
-      program,
-    });
-  } else if (typeof context.focusNodeResolver === 'function') {
-    resolved = await context.focusNodeResolver(target.shape, {
-      variable: target.variable,
-      rule,
-      ruleIndex,
-      layer: context.layer,
-      graph: store.values(),
-      groundGraph: context.groundStore.values(),
-      program,
-    });
-  } else {
-    throw new Error(`${rule.name || `rule#${ruleIndex + 1}`} uses FOR ?${target.variable} IN <${target.shape}>; provide shapes/shapeEngine or a focusNodeResolver(shape, context)`);
-  }
-
-  return cacheTargetBindings(resolved, target, ruleIndex, context);
-}
-
-function cacheTargetBindings(resolved, target, ruleIndex, context) {
-  if (resolved == null || typeof resolved[Symbol.iterator] !== 'function') {
-    throw new Error(`Focus-node resolution for <${target.shape}> must return an iterable of RDF focus nodes`);
-  }
-  const bindings = [];
-  const seen = new Set();
-  for (const node of resolved) {
-    const term = normalizeFocusNode(node);
-    const key = termKey(term);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    bindings.push({ [target.variable]: term });
-  }
-  if (context.targetBindingCache) context.targetBindingCache.set(ruleIndex, bindings);
-  return bindings;
-}
-
-function prepareTargetBindingsForLayer(program, store, ruleIndexes, context) {
-  for (const ruleIndex of ruleIndexes) {
-    if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
-      targetBindingsForRule(program, store, ruleIndex, context);
-    }
-  }
-}
-
-function targetBindingsForRule(program, store, ruleIndex, context) {
-  const cached = context.targetBindingCache && context.targetBindingCache.get(ruleIndex);
-  if (cached) return cached;
-
-  const rule = program.rules[ruleIndex];
-  const target = rule && rule.target;
-  if (!target) return [{}];
-
-  const resolver = context.focusNodeResolver;
-  if (typeof resolver !== 'function') {
-    throw new Error(`${rule.name || `rule#${ruleIndex + 1}`} uses FOR ?${target.variable} IN <${target.shape}>; provide a focusNodeResolver(shape, context) option that returns the conforming target focus nodes`);
-  }
-
-  const resolved = resolver(target.shape, {
-    variable: target.variable,
-    rule,
-    ruleIndex,
-    layer: context.layer,
-    graph: store.values(),
-    groundGraph: context.groundStore.values(),
-    program,
-  });
-  return cacheTargetBindings(resolved, target, ruleIndex, context);
-}
-
-function normalizeFocusNode(node) {
-  if (node && typeof node === 'object' && node.type) return node;
-  if (typeof node === 'string') return iri(node);
-  if (node && typeof node === 'object' && node.termType) {
-    if (node.termType === 'NamedNode') return iri(node.value);
-    if (node.termType === 'BlankNode') return blankNode(node.value);
-    if (node.termType === 'Literal') {
-      const datatype = node.datatype && node.datatype.value ? node.datatype.value : null;
-      return literal(node.value, datatype, node.language || null, node.direction || null);
-    }
-  }
-  throw new Error('focusNodeResolver returned an unsupported focus node; return an Eyeleng term, an RDF/JS term, or an absolute IRI string');
-}
-
 function proofUses(body, binding) {
   return body
     .filter((clause) => clause.type === 'triple')
@@ -484,17 +380,6 @@ function mergeBackwardStats(total, item) {
   total.memoHits += item.memoHits || 0;
   total.memoStores += item.memoStores || 0;
   total.maxDepth = Math.max(total.maxDepth || 0, item.maxDepth || 0);
-}
-
-function recursiveTermGenerationRuleIndexes(analysis) {
-  const out = new Set();
-  if (!analysis || !analysis.dependency || !analysis.diagnostics) return out;
-  const byName = new Map((analysis.dependency.rules || []).map((rule) => [rule.name, rule.index]));
-  for (const diagnostic of analysis.diagnostics) {
-    if (diagnostic.code !== 'recursive-assignment-rule') continue;
-    if (byName.has(diagnostic.rule)) out.add(byName.get(diagnostic.rule));
-  }
-  return out;
 }
 
 function instantiateHeadTriple(pattern, binding, headBlankLabels, headBlankMap, skolemKey) {

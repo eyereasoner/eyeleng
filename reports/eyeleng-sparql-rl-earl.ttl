@@ -1,0 +1,23 @@
+# EARL 1.0 test result report for Eyeleng running the W3C SPARQL 1.2 RL test suite.
+# Generated from the manifest at https://raw.githubusercontent.com/w3c/data-shapes/gh-pages/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl .
+
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix earl: <http://www.w3.org/ns/earl#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix srt:  <http://www.w3.org/ns/sparql-rl-tests#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<#report>
+    a earl:TestResult ;
+    dct:title "Eyeleng W3C SPARQL 1.2 RL EARL report"@en ;
+    dct:description "Generated Eyeleng EARL 1.0 report for the W3C SPARQL 1.2 RL test manifest. 0/0 tests passed."@en ;
+    dct:date "2026-08-25T22:41:29.732Z"^^xsd:dateTime ;
+    earl:outcome earl:passed .
+
+<https://github.com/eyereasoner/eyeleng>
+    a earl:Software, doap:Project, foaf:Agent ;
+    dct:title "Eyeleng"@en ;
+    doap:name "eyeleng" ;
+    foaf:homepage <https://github.com/eyereasoner/eyeleng> .
+

@@ -1,1 +1,1 @@
-eyeleng: error: Unstratified negation through rule#1 -> rule#2 using :blocked
+eyeleng: error: Stratification condition violated by a recursive closed dependency through rule#1 -> rule#2

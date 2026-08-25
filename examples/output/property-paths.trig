@@ -1,3 +1,5 @@
 :alice :grandparentOf :carol .
+:alice :parentOf :bob .
 :bob :hasParent :alice .
+:bob :parentOf :carol .
 :carol :hasParent :bob .

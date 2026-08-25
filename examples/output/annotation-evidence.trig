@@ -1,3 +1,7 @@
+:a :name "Alice" .
+:t :recorded "2021-07-07"^^xsd:date .
+:t :statedBy :bob .
+:t rdf:reifies <<(:a :name "Alice")>> .
 :test :hasNamedStatement :t .
 :test :hasStatement true .
 :test :statementAuthor :bob .

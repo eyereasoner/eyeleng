@@ -1,7 +1,6 @@
 PREFIX : <http://example/messages#>
 PREFIX eymsg: <https://eyereasoner.github.io/eyeling/vocab/message#>
 
-IMPORTS <./rdf-messages.trig>
 
 RULE { ?envelope :mentionsSensor ?sensor }
 WHERE {

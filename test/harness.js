@@ -22,14 +22,8 @@ function statusWord(status) {
   return `${C.r}FAIL${C.n}`;
 }
 
-function coloredMessage(status, msg) {
-  if (status === 'ok' || status === 'pass') return `${C.g}${msg}${C.n}`;
-  if (status === 'skip') return `${C.y}${msg}${C.n}`;
-  return `${C.r}${msg}${C.n}`;
-}
-
 function line(idx, status, msg, ms) {
-  const text = `${C.dim}${idx}${C.n} ${statusWord(status)} ${coloredMessage(status, msg)} ${msTag(ms)}`;
+  const text = `${C.dim}${idx}${C.n} ${statusWord(status)} ${msg} ${msTag(ms)}`;
   if (status === 'fail') console.error(text);
   else console.log(text);
 }

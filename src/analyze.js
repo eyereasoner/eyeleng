@@ -6,98 +6,68 @@ const { tripleHasBlankNode } = require('./assignments.js');
 function analyze(program, options = {}) {
   const diagnostics = [];
   const dependency = dependencyGraph(program, options);
-  const hasTermGeneratingRules = dependency.rules.some((rule) => rule.createsTerms);
-  const recursiveIndexes = hasTermGeneratingRules ? recursiveRuleIndexes(dependency) : new Set();
 
   program.rules.forEach((rule, index) => {
     const name = ruleName(rule, index);
-    const initialBound = rule.target ? new Set([rule.target.variable]) : new Set();
-    const bound = boundVariables(rule.body, initialBound);
-    const head = new Set();
-    for (const triple of rule.head) collectTripleVars(triple, head);
+    const initialBound = new Set();
 
-    for (const variable of head) {
-      if (!bound.has(variable)) {
-        diagnostics.push({
-          code: 'unsafe-head-variable',
-          severity: 'error',
-          rule: name,
-          message: `${displayRuleName(name, program.prefixes || {})} has unbound head variable ?${variable}`,
-        });
-      }
-    }
-
-    for (const triple of rule.head) {
-      if (triple.p.type !== 'iri' && triple.p.type !== 'var') {
-        diagnostics.push({
-          code: 'invalid-head-predicate',
-          severity: 'error',
-          rule: name,
-          message: `${displayRuleName(name, program.prefixes || {})} has a non-IRI/non-variable predicate in the head`,
-        });
-      }
-    }
-
-    diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}, initialBound));
-
-    const depRule = dependency.rules[index] || {};
-    if (depRule.createsTerms && recursiveIndexes.has(index)) {
+    // The 25 August 2026 grammar still contains ForClause, but the normative
+    // abstract syntax and evaluation model define no focus/shape component.
+    // Recognize it syntactically, but do not invent target semantics that the abstract evaluation model does not define.
+    if (rule.target) {
       diagnostics.push({
-        code: 'recursive-assignment-rule',
-        severity: 'warning',
-        rule: name,
-        message: `${displayRuleName(name, program.prefixes || {})} creates terms in a recursive dependency cycle; relaxed mode allows this but termination is not guaranteed (use --strict to reject it)`,
+        code: 'for-clause-no-evaluation-semantics', severity: 'error', rule: name,
+        message: `${displayRuleName(name, program.prefixes || {})} uses FOR ?${rule.target.variable} IN <${rule.target.iri}>; the current SPARQL-RL abstract evaluation model does not define FOR execution semantics`,
       });
     }
 
+    const bound = boundVariables(rule.body, initialBound);
+    const head = new Set();
+    for (const triple of rule.head) collectTripleVars(triple, head);
+    for (const variableName of head) {
+      if (!bound.has(variableName)) diagnostics.push({
+        code: 'unsafe-head-variable', severity: 'error', rule: name,
+        message: `${displayRuleName(name, program.prefixes || {})} has unbound head variable ?${variableName}`,
+      });
+    }
+    for (const triple of rule.head) {
+      if (triple.p.type !== 'iri' && triple.p.type !== 'var') diagnostics.push({
+        code: 'invalid-head-predicate', severity: 'error', rule: name,
+        message: `${displayRuleName(name, program.prefixes || {})} has a non-IRI/non-variable predicate in the head`,
+      });
+    }
+    diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}, initialBound));
   });
 
-  for (const cycle of dependency.unstratifiedCycles) {
-    diagnostics.push({
-      code: 'unstratified-negation',
-      severity: 'error',
-      rules: cycle.rules,
-      message: `Unstratified negation through ${cycle.rules.map((name) => displayRuleName(name, program.prefixes || {})).join(' -> ')} using ${cycle.predicate ? compactIRI(cycle.predicate, program.prefixes || {}) : '*'}`,
-    });
-  }
-
-  for (const cycle of dependency.shapeConstraintCycles || []) {
-    diagnostics.push({
-      code: 'shape-rule-cycle',
-      severity: 'error',
-      rules: cycle.rules,
-      shape: cycle.shape,
-      message: `Closed SHACL shape dependency cycle through ${cycle.rules.map((name) => displayRuleName(name, program.prefixes || {})).join(' -> ')} for <${cycle.shape}>${cycle.predicate ? ` using ${compactIRI(cycle.predicate, program.prefixes || {})}` : ''}`,
+  if (options.checkStratification !== false) {
+    for (const cycle of dependency.unstratifiedCycles) diagnostics.push({
+      code: 'unstratified-closed-dependency', severity: 'error', rules: cycle.rules,
+      message: `Stratification condition violated by a recursive closed dependency through ${cycle.rules.map((name) => displayRuleName(name, program.prefixes || {})).join(' -> ')}`,
     });
   }
 
   return {
-    warnings: diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
-    errors: diagnostics.filter((diagnostic) => diagnostic.severity === 'error'),
+    warnings: diagnostics.filter((d) => d.severity === 'warning'),
+    errors: diagnostics.filter((d) => d.severity === 'error'),
     diagnostics,
     dependency,
   };
 }
 
-function ruleName(rule, index) {
-  return rule.name || `rule#${index + 1}`;
-}
-
-function displayRuleName(name, prefixes = {}) {
-  return /^https?:/.test(name) ? compactIRI(name, prefixes) : name;
-}
+function ruleName(rule, index) { return rule.name || `rule#${index + 1}`; }
+function displayRuleName(name, prefixes = {}) { return /^https?:/.test(name) ? compactIRI(name, prefixes) : name; }
 
 function dependencyGraph(program, options = {}) {
   const rules = program.rules.map((rule, index) => {
-    const positivePatterns = bodyTriplePatterns(rule.body, false);
-    const negativePatterns = bodyTriplePatterns(rule.body, true);
+    // WHERE DATA and NOT DATA read the immutable base graph. Rule heads can
+    // never add triples to that graph, so those patterns do not create rule
+    // dependencies (§4.3 dependency is about possible head/body matching in
+    // the inference graph).
+    const positivePatterns = rule.groundData ? [] : bodyTriplePatterns(rule.body, false);
+    const negativePatterns = rule.groundData ? [] : bodyTriplePatterns(rule.body, true);
     const headTemplates = effectiveHeadTemplates(rule);
     return {
-      index,
-      name: ruleName(rule, index),
-      headTemplates,
-      positivePatterns,
-      negativePatterns,
+      index, name: ruleName(rule, index), headTemplates, positivePatterns, negativePatterns,
       headPredicates: new Set(headTemplates.map((triple) => predicateIRI(triple)).filter(Boolean)),
       positivePredicates: new Set(positivePatterns.flatMap((triple) => predicateIRIs(triple))),
       negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
@@ -106,46 +76,39 @@ function dependencyGraph(program, options = {}) {
       hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
       headHasBlankNode: ruleHeadHasBlankNode(rule),
       createsTerms: ruleCreatesTerms(rule, options),
-      target: rule.target || null,
-      shapeDependencies: rule.target ? resolveShapeDependencies(rule.target.shape, options) : null,
     };
   });
 
   const edgeMap = new Map();
   function addEdge(from, to, kind, predicate) {
-    const label = predicate || '*';
-    const key = `${from.index}->${to.index}:${label}`;
+    const key = `${from.index}->${to.index}`;
     const negated = kind === 'negated';
-    const termGeneration = kind === 'term-generation';
-    const shapeConstraint = kind === 'shape';
+    // Per §4.3, every dependency *from* an assignment rule or a rule with a
+    // blank node in its head is closed, even when the matching pattern itself
+    // is positive.
+    const runOnceConstraint = from.runOnce;
+    const closed = negated || runOnceConstraint;
     const existing = edgeMap.get(key);
     if (existing) {
+      existing.closed = existing.closed || closed;
+      existing.negative = existing.closed;
       existing.negated = existing.negated || negated;
-      existing.termGeneration = existing.termGeneration || termGeneration;
-      existing.shapeConstraint = existing.shapeConstraint || shapeConstraint;
-      if (shapeConstraint && !existing.shape && from.target) existing.shape = from.target.shape;
-      existing.negative = existing.negated || existing.termGeneration || existing.shapeConstraint;
+      existing.runOnceConstraint = existing.runOnceConstraint || runOnceConstraint;
+      if (predicate && !existing.predicates.includes(predicate)) existing.predicates.push(predicate);
+      if (!existing.predicate && predicate) existing.predicate = predicate;
       return;
     }
     edgeMap.set(key, {
-      from: from.index,
-      to: to.index,
-      negative: negated || termGeneration || shapeConstraint,
-      negated,
-      termGeneration,
-      shapeConstraint,
-      predicate,
-      shape: shapeConstraint && from.target ? from.target.shape : null,
+      from: from.index, to: to.index, label: closed ? 'closed' : 'open', closed, negative: closed,
+      negated, runOnceConstraint, predicate: predicate || null, predicates: predicate ? [predicate] : [],
     });
   }
 
   const headIndex = buildHeadTemplateIndex(rules);
-
   for (const from of rules) {
-    const forceClosed = from.createsTerms;
     for (const pattern of from.positivePatterns) {
       for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
-        if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], forceClosed ? 'term-generation' : 'positive', dependencyPredicateLabel(pattern));
+        if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], 'positive', dependencyPredicateLabel(pattern));
       }
     }
     for (const pattern of from.negativePatterns) {
@@ -155,97 +118,39 @@ function dependencyGraph(program, options = {}) {
     }
   }
 
-  for (const from of rules) {
-    if (!from.target || !from.shapeDependencies) continue;
-    const dependencies = from.shapeDependencies;
-    const wanted = new Set(dependencies.predicates || []);
-    for (const producer of rules) {
-      if (!producer.headTemplates || producer.headTemplates.length === 0) continue;
-      const hasVariablePredicate = producer.headTemplates.some((template) => !template.p || template.p.type !== 'iri');
-      if (dependencies.wildcard || hasVariablePredicate) {
-        addEdge(from, producer, 'shape', null);
-        continue;
-      }
-      for (const predicate of wanted) {
-        if (producer.headPredicates.has(predicate)) addEdge(from, producer, 'shape', predicate);
-      }
-    }
-  }
-
-  const edges = Array.from(edgeMap.values()).sort((a, b) => a.from - b.from || a.to - b.to || String(a.predicate || '').localeCompare(String(b.predicate || '')));
-
+  const edges = Array.from(edgeMap.values()).sort((a,b) => a.from-b.from || a.to-b.to);
+  for (const edge of edges) edge.label = edge.closed ? 'closed' : 'open';
   const components = stronglyConnectedComponents(rules.length, edges);
   const componentOf = new Map();
-  components.forEach((component, index) => {
-    for (const ruleIndex of component) componentOf.set(ruleIndex, index);
-  });
+  components.forEach((component, i) => component.forEach((ruleIndex) => componentOf.set(ruleIndex, i)));
 
   const unstratifiedCycles = [];
   const seen = new Set();
   for (const edge of edges) {
-    if (!edge.negated) continue;
-    if (edge.from === edge.to && rules[edge.from].runOnce && !rules[edge.from].headHasBlankNode) continue;
-    if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
+    if (!edge.closed || componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
     const component = components[componentOf.get(edge.from)];
-    const key = `${component.slice().sort((a, b) => a - b).join(',')}|${edge.predicate || '*'}`;
+    const isCycle = component.length > 1 || edge.from === edge.to;
+    if (!isCycle) continue;
+    const key = component.join(',');
     if (seen.has(key)) continue;
     seen.add(key);
-    unstratifiedCycles.push({
-      predicate: edge.predicate,
-      rules: component.map((ruleIndex) => rules[ruleIndex].name),
-    });
+    unstratifiedCycles.push({ rules: component.map((i) => rules[i].name) });
   }
 
-  const shapeConstraintCycles = [];
-  const seenShapeCycles = new Set();
-  for (const edge of edges) {
-    if (!edge.shapeConstraint) continue;
-    if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
-    const component = components[componentOf.get(edge.from)];
-    const key = `${component.slice().sort((a, b) => a - b).join(',')}|${edge.shape || ''}|${edge.predicate || '*'}`;
-    if (seenShapeCycles.has(key)) continue;
-    seenShapeCycles.add(key);
-    shapeConstraintCycles.push({
-      predicate: edge.predicate,
-      shape: edge.shape || (rules[edge.from].target && rules[edge.from].target.shape) || '',
-      rules: component.map((ruleIndex) => rules[ruleIndex].name),
-    });
-  }
-
-  const layers = stratificationLayers(rules.length, components, componentOf, edges);
-
+  const layers = unstratifiedCycles.length ? [rules.map((r) => r.index)] : stratificationLayers(rules.length, components, componentOf, edges);
   return {
     rules: rules.map((rule) => ({
-      index: rule.index,
-      name: rule.name,
-      headPredicates: Array.from(rule.headPredicates),
-      positivePredicates: Array.from(rule.positivePredicates),
-      negativePredicates: Array.from(rule.negativePredicates),
-      runOnce: rule.runOnce,
-      hasAssignment: rule.hasAssignment,
-      hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
-      headHasBlankNode: rule.headHasBlankNode,
-      createsTerms: rule.createsTerms,
-      target: rule.target,
-      shapeDependencies: rule.shapeDependencies,
+      index: rule.index, name: rule.name,
+      headPredicates: Array.from(rule.headPredicates), positivePredicates: Array.from(rule.positivePredicates), negativePredicates: Array.from(rule.negativePredicates),
+      runOnce: rule.runOnce, hasAssignment: rule.hasAssignment, hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
+      headHasBlankNode: rule.headHasBlankNode, createsTerms: rule.createsTerms,
     })),
     edges,
-    components: components.map((component) => component.map((ruleIndex) => rules[ruleIndex].name)),
-    layers: layers.map((layer) => layer.map((ruleIndex) => rules[ruleIndex].name)),
+    components: components.map((component) => component.map((i) => rules[i].name)),
+    layers: layers.map((layer) => layer.map((i) => rules[i].name)),
     layerIndexes: layers,
     unstratifiedCycles,
-    shapeConstraintCycles,
   };
-}
-
-function resolveShapeDependencies(shapeIRI, options = {}) {
-  if (!shapeIRI) return null;
-  if (options.shapeEngine && typeof options.shapeEngine.dependencies === 'function') {
-    return options.shapeEngine.dependencies(shapeIRI);
-  }
-  if (typeof options.shapeDependencies === 'function') return options.shapeDependencies(shapeIRI);
-  if (options.shapeDependencies && typeof options.shapeDependencies === 'object') return options.shapeDependencies[shapeIRI] || null;
-  return null;
 }
 
 function buildHeadTemplateIndex(rules) {
@@ -360,77 +265,24 @@ function allTemplateIds(length) {
 
 function stratificationLayers(ruleCount, components, componentOf, edges) {
   if (ruleCount === 0) return [];
-  const outgoing = Array.from({ length: components.length }, () => new Set());
-  const indegree = Array(components.length).fill(0);
-
-  for (const edge of edges) {
-    const dependent = componentOf.get(edge.from);
-    const dependency = componentOf.get(edge.to);
-    if (dependent === dependency) continue;
-    // Rule edge means "from depends on to". Evaluation must run dependency before dependent.
-    if (!outgoing[dependency].has(dependent)) {
-      outgoing[dependency].add(dependent);
-      indegree[dependent] += 1;
-    }
-  }
-
-  let ready = [];
-  for (let i = 0; i < indegree.length; i += 1) if (indegree[i] === 0) ready.push(i);
-  const layers = [];
-  const emitted = new Set();
-  while (ready.length > 0) {
-    ready.sort((a, b) => componentMin(components[a]) - componentMin(components[b]));
-    const layerComponents = ready;
-    ready = [];
-    const layer = [];
-    for (const componentIndex of layerComponents) {
-      emitted.add(componentIndex);
-      layer.push(...components[componentIndex]);
-      for (const next of outgoing[componentIndex]) {
-        indegree[next] -= 1;
-        if (indegree[next] === 0) ready.push(next);
+  const levels = Array(ruleCount).fill(0);
+  const limit = ruleCount + 1;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const edge of edges) {
+      const required = levels[edge.to] + (edge.closed ? 1 : 0);
+      if (levels[edge.from] < required) {
+        levels[edge.from] = required;
+        if (levels[edge.from] > limit) throw new Error('Stratification error');
+        changed = true;
       }
     }
-    layers.push(layer.sort((a, b) => a - b));
   }
-
-  if (emitted.size !== components.length) return [Array.from({ length: ruleCount }, (_, i) => i)];
+  const max = Math.max(0, ...levels);
+  const layers = Array.from({ length: max + 1 }, () => []);
+  levels.forEach((level, index) => layers[level].push(index));
   return layers;
-}
-
-
-function componentMin(component) {
-  let min = Infinity;
-  for (const value of component) if (value < min) min = value;
-  return min;
-}
-
-function recursiveRuleIndexes(dependency) {
-  const out = new Set();
-  const ruleByName = new Map(dependency.rules.map((rule) => [rule.name, rule]));
-  const componentOf = new Map();
-
-  dependency.components.forEach((component, componentIndex) => {
-    for (const name of component) {
-      const rule = ruleByName.get(name);
-      if (rule) componentOf.set(rule.index, componentIndex);
-    }
-  });
-
-  for (const component of dependency.components) {
-    if (component.length <= 1) continue;
-    for (const name of component) {
-      const rule = ruleByName.get(name);
-      if (rule) out.add(rule.index);
-    }
-  }
-
-  for (const edge of dependency.edges) {
-    const rule = (dependency.rules || []).find((candidate) => candidate.index === edge.from);
-    if (edge.from === edge.to && edge.negated && rule && rule.runOnce && !rule.headHasBlankNode) continue;
-    if (edge.from === edge.to || componentOf.get(edge.from) === componentOf.get(edge.to)) out.add(edge.from);
-  }
-  return out;
 }
 
 function stronglyConnectedComponents(size, edges) {
@@ -545,7 +397,7 @@ function bodyTriplePatterns(clauses, wantNegative, inNegativeContext = false) {
       if (clause.type === 'path') out.push(...pathTriplePatterns(clause.triple));
       else out.push(clause.triple);
     } else if (clause.type === 'not') {
-      out.push(...bodyTriplePatterns(clause.body, wantNegative, true));
+      if (!clause.groundData) out.push(...bodyTriplePatterns(clause.body, wantNegative, true));
     }
   }
   return out;

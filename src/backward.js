@@ -38,7 +38,7 @@ function bodySupported(clauses, options = {}) {
 }
 
 function ruleSupported(rule, options = {}) {
-  // Targeted rules are seeded from SHACL focus nodes by the forward evaluator.
+  // FOR clauses have no execution hook in the current SPARQL-RL abstract evaluation model.
   // Until the backward prover has an equivalent targeting gate, treating them
   // as ordinary rules would be semantically incorrect.
   if (rule.target) return false;

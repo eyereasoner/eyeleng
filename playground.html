@@ -381,7 +381,7 @@
     <header>
       <div>
         <h1>Eyeleng Playground</h1>
-        <p class="lede">Edit an SRL or RDF Rules program below, load it from a URL, autosave locally, or copy a share link with the program encoded in the fragment.</p>
+        <p class="lede">Edit a SPARQL 1.2 RL rule set below, load it from a URL, autosave locally, or copy a share link with the program encoded in the fragment.</p>
       </div>
       <div class="badge">Powered by <a href="https://github.com/eyereasoner/eyeleng" target="_blank" rel="noreferrer">Eyeleng</a> — running version <span id="version-label">v…</span></div>
     </header>
@@ -394,7 +394,7 @@
         </div>
         <div class="card-body">
           <div class="uri-row">
-            <label for="rules-uri">Load SRL/RDF Rules from URL</label>
+            <label for="rules-uri">Load SPARQL 1.2 RL from URL</label>
             <div class="uri-input-row">
               <input id="rules-uri" type="text" value="https://raw.githubusercontent.com/eyereasoner/eyeleng/refs/heads/main/examples/family.srl" />
               <button id="load-uri-btn" type="button">Load from URL</button>
@@ -419,16 +419,10 @@
               <span class="hint">Examples are listed from the <a href="https://github.com/eyereasoner/eyeleng/tree/main/examples">GitHub repository</a>.</span>
             </div>
             <div>
-              <label for="syntax-select">Syntax</label>
+              <label for="syntax-select">Rule syntax</label>
               <select id="syntax-select">
-                <option value="auto">Auto-detect SRL/RDF Rules</option>
-                <option value="srl">SRL</option>
-                <option value="rdf">RDF Rules/Turtle</option>
+                <option value="srl">SPARQL 1.2 RL (SRL)</option>
               </select>
-            </div>
-            <div>
-              <label for="ruleset-input">RDF RuleSet term</label>
-              <input id="ruleset-input" type="text" placeholder="Optional, e.g. :ruleSet-1" />
             </div>
             <div>
               <label for="max-iterations">Max iterations</label>
@@ -451,7 +445,7 @@
             <span class="hint">When present, the output is bindings for this raw SRL body pattern over the closure.</span>
           </div>
 
-          <label for="editor">Editable SRL/RDF Rules program</label>
+          <label for="editor">Editable SPARQL 1.2 RL program</label>
           <div class="code-editor">
             <pre id="editor-highlight" class="code-highlight" aria-hidden="true"></pre>
             <textarea id="editor" class="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
@@ -488,7 +482,7 @@
   <script>
     window.__EYELENG_MODULES__ = {};
     window.__EYELENG_MAPPINGS__ = {};
-    window.__EYELENG_EXAMPLES__ = {"family.srl":"PREFIX : <http://example/>\n\nDATA {\n  :A :fatherOf :X .\n  :B :motherOf :X .\n  :C :motherOf :A .\n}\n\nRULE { ?x :childOf ?y } WHERE { ?y :fatherOf ?x }\nRULE { ?x :childOf ?y } WHERE { ?y :motherOf ?x }\nRULE { ?x :descendedFrom ?y } WHERE { ?x :childOf ?y }\nRULE { ?x :descendedFrom ?y } WHERE { ?x :childOf ?z . ?z :descendedFrom ?y }\n","socrates.srl":"PREFIX : <http://example.org/socrates#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nDATA {\n  :Socrates a :Human .\n  :Human rdfs:subClassOf :Mortal .\n}\n\nRULE { ?individual a ?superclass } WHERE {\n  ?individual a ?class .\n  ?class rdfs:subClassOf ?superclass .\n}\n","spec-2-2-recursion.srl":"PREFIX : <http://example.com/>\n\nDATA {\n  :A :fatherOf :X .\n  :B :motherOf :X .\n  :C :motherOf :A .\n}\n\nRULE { ?x :childOf ?y } WHERE { ?y :fatherOf ?x }\nRULE { ?x :childOf ?y } WHERE { ?y :motherOf ?x }\nRULE { ?x :descendedFrom ?y } WHERE { ?x :childOf ?y }\nRULE { ?x :descendedFrom ?y } WHERE { ?x :childOf ?z . ?z :descendedFrom ?y }\n","bmi.srl":"# Adapted from eyeling/examples/bmi.n3\n# Normalizes metric input, computes BMI, assigns an adult BMI category, and\n# derives a healthy-weight band for the given height.\n\nPREFIX : <http://example/eyeling/bmi/>\n\nDATA {\n  :Input :unitSystem \"metric\" ; :weight 72.0 ; :height 178.0 .\n}\n\nRULE { :Case :weightKg ?weight ; :heightM ?heightM }\nWHERE {\n  :Input :unitSystem \"metric\" ; :weight ?weight ; :height ?heightCm .\n  SET(?heightM := ?heightCm / 100.0)\n}\n\nRULE {\n  :Case :heightSquared ?heightSquared ;\n        :bmi ?bmi ;\n        :bmiRounded ?bmiRounded ;\n        :healthyMinKg ?healthyMin ;\n        :healthyMaxKg ?healthyMax ;\n        :healthyMinKgRounded ?healthyMinRounded ;\n        :healthyMaxKgRounded ?healthyMaxRounded .\n}\nWHERE {\n  :Case :weightKg ?weight ; :heightM ?heightM .\n  SET(?heightSquared := ?heightM * ?heightM)\n  SET(?bmi := ?weight / ?heightSquared)\n  SET(?bmiRounded := ROUND(?bmi * 100.0) / 100.0)\n  SET(?healthyMin := 18.5 * ?heightSquared)\n  SET(?healthyMax := 24.9 * ?heightSquared)\n  SET(?healthyMinRounded := ROUND(?healthyMin * 10.0) / 10.0)\n  SET(?healthyMaxRounded := ROUND(?healthyMax * 10.0) / 10.0)\n}\n\nRULE { :Decision :category \"Underweight\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi < 18.5) }\n\nRULE { :Decision :category \"Normal\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 18.5 && ?bmi < 25.0) }\n\nRULE { :Decision :category \"Overweight\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 25.0 && ?bmi < 30.0) }\n\nRULE { :Decision :category \"Obesity I\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 30.0 && ?bmi < 35.0) }\n\nRULE { :Decision :category \"Obesity II\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 35.0 && ?bmi < 40.0) }\n\nRULE { :Decision :category \"Obesity III\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 40.0) }\n\nRULE {\n  :Answer :bmi ?bmiRounded ;\n          :category ?category ;\n          :healthyMinKg ?healthyMinRounded ;\n          :healthyMaxKg ?healthyMaxRounded .\n}\nWHERE {\n  :Case :bmiRounded ?bmiRounded ;\n        :healthyMinKgRounded ?healthyMinRounded ;\n        :healthyMaxKgRounded ?healthyMaxRounded .\n  :Decision :category ?category .\n}\n","stratified-negation.srl":"PREFIX : <http://example/>\n\nDATA {\n  :alice a :Person ; :blocked true .\n  :bob a :Person .\n  :carol a :Person ; :flagged true .\n}\n\n# This rule is intentionally written before the producer of :blocked.\n# Stratified evaluation must still run the :blocked-producing rule first.\nRULE { ?x :eligible true }\nWHERE { ?x a :Person . NOT { ?x :blocked true } }\n\nRULE { ?x :blocked true }\nWHERE { ?x :flagged true }\n","spec-builtins.srl":"PREFIX : <http://example/>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nDATA {\n  :event :when \"2026-05-15T10:20:30Z\"^^xsd:dateTime .\n}\n\nRULE { :event :year ?year ; :month ?month ; :blank ?blank ; :tripleSubject ?subject }\nWHERE {\n  :event :when ?when .\n  SET(?year := YEAR(?when))\n  SET(?month := MONTH(?when))\n  SET(?blank := BNODE(\"event\"))\n  SET(?triple := TRIPLE(:subject, :predicate, :object))\n  SET(?subject := SUBJECT(?triple))\n}\n","spec-4-2-rdf-rules-syntax.ttl":"# Captured from the SHACL 1.2 Rules draft section 4.2.\n# This is RDF Rules syntax in Turtle and is executable by Eyeleng.\n\nPREFIX :       <http://example/>\nPREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\nPREFIX sh:     <http://www.w3.org/ns/shacl#>\nPREFIX srl:    <http://www.w3.org/ns/shacl-rules#>\nPREFIX sparql: <http://www.w3.org/ns/sparql#>\n\n:ruleSet-1\n  rdf:type srl:RuleSet;\n  srl:data (\n    [  srl:subject :x ; srl:predicate :p ; srl:object 1 ]\n    [  srl:subject :x ; srl:predicate :q ; srl:object 2 ]\n  );\n  srl:rules (\n    [\n      rdf:type srl:Rule;\n      srl:head (\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :bothPositive ; srl:object true ]\n      ) ;\n      srl:body (\n        [ srl:subject [ srl:varName \"x\" ]; srl:predicate :p ; srl:object [ srl:varName \"v1\" ] ]\n        [ srl:expr [ sparql:greaterThan ( [ srl:varName \"v1\" ] 0 ) ] ]\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :q ; srl:object [ srl:varName \"v2\" ] ]\n        [ srl:expr [ sparql:greaterThan ( [ srl:varName \"v2\" ] 0 ) ] ]\n      );\n    ]\n    [\n      rdf:type srl:Rule;\n      srl:head (\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :oneIsZero ; srl:object true ]\n      ) ;\n      srl:body (\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :p ; srl:object [ srl:varName \"v1\" ] ]\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :q ; srl:object [ srl:varName \"v2\" ] ]\n        [ srl:filter [ sparql:function-or (\n              [ sparql:equals ( [ srl:varName \"v1\" ] 0 ) ]\n              [ sparql:equals ( [ srl:varName \"v2\" ] 0 ) ]\n            ) ]\n        ]\n      );\n    ]\n  ) .\n","basic-ruleset.ttl":"PREFIX : <http://example/>\nPREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\nPREFIX srl: <http://www.w3.org/ns/shacl-rules#>\n\n:familyRules a srl:RuleSet ;\n  srl:data (\n    [ srl:subject :alice ; srl:predicate :parentOf ; srl:object :bob ]\n    [ srl:subject :bob ; srl:predicate :parentOf ; srl:object :carol ]\n  ) ;\n  srl:rules (\n    [ a srl:Rule ;\n      srl:body (\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :parentOf ; srl:object [ srl:varName \"y\" ] ]\n      ) ;\n      srl:head (\n        [ srl:subject [ srl:varName \"y\" ] ; srl:predicate :childOf ; srl:object [ srl:varName \"x\" ] ]\n      )\n    ]\n    [ a srl:Rule ;\n      srl:body (\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :parentOf ; srl:object [ srl:varName \"y\" ] ]\n      ) ;\n      srl:head (\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :ancestorOf ; srl:object [ srl:varName \"y\" ] ]\n      )\n    ]\n    [ a srl:Rule ;\n      srl:body (\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :parentOf ; srl:object [ srl:varName \"y\" ] ]\n        [ srl:subject [ srl:varName \"y\" ] ; srl:predicate :ancestorOf ; srl:object [ srl:varName \"z\" ] ]\n      ) ;\n      srl:head (\n        [ srl:subject [ srl:varName \"x\" ] ; srl:predicate :ancestorOf ; srl:object [ srl:varName \"z\" ] ]\n      )\n    ]\n  ) .\n"};
+    window.__EYELENG_EXAMPLES__ = {"family.srl":"PREFIX : <http://example/>\n\nDATA {\n  :A :fatherOf :X .\n  :B :motherOf :X .\n  :C :motherOf :A .\n}\n\nRULE { ?x :childOf ?y } WHERE { ?y :fatherOf ?x }\nRULE { ?x :childOf ?y } WHERE { ?y :motherOf ?x }\nRULE { ?x :descendedFrom ?y } WHERE { ?x :childOf ?y }\nRULE { ?x :descendedFrom ?y } WHERE { ?x :childOf ?z . ?z :descendedFrom ?y }\n","socrates.srl":"PREFIX : <http://example.org/socrates#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nDATA {\n  :Socrates a :Human .\n  :Human rdfs:subClassOf :Mortal .\n}\n\nRULE { ?individual a ?superclass } WHERE {\n  ?individual a ?class .\n  ?class rdfs:subClassOf ?superclass .\n}\n","spec-2-2-recursion.srl":"PREFIX : <http://example.com/>\n\nDATA {\n  :A :fatherOf :X .\n  :B :motherOf :X .\n  :C :motherOf :A .\n}\n\nRULE { ?x :childOf ?y } WHERE { ?y :fatherOf ?x }\nRULE { ?x :childOf ?y } WHERE { ?y :motherOf ?x }\nRULE { ?x :descendedFrom ?y } WHERE { ?x :childOf ?y }\nRULE { ?x :descendedFrom ?y } WHERE { ?x :childOf ?z . ?z :descendedFrom ?y }\n","bmi.srl":"# Adapted from eyeling/examples/bmi.n3\n# Normalizes metric input, computes BMI, assigns an adult BMI category, and\n# derives a healthy-weight band for the given height.\n\nPREFIX : <http://example/eyeling/bmi/>\n\nDATA {\n  :Input :unitSystem \"metric\" ; :weight 72.0 ; :height 178.0 .\n}\n\nRULE { :Case :weightKg ?weight ; :heightM ?heightM }\nWHERE {\n  :Input :unitSystem \"metric\" ; :weight ?weight ; :height ?heightCm .\n  SET(?heightM := ?heightCm / 100.0)\n}\n\nRULE {\n  :Case :heightSquared ?heightSquared ;\n        :bmi ?bmi ;\n        :bmiRounded ?bmiRounded ;\n        :healthyMinKg ?healthyMin ;\n        :healthyMaxKg ?healthyMax ;\n        :healthyMinKgRounded ?healthyMinRounded ;\n        :healthyMaxKgRounded ?healthyMaxRounded .\n}\nWHERE {\n  :Case :weightKg ?weight ; :heightM ?heightM .\n  SET(?heightSquared := ?heightM * ?heightM)\n  SET(?bmi := ?weight / ?heightSquared)\n  SET(?bmiRounded := ROUND(?bmi * 100.0) / 100.0)\n  SET(?healthyMin := 18.5 * ?heightSquared)\n  SET(?healthyMax := 24.9 * ?heightSquared)\n  SET(?healthyMinRounded := ROUND(?healthyMin * 10.0) / 10.0)\n  SET(?healthyMaxRounded := ROUND(?healthyMax * 10.0) / 10.0)\n}\n\nRULE { :Decision :category \"Underweight\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi < 18.5) }\n\nRULE { :Decision :category \"Normal\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 18.5 && ?bmi < 25.0) }\n\nRULE { :Decision :category \"Overweight\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 25.0 && ?bmi < 30.0) }\n\nRULE { :Decision :category \"Obesity I\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 30.0 && ?bmi < 35.0) }\n\nRULE { :Decision :category \"Obesity II\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 35.0 && ?bmi < 40.0) }\n\nRULE { :Decision :category \"Obesity III\" }\nWHERE { :Case :bmi ?bmi . FILTER(?bmi >= 40.0) }\n\nRULE {\n  :Answer :bmi ?bmiRounded ;\n          :category ?category ;\n          :healthyMinKg ?healthyMinRounded ;\n          :healthyMaxKg ?healthyMaxRounded .\n}\nWHERE {\n  :Case :bmiRounded ?bmiRounded ;\n        :healthyMinKgRounded ?healthyMinRounded ;\n        :healthyMaxKgRounded ?healthyMaxRounded .\n  :Decision :category ?category .\n}\n","stratified-negation.srl":"PREFIX : <http://example/>\n\nDATA {\n  :alice a :Person ; :blocked true .\n  :bob a :Person .\n  :carol a :Person ; :flagged true .\n}\n\n# This rule is intentionally written before the producer of :blocked.\n# Stratified evaluation must still run the :blocked-producing rule first.\nRULE { ?x :eligible true }\nWHERE { ?x a :Person . NOT { ?x :blocked true } }\n\nRULE { ?x :blocked true }\nWHERE { ?x :flagged true }\n","spec-builtins.srl":"PREFIX : <http://example/>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nDATA {\n  :event :when \"2026-05-15T10:20:30Z\"^^xsd:dateTime .\n}\n\nRULE { :event :year ?year ; :month ?month ; :blank ?blank ; :tripleSubject ?subject }\nWHERE {\n  :event :when ?when .\n  SET(?year := YEAR(?when))\n  SET(?month := MONTH(?when))\n  SET(?blank := BNODE(\"event\"))\n  SET(?triple := TRIPLE(:subject, :predicate, :object))\n  SET(?subject := SUBJECT(?triple))\n}\n"};
   </script>
   <script src="dist/browser/eyeleng.browser.js"></script>
   <script>
@@ -512,7 +506,6 @@
         clearBackground: $('clear-background-btn'),
         example: $('example-select'),
         syntax: $('syntax-select'),
-        ruleSet: $('ruleset-input'),
         maxIterations: $('max-iterations'),
         all: $('all-output'),
         json: $('json-output'),
@@ -744,7 +737,7 @@
           if (!response.ok) throw new Error('HTTP ' + response.status);
           const entries = await response.json();
           const names = entries
-            .filter((entry) => entry && entry.type === 'file' && /\.(?:srl|ttl)$/i.test(entry.name || ''))
+            .filter((entry) => entry && entry.type === 'file' && /\.srl$/i.test(entry.name || ''))
             .map((entry) => entry.name);
           if (names.length > 0) setExampleOptions(names);
         } catch (_) {
@@ -764,7 +757,7 @@
           }
           els.editor.value = examples[name];
           updateEditorHighlight();
-          els.syntax.value = name.endsWith('.ttl') ? 'rdf' : 'auto';
+          els.syntax.value = 'srl';
           saveState();
           setStatus('Example loaded.', 'ok');
         } catch (error) {
@@ -777,8 +770,7 @@
         return {
           source: examples['family.srl'],
           query: '',
-          syntax: 'auto',
-          ruleSet: '',
+          syntax: 'srl',
           maxIterations: 1000,
           all: false,
           json: false,
@@ -795,8 +787,7 @@
         els.editor.value = merged.source || '';
         updateEditorHighlight();
         els.query.value = merged.query || '';
-        els.syntax.value = merged.syntax || 'auto';
-        els.ruleSet.value = merged.ruleSet || '';
+        els.syntax.value = 'srl';
         els.maxIterations.value = String(merged.maxIterations || 1000);
         els.all.checked = !!merged.all;
         els.json.checked = !!merged.json;
@@ -812,8 +803,7 @@
         return {
           source: els.editor.value,
           query: els.query.value,
-          syntax: els.syntax.value,
-          ruleSet: els.ruleSet.value,
+          syntax: 'srl',
           maxIterations: Number(els.maxIterations.value) || 1000,
           all: els.all.checked,
           json: els.json.checked,
@@ -914,14 +904,11 @@
       }
 
       function compileOptions() {
-        const syntax = els.syntax.value;
-        const ruleSet = els.ruleSet.value.trim();
         return {
           strict: false,
+          strictGrammar: true,
           throwOnDiagnostics: false,
           resolveImports: false,
-          syntax: syntax === 'auto' ? undefined : syntax,
-          ruleSet: ruleSet || undefined,
         };
       }
 
@@ -1046,7 +1033,7 @@
 
       function initEvents() {
         const autosaveEvents = ['input', 'change'];
-        for (const el of [els.editor, els.query, els.syntax, els.ruleSet, els.maxIterations, els.all, els.json, els.trace, els.strict, els.checkOnly, els.analysis]) {
+        for (const el of [els.editor, els.query, els.syntax, els.maxIterations, els.all, els.json, els.trace, els.strict, els.checkOnly, els.analysis]) {
           for (const eventName of autosaveEvents) el.addEventListener(eventName, saveState);
         }
         els.editor.addEventListener('input', updateEditorHighlight);

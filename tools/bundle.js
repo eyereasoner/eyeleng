@@ -122,7 +122,7 @@ function buildBrowser() {
   } catch {
     // Keep source-only checkouts buildable before npm install. This fallback is
     // sufficient for the synchronous SRL API; installing dependencies enables
-    // the full RDF/SHACL browser bundle.
+    // the full SPARQL-RL + RDF 1.2 browser bundle.
     return buildBrowserFallback();
   }
 
@@ -177,9 +177,9 @@ function buildBrowserFallback() {
 
 function buildBrowserModuleWrapper() {
   const exported = [
-    'parse', 'parseQuery', 'parseInput', 'parseInputAsync', 'parseRdfSyntax', 'parseRdfDocument',
-    'rdfDocumentToProgram', 'compile', 'compileAsync', 'resolveImports', 'resolveImportsAsync',
-    'mergePrograms', 'analyze', 'evaluate', 'evaluateAsync', 'run', 'runAsync', 'runAndValidateAsync',
+    'parse', 'parseQuery', 'parseInput', 'parseInputAsync', 'parseRdfDocument',
+    'compile', 'compileAsync', 'resolveImports', 'resolveImportsAsync',
+    'mergePrograms', 'analyze', 'evaluate', 'evaluateAsync', 'run', 'runAsync',
     'runToString', 'runToStringAsync', 'runQuery', 'runQueryAsync', 'queryResult', 'formatTriples',
     'formatBindings', 'sortTriples', 'toJSON', 'formatTrace', 'formatProof',
   ];
@@ -208,8 +208,6 @@ function updatePlaygroundBundle() {
     'bmi.srl',
     'stratified-negation.srl',
     'spec-builtins.srl',
-    'spec-4-2-rdf-rules-syntax.ttl',
-    'basic-ruleset.ttl',
   ];
   const examples = {};
   for (const name of fallbackNames) {

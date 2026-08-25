@@ -13,27 +13,6 @@
       "repeat": 1,
       "baselineMs": 12316.7,
       "outputBytes": 5068161
-    },
-    {
-      "name": "fibonacci.srl",
-      "file": "examples/fibonacci.srl",
-      "repeat": 1,
-      "baselineMs": 124.0,
-      "outputBytes": 2405
-    },
-    {
-      "name": "fft32-numeric.srl",
-      "file": "examples/fft32-numeric.srl",
-      "repeat": 1,
-      "baselineMs": 607.8,
-      "outputBytes": 466351
-    },
-    {
-      "name": "path-discovery.srl",
-      "file": "examples/path-discovery.srl",
-      "repeat": 1,
-      "baselineMs": 3054.6,
-      "outputBytes": 736870
     }
   ]
 }

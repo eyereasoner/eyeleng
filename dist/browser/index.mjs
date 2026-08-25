@@ -10,9 +10,7 @@ export function parse(...args) { return getBrowserApi().parse(...args); }
 export function parseQuery(...args) { return getBrowserApi().parseQuery(...args); }
 export function parseInput(...args) { return getBrowserApi().parseInput(...args); }
 export function parseInputAsync(...args) { return getBrowserApi().parseInputAsync(...args); }
-export function parseRdfSyntax(...args) { return getBrowserApi().parseRdfSyntax(...args); }
 export function parseRdfDocument(...args) { return getBrowserApi().parseRdfDocument(...args); }
-export function rdfDocumentToProgram(...args) { return getBrowserApi().rdfDocumentToProgram(...args); }
 export function compile(...args) { return getBrowserApi().compile(...args); }
 export function compileAsync(...args) { return getBrowserApi().compileAsync(...args); }
 export function resolveImports(...args) { return getBrowserApi().resolveImports(...args); }
@@ -23,7 +21,6 @@ export function evaluate(...args) { return getBrowserApi().evaluate(...args); }
 export function evaluateAsync(...args) { return getBrowserApi().evaluateAsync(...args); }
 export function run(...args) { return getBrowserApi().run(...args); }
 export function runAsync(...args) { return getBrowserApi().runAsync(...args); }
-export function runAndValidateAsync(...args) { return getBrowserApi().runAndValidateAsync(...args); }
 export function runToString(...args) { return getBrowserApi().runToString(...args); }
 export function runToStringAsync(...args) { return getBrowserApi().runToStringAsync(...args); }
 export function runQuery(...args) { return getBrowserApi().runQuery(...args); }
@@ -41,9 +38,7 @@ const eyeleng = {
   parseQuery,
   parseInput,
   parseInputAsync,
-  parseRdfSyntax,
   parseRdfDocument,
-  rdfDocumentToProgram,
   compile,
   compileAsync,
   resolveImports,
@@ -54,7 +49,6 @@ const eyeleng = {
   evaluateAsync,
   run,
   runAsync,
-  runAndValidateAsync,
   runToString,
   runToStringAsync,
   runQuery,

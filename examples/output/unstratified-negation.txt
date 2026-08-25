@@ -1,2 +1,1 @@
-eyeleng: error: Unstratified negation through rule#1 -> rule#2 using :out
-eyeleng: error: Unstratified negation through rule#1 -> rule#2 using :in
+eyeleng: error: Stratification condition violated by a recursive closed dependency through rule#1 -> rule#2

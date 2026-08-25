@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL, fileURLToPath } = require('node:url');
 const { spawnSync } = require('node:child_process');
-const { runToStringAsync } = require('../src/index.js');
+const { runToStringAsync, parseRdfMessageLog } = require('../src/index.js');
 
 const root = path.join(__dirname, '..');
 const examplesDir = path.join(root, 'examples');
@@ -23,7 +23,7 @@ function collectExampleFiles(dir) {
     if (entry.name === 'README.md' || entry.name === 'output') continue;
     const filename = path.join(dir, entry.name);
     if (entry.isDirectory()) out.push(...collectExampleFiles(filename));
-    else if (/\.(srl|ttl)$/i.test(entry.name)) out.push(filename);
+    else if (/\.srl$/i.test(entry.name)) out.push(filename);
   }
   return out.sort((a, b) => relativeExample(a).localeCompare(relativeExample(b)));
 }
@@ -42,7 +42,6 @@ function runOptions(filename) {
     filename,
     baseIRI: pathToFileURL(filename).href,
     importResolver,
-    syntax: filename.endsWith('.ttl') ? 'rdf' : undefined,
     now: new Date('2026-05-15T12:34:56Z'),
   };
 }
@@ -81,7 +80,16 @@ function runCheckExample(filename, expectedStatus) {
 
 async function runOutputExample(filename) {
   const source = fs.readFileSync(filename, 'utf8');
-  return runToStringAsync(source, runOptions(filename));
+  const options = runOptions(filename);
+  if (relativeExample(filename) === 'rdf-messages.srl') {
+    const dataFilename = path.join(examplesDir, 'rdf-messages.trig');
+    const messageLog = await parseRdfMessageLog(fs.readFileSync(dataFilename, 'utf8'), {
+      filename: dataFilename,
+      baseIRI: pathToFileURL(dataFilename).href,
+    });
+    options.baseGraph = messageLog.baseData;
+  }
+  return runToStringAsync(source, options);
 }
 
 

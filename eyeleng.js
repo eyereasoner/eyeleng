@@ -21,6 +21,9 @@
         formatBindings,
         toJSON,
         resultTriples,
+        parseRdfDocument,
+        parseRdfMessageLog,
+        looksLikeRdfMessageLog,
       } = require('./api.js');
       const { compactIRI } = require('./term.js');
       
@@ -41,21 +44,8 @@
       
       const VERSION = readPackageVersion();
       
-      function legacyHelp() {
-        return `eyeleng ${VERSION}\n\nA JavaScript implementation experiment for the SHACL 1.2 Rules draft, including SRL and RDF Rules syntax front-ends.\n\nUsage:\n  eyeleng [options] [file ...]\n\nOptions:\n  --all                 Print the full closure, including input facts\n  --json                Print JSON instead of compact triples/bindings\n  --trace               Print derivation trace to stderr, or include it in JSON\n  --stats               Print iteration and triple counts to stderr\n  --check               Parse and analyze only; do not run rules\n  --strict              Treat static warnings as errors, including recursive term generation\n  --deps                Print rule dependency edges during --check\n  --query TEXT          Run a raw SRL body pattern over the closure or backward planner\n  --query-file FILE     Read a raw SRL body pattern from a file\n  --query-mode MODE     Use auto, forward, or backward query planning (default auto)\n  --hybrid              Force aggressive hybrid orientation for function-like rules\n  --no-hybrid           Disable automatic hybrid forward/backward execution\n  --max-iterations N    Stop after N fixpoint iterations within a recursive layer\n  --no-imports          Parse IMPORTS/owl:imports but do not load imported rule sets\n  --rdf-messages        Parse input as an RDF Message Log\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --syntax MODE         Use srl, rdf, or auto syntax detection (default auto)\n  --ruleset TERM        In RDF syntax, run only the selected srl:RuleSet\n  --shapes FILE         SHACL shapes graph for FOR ?v IN <shape> constraints\n  --validate            After rule saturation, validate the final graph against --shapes\n  --version             Print version\n  -h, --help            Print this help\n\nWith no file arguments, eyeleng reads from stdin.\n`;
-      }
-      
       function help() {
-        return legacyHelp().replace(
-          '  --trace               Print derivation trace to stderr, or include it in JSON',
-          '  --prove               Print proof explanations',
-        ).replace(
-          'Usage:\n  eyeleng [options] [file ...]',
-          'Usage: eyeleng [options] [file-or-url.n3|- ...]',
-        ).replace(
-          'With no file arguments, eyeleng reads from stdin.',
-          'With no input arguments, eyeleng prints this help. Use - to read from stdin.',
-        );
+        return `eyeleng ${VERSION}\n\nSPARQL 1.2 RL (SRL) rule engine with RDF 1.2 base-graph input via rdf-parse.\n\nUsage: eyeleng [options] rules.srl\n\nOptions:\n  --data FILE            Add an RDF 1.2 document to the immutable base graph (repeatable)\n  --all                  Print base graph plus inference graph\n  --json                 Print JSON instead of compact triples/bindings\n  --prove                Print proof explanations\n  --stats                Print iteration and triple counts to stderr\n  --check                Parse, check well-formedness, and stratify only\n  --strict               Treat warnings as errors\n  --deps                 Print open/closed rule dependencies during --check\n  --query TEXT           Run a raw SRL body pattern\n  --query-file FILE      Read a raw SRL body pattern from a file\n  --query-mode MODE      Use auto, forward, or backward query planning (default auto)\n  --hybrid               Opt into Eyeleng's hybrid forward/backward optimization\n  --max-iterations N     Stop after N fixpoint iterations within a stratum\n  --no-imports           Reject rule sets containing IMPORTS\n  --rdf-messages         Treat --data input as an RDF Message Log (ancillary feature)\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --version              Print version\n  -h, --help             Print this help\n\nThe rule-set media type is application/sparql-rl and the conventional extension is .srl.\n`;
       }
       
       function parseArgs(argv) {
@@ -70,13 +60,10 @@
           query: null,
           queryFile: null,
           queryMode: 'auto',
-          hybrid: 'auto',
+          hybrid: false,
           maxIterations: 10000,
           imports: true,
-          syntax: 'auto',
-          ruleSet: null,
-          shapes: null,
-          validate: false,
+          dataFiles: [],
           rdfMessages: false,
           includeMessageFacts: false,
         };
@@ -95,21 +82,10 @@
           else if (arg === '--no-hybrid') options.hybrid = false;
           else if (arg === '--rdf-messages') options.rdfMessages = true;
           else if (arg === '--include-message-facts') options.includeMessageFacts = true;
-          else if (arg === '--syntax') {
+          else if (arg === '--data') {
             i += 1;
-            if (i >= argv.length) throw new Error('--syntax requires srl, rdf, or auto');
-            options.syntax = argv[i];
-            if (!['srl', 'rdf', 'auto'].includes(options.syntax)) throw new Error('--syntax requires srl, rdf, or auto');
-          } else if (arg === '--ruleset') {
-            i += 1;
-            if (i >= argv.length) throw new Error('--ruleset requires an RDF term');
-            options.ruleSet = argv[i];
-          } else if (arg === '--shapes') {
-            i += 1;
-            if (i >= argv.length) throw new Error('--shapes requires a file or URL');
-            options.shapes = argv[i];
-          } else if (arg === '--validate') {
-            options.validate = true;
+            if (i >= argv.length) throw new Error('--data requires an RDF file or URL');
+            options.dataFiles.push(argv[i]);
           } else if (arg === '--query-mode') {
             i += 1;
             if (i >= argv.length) throw new Error('--query-mode requires auto, forward, or backward');
@@ -194,7 +170,7 @@
         for (const edge of edges) {
           const from = formatRuleName(analysis.dependency.rules[edge.from].name, prefixes);
           const to = formatRuleName(analysis.dependency.rules[edge.to].name, prefixes);
-          const kind = edge.shapeConstraint ? 'shape' : (edge.negated ? 'NOT' : (edge.termGeneration ? 'generates' : 'uses'));
+          const kind = edge.closed ? 'closed' : 'open';
           stderr.write(`eyeleng: deps: ${from} --${kind} ${edge.predicate ? compactIRI(edge.predicate, prefixes) : '*'}--> ${to}\n`);
         }
         if (analysis.dependency.layers && analysis.dependency.layers.length > 0) {
@@ -224,20 +200,30 @@
             return 0;
           }
           const input = await readInput(files);
-          const shapesInput = options.shapes ? await readInput([options.shapes]) : null;
+          const baseGraph = [];
+          for (const dataSpec of options.dataFiles) {
+            const dataInput = await readInput([dataSpec]);
+            if (looksLikeRdfMessageLog(dataInput.source, { rdfMessages: options.rdfMessages })) {
+              const messageLog = await parseRdfMessageLog(dataInput.source, {
+                filename: dataInput.filename,
+                baseIRI: dataInput.baseIRI,
+                includeMessageFacts: options.includeMessageFacts,
+              });
+              baseGraph.push(...(messageLog.baseData || []));
+            } else {
+              const document = await parseRdfDocument(dataInput.source, { filename: dataInput.filename, baseIRI: dataInput.baseIRI, version: '1.2' });
+              baseGraph.push(...document.triples);
+            }
+          }
           const compiled = await compileAsync(input.source, {
             filename: input.filename,
             baseIRI: input.baseIRI,
-            shapes: shapesInput ? shapesInput.source : null,
-            shapesFilename: shapesInput ? shapesInput.filename : null,
-            shapesBaseIRI: shapesInput ? shapesInput.baseIRI : null,
+            baseGraph,
+            strictGrammar: true,
             strict: false,
             throwOnDiagnostics: false,
             resolveImports: options.imports,
             importResolver: options.imports ? createFileImportResolver() : null,
-            syntax: options.syntax === 'auto' ? undefined : options.syntax,
-            ruleSet: options.ruleSet,
-            rdfMessages: options.rdfMessages,
             includeMessageFacts: options.includeMessageFacts,
           });
           const fatal = hasFatalDiagnostics(compiled.analysis, options.strict);
@@ -257,15 +243,16 @@
             : null;
       
           let result;
-          if (querySpec && !options.validate) {
+          if (querySpec) {
             const directQuery = queryProgram(compiled.program, querySpec, options);
             if (directQuery) {
               result = {
                 baseIRI: compiled.program.baseIRI,
                 prefixes: compiled.program.prefixes,
-                input: compiled.program.data.slice(),
-                inferred: [],
-                closure: compiled.program.data.slice(),
+                input: (compiled.program.baseData || []).slice(),
+                data: (compiled.program.data || []).slice(),
+                inferred: (compiled.program.data || []).filter((triple) => !(compiled.program.baseData || []).some((base) => require('./term.js').tripleKey(base) === require('./term.js').tripleKey(triple))),
+                closure: [...(compiled.program.baseData || []), ...(compiled.program.data || [])],
                 iterations: 0,
                 layers: [],
                 ruleApplications: 0,
@@ -286,12 +273,6 @@
             result.diagnostics = compiled.diagnostics;
             result.analysis = compiled.analysis;
             if (querySpec) result.query = queryResult(result, querySpec, runOptions);
-          }
-      
-          if (options.validate) {
-            if (!compiled.shapeEngine) throw new Error('--validate requires --shapes');
-            result.validationReport = await compiled.shapeEngine.validate(result.closure, options);
-            io.stderr.write(`eyeleng: shacl conforms=${result.validationReport.conforms}${Array.isArray(result.validationReport.results) ? ` results=${result.validationReport.results.length}` : ''}\n`);
           }
       
           if (options.json) {
@@ -317,7 +298,6 @@
               if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyeleng: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
             }
           }
-          if (options.validate && result.validationReport && !result.validationReport.conforms) return 1;
           return 0;
         } catch (error) {
           io.stderr.write(`eyeleng: ${error.message}\n`);
@@ -334,7 +314,7 @@
       'use strict';
       
       const { parse, parseQuery } = require('./parser.js');
-      const { parseRdfSyntax, parseRdfDocument, rdfDocumentToProgram, looksLikeRdfRules } = require('./rdfSyntax.js');
+      const { parseRdfDocument } = require('./rdf.js');
       const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js');
       const { evaluate, evaluateAsync } = require('./engine.js');
       const { analyze } = require('./analyze.js');
@@ -344,8 +324,8 @@
       
       function parseInput(source, options = {}) {
         if (typeof source !== 'string') return source;
-        if (looksLikeRdfMessageLog(source, options) || looksLikeRdfRules(source, options)) {
-          throw new Error('RDF input parsing is asynchronous with rdf-parse; use parseInputAsync(), compileAsync(), runAsync(), or the CLI');
+        if (looksLikeRdfMessageLog(source, options)) {
+          throw new Error('RDF Message Log parsing is asynchronous with rdf-parse; use parseInputAsync(), compileAsync(), runAsync(), or the CLI');
         }
         return parse(source, options);
       }
@@ -353,12 +333,24 @@
       async function parseInputAsync(source, options = {}) {
         if (typeof source !== 'string') return source;
         if (looksLikeRdfMessageLog(source, options)) return await parseRdfMessageLog(source, options);
-        return looksLikeRdfRules(source, options) ? await parseRdfSyntax(source, options) : parse(source, options);
+        return parse(source, options);
       }
       
       function compile(source, options = {}) {
         const parsed = parseInput(source, options);
-        const program = options.resolveImports === false ? parsed : resolveImports(parsed, options);
+        const resolved = resolveProgramImportsSync(parsed, options);
+        const program = attachBaseGraph(resolved, options.baseGraph);
+        return analyzeCompiled(program, options);
+      }
+      
+      async function compileAsync(source, options = {}) {
+        const parsed = await parseInputAsync(source, options);
+        const resolved = await resolveProgramImportsAsync(parsed, options);
+        const program = attachBaseGraph(resolved, options.baseGraph);
+        return { ...analyzeCompiled(program, options), options };
+      }
+      
+      function analyzeCompiled(program, options) {
         const analysis = analyze(program, options);
         const diagnostics = analysis.diagnostics;
         const fatal = analysis.errors.length > 0 || (options.strict && analysis.warnings.length > 0);
@@ -369,103 +361,79 @@
         return { program, diagnostics, analysis };
       }
       
-      async function compileAsync(source, options = {}) {
-        const asyncOptions = await withShapeEngine(options);
-        const parsed = await parseInputAsync(source, asyncOptions);
-        const program = asyncOptions.resolveImports === false ? parsed : await resolveImportsAsync(parsed, asyncOptions);
-        const analysis = analyze(program, asyncOptions);
-        const diagnostics = analysis.diagnostics;
-        const fatal = analysis.errors.length > 0 || (asyncOptions.strict && analysis.warnings.length > 0);
-        if (fatal && asyncOptions.throwOnDiagnostics !== false) {
-          const details = diagnostics.map((diagnostic) => diagnostic.message).join('; ');
-          throw new Error(`${analysis.errors.length > 0 ? 'Analysis failed' : 'Strict mode failed'}: ${details}`);
-        }
-        return { program, diagnostics, analysis, shapeEngine: asyncOptions.shapeEngine || null, options: asyncOptions };
+      function attachBaseGraph(program, baseGraph) {
+        return { ...cloneProgram(program), baseData: Array.isArray(baseGraph) ? baseGraph.slice() : (program.baseData || []).slice() };
       }
       
-      async function withShapeEngine(options = {}) {
-        if (!options.shapes || options.shapeEngine) return options;
-        const { createShaclShapeEngine } = require('./shacl.js');
-        const shapeEngine = await createShaclShapeEngine(options.shapes, options);
-        return { ...options, shapeEngine };
+      async function resolveProgramImportsAsync(program, options) {
+        if (!program.imports || program.imports.length === 0) return cloneProgram(program);
+        if (options.resolveImports === false || !options.importResolver) {
+          throw new Error('This rule set contains IMPORTS, but no supported import resolver is enabled');
+        }
+        return resolveImportsAsync(program, options);
+      }
+      
+      function resolveProgramImportsSync(program, options) {
+        if (!program.imports || program.imports.length === 0) return cloneProgram(program);
+        if (options.resolveImports === false || !options.importResolver) {
+          throw new Error('This rule set contains IMPORTS, but no supported import resolver is enabled');
+        }
+        return resolveImports(program, options);
       }
       
       async function resolveImportsAsync(program, options = {}, seen = new Set()) {
-        if (!program.imports || program.imports.length === 0) return cloneProgram(program);
-        const importResolver = options.importResolver;
-        if (!importResolver) return cloneProgram(program);
-      
         let merged = emptyProgram(program);
         const localKey = program.baseIRI || options.filename || '<input>';
         if (localKey) seen.add(localKey);
-      
-        for (const target of program.imports) {
+        for (const target of program.imports || []) {
           if (seen.has(target)) continue;
           seen.add(target);
-          const resolved = await importResolver(target, { from: program.baseIRI || options.filename || null, seen });
+          const resolved = await options.importResolver(target, { from: program.baseIRI || options.filename || null, seen });
           if (!resolved) throw new Error(`IMPORTS resolver returned no source for ${target}`);
           const importSource = typeof resolved === 'string' ? resolved : resolved.source;
           const importOptions = typeof resolved === 'string' ? {} : (resolved.options || {});
-          const parsedImport = await parseInputAsync(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
-          const imported = await resolveImportsAsync(parsedImport, { ...options, ...importOptions, importResolver }, seen);
+          // IMPORTS incorporates rule sets only (SPARQL 1.2 RL §4.5).
+          // Do not auto-detect RDF/message data here: base data is a separate
+          // evaluation input and must not be smuggled into the resolved rule set.
+          const parsedImport = parse(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
+          const imported = await resolveImportsAsync(parsedImport, { ...options, ...importOptions }, seen);
           merged = mergePrograms(merged, imported);
         }
-      
-        return mergePrograms(merged, program);
+        return mergePrograms(merged, { ...program, imports: [] });
       }
       
       function resolveImports(program, options = {}, seen = new Set()) {
-        if (!program.imports || program.imports.length === 0) return cloneProgram(program);
-        const importResolver = options.importResolver;
-        if (!importResolver) return cloneProgram(program);
-      
         let merged = emptyProgram(program);
         const localKey = program.baseIRI || options.filename || '<input>';
         if (localKey) seen.add(localKey);
-      
-        for (const target of program.imports) {
+        for (const target of program.imports || []) {
           if (seen.has(target)) continue;
           seen.add(target);
-          const resolved = importResolver(target, { from: program.baseIRI || options.filename || null, seen });
-          if (!resolved) throw new Error(`IMPORTS resolver returned no source for ${target}`);
+          const resolved = options.importResolver(target, { from: program.baseIRI || options.filename || null, seen });
+          if (!resolved || (resolved && typeof resolved.then === 'function')) throw new Error(`Synchronous IMPORTS resolver returned no source for ${target}; use compileAsync() for async resolvers`);
           const importSource = typeof resolved === 'string' ? resolved : resolved.source;
           const importOptions = typeof resolved === 'string' ? {} : (resolved.options || {});
-          const parsedImport = parseInput(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
-          const imported = resolveImports(parsedImport, { ...options, ...importOptions, importResolver }, seen);
+          // IMPORTS incorporates rule sets only (SPARQL 1.2 RL §4.5).
+          const parsedImport = parse(importSource, { ...options, ...importOptions, baseIRI: importOptions.baseIRI || target, filename: importOptions.filename || target });
+          const imported = resolveImports(parsedImport, { ...options, ...importOptions }, seen);
           merged = mergePrograms(merged, imported);
         }
-      
-        return mergePrograms(merged, program);
+        return mergePrograms(merged, { ...program, imports: [] });
       }
       
       function emptyProgram(program = {}) {
-        return {
-          baseIRI: program.baseIRI || null,
-          version: program.version || null,
-          imports: [],
-          prefixes: { ...(program.prefixes || {}) },
-          data: [],
-          rules: [],
-        };
+        return { baseIRI: program.baseIRI || null, version: program.version || null, imports: [], prefixes: { ...(program.prefixes || {}) }, baseData: [], data: [], rules: [] };
       }
-      
       function cloneProgram(program) {
-        return {
-          baseIRI: program.baseIRI || null,
-          version: program.version || null,
-          imports: (program.imports || []).slice(),
-          prefixes: { ...(program.prefixes || {}) },
-          data: (program.data || []).slice(),
-          rules: (program.rules || []).slice(),
-        };
+        return { baseIRI: program.baseIRI || null, version: program.version || null, imports: (program.imports || []).slice(), prefixes: { ...(program.prefixes || {}) }, baseData: (program.baseData || []).slice(), data: (program.data || []).slice(), rules: (program.rules || []).slice() };
       }
-      
       function mergePrograms(left, right) {
         return {
           baseIRI: right.baseIRI || left.baseIRI || null,
           version: right.version || left.version || null,
           imports: Array.from(new Set([...(left.imports || []), ...(right.imports || [])])),
           prefixes: { ...(left.prefixes || {}), ...(right.prefixes || {}) },
+          baseData: [...(left.baseData || []), ...(right.baseData || [])],
           data: [...(left.data || []), ...(right.data || [])],
           rules: [...(left.rules || []), ...(right.rules || [])],
         };
@@ -474,81 +442,30 @@
       function run(source, options = {}) {
         const { program, diagnostics, analysis } = compile(source, options);
         const result = evaluate(program, { ...options, analysis });
-        result.diagnostics = diagnostics;
-        result.analysis = analysis;
-        return result;
+        result.diagnostics = diagnostics; result.analysis = analysis; return result;
       }
-      
       function runToString(source, options = {}) {
         const { program, diagnostics, analysis } = compile(source, options);
-        const result = evaluate(program, { ...options, analysis });
-        result.diagnostics = diagnostics;
-        result.analysis = analysis;
-        const triples = resultTriples(result, program, options);
-        return formatTriples(triples, result.prefixes);
+        const result = evaluate(program, { ...options, analysis }); result.diagnostics = diagnostics; result.analysis = analysis;
+        return formatTriples(resultTriples(result, program, options), result.prefixes);
       }
-      
       async function runAsync(source, options = {}) {
         const compiled = await compileAsync(source, options);
         const result = await evaluateAsync(compiled.program, { ...compiled.options, analysis: compiled.analysis });
-        result.diagnostics = compiled.diagnostics;
-        result.analysis = compiled.analysis;
-        if (compiled.shapeEngine && options.validateShapes) {
-          result.validationReport = await compiled.shapeEngine.validate(result.closure, options);
-        }
-        return result;
+        result.diagnostics = compiled.diagnostics; result.analysis = compiled.analysis; return result;
       }
-      
-      async function runAndValidateAsync(source, options = {}) {
-        if (!options.shapes && !options.shapeEngine) throw new Error('runAndValidateAsync requires shapes or shapeEngine');
-        return runAsync(source, { ...options, validateShapes: true });
-      }
-      
       async function runToStringAsync(source, options = {}) {
         const compiled = await compileAsync(source, options);
         const result = await evaluateAsync(compiled.program, { ...compiled.options, analysis: compiled.analysis });
-        result.diagnostics = compiled.diagnostics;
-        result.analysis = compiled.analysis;
-        const triples = resultTriples(result, compiled.program, options);
-        return formatTriples(triples, result.prefixes);
+        result.diagnostics = compiled.diagnostics; result.analysis = compiled.analysis;
+        return formatTriples(resultTriples(result, compiled.program, options), result.prefixes);
       }
       
       module.exports = {
-        parse,
-        parseQuery,
-        parseInput,
-        parseInputAsync,
-        parseRdfSyntax,
-        parseRdfDocument,
-        parseRdfMessageLog,
-        looksLikeRdfMessageLog,
-        rdfDocumentToProgram,
-        compile,
-        compileAsync,
-        resolveImports,
-        resolveImportsAsync,
-        mergePrograms,
-        analyze,
-        evaluate,
-        evaluateAsync,
-        run,
-        runAsync,
-        runAndValidateAsync,
-        runToString,
-        runToStringAsync,
-        runQuery,
-        runQueryAsync,
-        queryResult,
-        queryProgram,
-        queryRunOptions,
-        shouldUseHybridForQuery,
-        formatTriples,
-        formatBindings,
-        sortTriples,
-        toJSON,
-        formatTrace,
-        formatProof,
-        resultTriples,
+        parse, parseQuery, parseInput, parseInputAsync, parseRdfDocument, parseRdfMessageLog, looksLikeRdfMessageLog,
+        compile, compileAsync, resolveImports, resolveImportsAsync, mergePrograms, analyze, evaluate, evaluateAsync,
+        run, runAsync, runToString, runToStringAsync, runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions,
+        shouldUseHybridForQuery, formatTriples, formatBindings, sortTriples, toJSON, formatTrace, formatProof, resultTriples,
       };
       
     },
@@ -585,10 +502,10 @@
           this.version = null;
           this.imports = [];
           this.bnodeCounter = 0;
+          this.bodyBnodeLabels = null;
           this.prefixes = {
             rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-            sh: 'http://www.w3.org/ns/shacl#',
-            srl: 'http://www.w3.org/ns/shacl-rules#',
+            srl: 'http://www.w3.org/ns/sparql-rl#',
             xsd: 'http://www.w3.org/2001/XMLSchema#',
             ...options.prefixes,
           };
@@ -613,10 +530,8 @@
               rules.push(this.parseRule());
             } else if (this.matchWord('IF')) {
               rules.push(this.parseIfThenRule());
-            } else if (this.checkDeclarationKeyword()) {
-              rules.push(...this.parseDeclaration());
             } else {
-              throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, IF, TRANSITIVE, SYMMETRIC, or INVERSE; got ${this.peek().value}`);
+              throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF; got ${this.peek().value}`);
             }
           }
           return {
@@ -651,7 +566,7 @@
           const token = this.expectType('string');
           if (this.strictGrammar()) {
             if (token.long) throw this.error('VERSION must use a short string literal', token);
-            if (token.value !== '1.2') throw this.error('VERSION must be the SHACL Rules version label \"1.2\"', token);
+            if (token.value !== '1.2') throw this.error('VERSION must be the SPARQL-RL version label \"1.2\"', token);
           }
           this.version = token.value;
         }
@@ -671,7 +586,7 @@
           this.expectWord('WHERE');
           const groundData = this.matchWord('DATA');
           this.expectValue('{');
-          const body = this.parseBodyBlockAlreadyOpen();
+          const body = this.parseRuleBodyWithBlankNodeScope();
           return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
         }
       
@@ -681,75 +596,37 @@
           const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
           const groundData = this.matchWord('DATA');
           this.expectValue('{');
-          const body = this.parseBodyBlockAlreadyOpen();
+          const body = this.parseRuleBodyWithBlankNodeScope();
           this.expectWord('THEN');
           this.expectValue('{');
           const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
           return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
         }
       
+        parseRuleBodyWithBlankNodeScope() {
+          const previous = this.bodyBnodeLabels;
+          this.bodyBnodeLabels = new Map();
+          try {
+            return this.parseBodyBlockAlreadyOpen();
+          } finally {
+            this.bodyBnodeLabels = previous;
+          }
+        }
+      
+        bodyBlankNodeVariable(label) {
+          if (!this.bodyBnodeLabels) this.bodyBnodeLabels = new Map();
+          if (!this.bodyBnodeLabels.has(label)) {
+            this.bnodeCounter += 1;
+            this.bodyBnodeLabels.set(label, variable(`__b${this.bnodeCounter}`));
+          }
+          return this.bodyBnodeLabels.get(label);
+        }
+      
         parseForClauseAfterFor() {
           const focusVariable = this.expectType('variable');
           this.expectWord('IN');
           const shape = this.parseIRIValue();
-          return { variable: focusVariable.value, shape: shape.value };
-        }
-      
-        checkDeclarationKeyword() {
-          return this.checkType('word') && ['TRANSITIVE', 'SYMMETRIC', 'INVERSE'].includes(this.peek().value.toUpperCase());
-        }
-      
-        parseDeclaration() {
-          if (this.matchWord('TRANSITIVE')) {
-            this.expectValue('(');
-            const pred = this.parseIRIValue();
-            this.expectValue(')');
-            this.consumeOptionalDot();
-            return [{
-              name: `TRANSITIVE(${pred.lexical})`,
-              head: [{ s: variable('x'), p: iri(pred.value), o: variable('z') }],
-              body: [
-                { type: 'triple', triple: { s: variable('x'), p: iri(pred.value), o: variable('y') } },
-                { type: 'triple', triple: { s: variable('y'), p: iri(pred.value), o: variable('z') } },
-              ],
-              runOnce: false,
-            }];
-          }
-          if (this.matchWord('SYMMETRIC')) {
-            this.expectValue('(');
-            const pred = this.parseIRIValue();
-            this.expectValue(')');
-            this.consumeOptionalDot();
-            return [{
-              name: `SYMMETRIC(${pred.lexical})`,
-              head: [{ s: variable('y'), p: iri(pred.value), o: variable('x') }],
-              body: [{ type: 'triple', triple: { s: variable('x'), p: iri(pred.value), o: variable('y') } }],
-              runOnce: false,
-            }];
-          }
-          if (this.matchWord('INVERSE')) {
-            this.expectValue('(');
-            const left = this.parseIRIValue();
-            this.expectValue(',');
-            const right = this.parseIRIValue();
-            this.expectValue(')');
-            this.consumeOptionalDot();
-            return [
-              {
-                name: `INVERSE(${left.lexical},${right.lexical})#1`,
-                head: [{ s: variable('y'), p: iri(right.value), o: variable('x') }],
-                body: [{ type: 'triple', triple: { s: variable('x'), p: iri(left.value), o: variable('y') } }],
-                runOnce: false,
-              },
-              {
-                name: `INVERSE(${left.lexical},${right.lexical})#2`,
-                head: [{ s: variable('y'), p: iri(left.value), o: variable('x') }],
-                body: [{ type: 'triple', triple: { s: variable('x'), p: iri(right.value), o: variable('y') } }],
-                runOnce: false,
-              },
-            ];
-          }
-          throw this.error(`Expected declaration, got ${this.peek().value}`);
+          return { variable: focusVariable.value, iri: shape.value };
         }
       
         parseIRIValue() {
@@ -976,8 +853,7 @@
             } else if (this.matchWord('SET')) {
               clauses.push(this.parseSetClause());
             } else if (this.matchWord('BIND')) {
-              if (this.strictGrammar()) throw this.error('BIND is not part of the SHACL 1.2 Rules grammar; use SET');
-              clauses.push(this.parseBindClause());
+              throw this.error('BIND is not part of the SPARQL 1.2 RL grammar; use SET');
             } else if (this.matchWord('NOT')) {
               const groundData = this.matchWord('DATA');
               this.expectValue('{');
@@ -1038,7 +914,10 @@
             }
             if (token.value === 'true') return literal(true, XSD_BOOLEAN);
             if (token.value === 'false') return literal(false, XSD_BOOLEAN);
-            if (token.value.startsWith('_:')) return blankNode(token.value.slice(2));
+            if (token.value.startsWith('_:')) {
+              const label = token.value.slice(2);
+              return options.context === 'body' ? this.bodyBlankNodeVariable(label) : blankNode(label);
+            }
             return iri(this.expandPrefixedName(token.value, token));
           }
           throw this.error(`Expected term, got ${token.value}`, token);
@@ -1259,7 +1138,7 @@
         peek() { return this.tokens[this.pos]; }
         peekN(n) { return this.tokens[this.pos + n] || this.tokens[this.tokens.length - 1]; }
         previous() { return this.tokens[this.pos - 1]; }
-        strictGrammar() { return !!this.options.strictGrammar; }
+        strictGrammar() { return this.options.strictGrammar !== false; }
         error(message, token = this.peek()) { return new SyntaxErrorWithLocation(message, token && token.filename ? token : { ...token, filename: this.options.filename || '<input>' }); }
       }
       
@@ -1372,7 +1251,7 @@
       
       function parseQuery(source, options = {}) {
         if (/^\s*(QUERY|SELECT)\b/i.test(source)) {
-          throw new Error('QUERY/SELECT concrete syntax is not part of the SHACL Rules SRL grammar; pass a raw body pattern instead');
+          throw new Error('QUERY/SELECT concrete syntax is not part of the SPARQL-RL rule-set grammar; pass a raw body pattern instead');
         }
         const trimmed = String(source).trim();
         const text = trimmed.startsWith('{') ? `RULE { } WHERE ${trimmed}` : `RULE { } WHERE { ${source} }`;
@@ -1715,12 +1594,14 @@
         valueToTerm,
         inferDatatype,
         XSD_STRING,
+        XSD_BOOLEAN,
         RDF_NS,
         XSD_INTEGER,
         XSD_DECIMAL,
         XSD_DOUBLE,
       } = require('./term.js');
       
+      const XSD_NS = 'http://www.w3.org/2001/XMLSchema#';
       const XSD_DATETIME = 'http://www.w3.org/2001/XMLSchema#dateTime';
       const XSD_DAYTIME_DURATION = 'http://www.w3.org/2001/XMLSchema#dayTimeDuration';
       const RDF_LANGSTRING = `${RDF_NS}langString`;
@@ -1729,7 +1610,7 @@
       const MAX_SAFE_INTEGER_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
       const MIN_SAFE_INTEGER_BIGINT = BigInt(Number.MIN_SAFE_INTEGER);
       
-      // This table is intentionally shaped by the SHACL 1.2 Rules grammar production BuiltInCall.
+      // This table is intentionally shaped by the SPARQL 1.2 RL grammar production BuiltInCall.
       // Keys are the canonical spellings used by the draft; lookup is case-insensitive so examples
       // may use SPARQL-style uppercase or lowercase spellings while still being checked against the
       // grammar's finite set of built-ins.
@@ -1841,7 +1722,44 @@
           const condition = evalExpression(expr.args[0], binding, options);
           return evalExpression(booleanValue(condition) ? expr.args[1] : expr.args[2], binding, options);
         }
+        if (isXsdCast(expr.name)) {
+          if (expr.args.length !== 1) throw new Error(`${expr.name} expects 1 argument, got ${expr.args.length}`);
+          return castXsd(expr.name, evalExpression(expr.args[0], binding, options));
+        }
         return callBuiltin(expr.name, expr.args.map((arg) => evalExpression(arg, binding, options)), binding, options);
+      }
+      
+      function isXsdCast(name) {
+        return typeof name === 'string' && name.startsWith(XSD_NS) && new Set([
+          XSD_STRING, XSD_BOOLEAN, XSD_INTEGER, XSD_DECIMAL, XSD_DOUBLE,
+        ]).has(name);
+      }
+      
+      function castXsd(datatype, value) {
+        const primitive = value && value.type ? termToPrimitive(value) : value;
+        if (datatype === XSD_STRING) return literal(termToString(valueToTermIfNeeded(value)), XSD_STRING);
+        if (datatype === XSD_BOOLEAN) {
+          if (typeof primitive === 'boolean') return literal(primitive, XSD_BOOLEAN);
+          if (typeof primitive === 'number' || typeof primitive === 'bigint') return literal(Number(primitive) !== 0 && !Number.isNaN(Number(primitive)), XSD_BOOLEAN);
+          const lexical = String(primitive).trim();
+          if (lexical === 'true' || lexical === '1') return literal(true, XSD_BOOLEAN);
+          if (lexical === 'false' || lexical === '0') return literal(false, XSD_BOOLEAN);
+          throw new Error(`Cannot cast ${lexical} to xsd:boolean`);
+        }
+        if (datatype === XSD_INTEGER) {
+          if (typeof primitive === 'bigint') return literal(primitive, XSD_INTEGER);
+          if (typeof primitive === 'boolean') return literal(primitive ? 1 : 0, XSD_INTEGER);
+          const numeric = Number(primitive);
+          if (!Number.isFinite(numeric)) throw new Error(`Cannot cast ${primitive} to xsd:integer`);
+          const integer = Math.trunc(numeric);
+          return literal(integer, XSD_INTEGER);
+        }
+        if (datatype === XSD_DECIMAL || datatype === XSD_DOUBLE) {
+          const numeric = Number(primitive);
+          if (Number.isNaN(numeric)) throw new Error(`Cannot cast ${primitive} to ${datatype}`);
+          return literal(numeric, datatype);
+        }
+        throw new Error(`Unsupported XSD cast ${datatype}`);
       }
       
       function evalBinary(op, left, right) {
@@ -1867,7 +1785,11 @@
         }
         if (op === '-') return subtractNumeric(lp, rp);
         if (op === '*') return multiplyNumeric(lp, rp);
-        if (op === '/') return Number(lp) / Number(rp);
+        if (op === '/') {
+          if (!isNumericPrimitive(lp) || !isNumericPrimitive(rp)) throw new Error('Numeric division requires numeric operands');
+          if (Number(rp) === 0) throw new Error('Division by zero');
+          return Number(lp) / Number(rp);
+        }
         throw new Error(`Unsupported binary operator ${op}`);
       }
       
@@ -2492,22 +2414,14 @@
     "src/assignments.js": function (require, module, exports) {
       'use strict';
       
-      // Most SET expressions are deterministic and can safely participate in the
-      // ordinary fixpoint loop.  Only genuinely fresh generators need run-once
-      // evaluation, otherwise a recursive rule such as SET(?x := UUID()) would keep
-      // creating new terms forever.
-      function assignmentsNeedRunOnce(clauses = [], options = {}) {
-        if (options.shacl12Conformance) {
-          return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
-        }
-        const hasSet = clauses.some((clause) => clause.type === 'set');
-        const hasNegation = clauses.some((clause) => clause.type === 'not');
-        return (hasSet && hasNegation)
-          || clauses.some((clause) => (clause.type === 'set' || clause.type === 'bind') && expressionIsVolatile(clause.expr));
+      // SPARQL 1.2 RL run-once rules are exactly rules with an assignment element
+      // or a blank node in the rule head. See SPARQL-RL §4.4.
+      function assignmentsNeedRunOnce(clauses = []) {
+        return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
       }
       
-      function ruleNeedsRunOnce(head = [], body = [], options = {}) {
-        return assignmentsNeedRunOnce(body, options) || head.some(tripleHasBlankNode);
+      function ruleNeedsRunOnce(head = [], body = []) {
+        return assignmentsNeedRunOnce(body) || head.some(tripleHasBlankNode);
       }
       
       function tripleHasBlankNode(triple) {
@@ -2523,84 +2437,13 @@
         return false;
       }
       
-      function expressionIsVolatile(expr) {
-        if (!expr) return false;
-        switch (expr.type) {
-          case 'call': {
-            const name = localName(expr.name).toLowerCase();
-            if (name === 'uuid' || name === 'struuid') return true;
-            if (name === 'bnode' && (!expr.args || expr.args.length === 0)) return true;
-            return (expr.args || []).some(expressionIsVolatile);
-          }
-          case 'binary':
-            return expressionIsVolatile(expr.left) || expressionIsVolatile(expr.right);
-          case 'unary':
-            return expressionIsVolatile(expr.expr);
-          case 'list':
-            return (expr.items || []).some(expressionIsVolatile);
-          default:
-            return false;
-        }
-      }
-      
-      function localName(name) {
-        const text = String(name || '');
-        const hash = text.lastIndexOf('#');
-        const slash = text.lastIndexOf('/');
-        const colon = text.lastIndexOf(':');
-        const index = Math.max(hash, slash, colon);
-        return index >= 0 ? text.slice(index + 1) : text;
-      }
-      
-      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, expressionIsVolatile, tripleHasBlankNode, termHasBlankNode };
+      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, tripleHasBlankNode, termHasBlankNode };
       
     },
-    "src/rdfSyntax.js": function (require, module, exports) {
+    "src/rdf.js": function (require, module, exports) {
       'use strict';
       
-      const { ruleNeedsRunOnce } = require('./assignments.js');
-      const {
-        iri,
-        variable,
-        blankNode,
-        literal,
-        tripleTerm,
-        termKey,
-        termEquals,
-        formatTerm,
-        RDF_TYPE,
-        RDF_FIRST,
-        RDF_REST,
-        RDF_NIL,
-        XSD_STRING,
-        XSD_BOOLEAN,
-        XSD_INTEGER,
-        XSD_DECIMAL,
-        XSD_DOUBLE,
-      } = require('./term.js');
-      
-      const RDF_NS = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
-      const SRL_NS = 'http://www.w3.org/ns/shacl-rules#';
-      const SHNEX_NS = 'http://www.w3.org/ns/shacl-node-expr#';
-      const SPARQL_NS = 'http://www.w3.org/ns/sparql#';
-      const OWL_IMPORTS = 'http://www.w3.org/2002/07/owl#imports';
-      const SRL_RULE_SET = `${SRL_NS}RuleSet`;
-      const SRL_RULE = `${SRL_NS}Rule`;
-      const SRL_DATA = `${SRL_NS}data`;
-      const SRL_RULES = `${SRL_NS}rules`;
-      const SRL_BODY = `${SRL_NS}body`;
-      const SRL_HEAD = `${SRL_NS}head`;
-      const SRL_SUBJECT = `${SRL_NS}subject`;
-      const SRL_PREDICATE = `${SRL_NS}predicate`;
-      const SRL_OBJECT = `${SRL_NS}object`;
-      const SRL_FILTER = `${SRL_NS}filter`;
-      const SRL_EXPR = `${SRL_NS}expr`;
-      const SRL_ASSIGN = `${SRL_NS}assign`;
-      const SRL_ASSIGN_VAR = `${SRL_NS}assignVar`;
-      const SRL_ASSIGN_VALUE = `${SRL_NS}assignValue`;
-      const SRL_NOT = `${SRL_NS}not`;
-      const SRL_VAR_NAME = `${SRL_NS}varName`;
-      const SHNEX_VAR = `${SHNEX_NS}var`;
+      const { iri, variable, blankNode, literal, tripleTerm, XSD_STRING, XSD_BOOLEAN, XSD_INTEGER, XSD_DECIMAL, XSD_DOUBLE } = require('./term.js');
       
       const CONTENT_TYPES = Object.freeze({
         turtle: 'text/turtle',
@@ -2610,9 +2453,15 @@
         n3: 'text/n3',
         jsonld: 'application/ld+json',
         rdfxml: 'application/rdf+xml',
-        shaclc: 'text/shaclc',
       });
       
+      /**
+       * Parse an RDF 1.2 document through rdf-parse.js.
+       *
+       * Eyeleng deliberately does not maintain a second RDF parser. rdf-parse 5.x
+       * selects the concrete RDF parser and exposes RDF/JS quads, including RDF 1.2
+       * triple terms where the selected syntax supports them.
+       */
       async function parseRdfDocument(source, options = {}) {
         const { Readable } = require('readable-stream');
         const { rdfParser } = require('rdf-parse');
@@ -2620,16 +2469,14 @@
         const prefixes = { ...(options.prefixes || {}) };
         const parseOptions = rdfParseOptions(options);
         parseOptions.dataFactory = dataFactory;
-        const prepared = prepareRdf12TripleTerms(String(source ?? ''));
-        const stream = rdfParser.parse(Readable.from([prepared.source]), parseOptions);
+      
+        const stream = rdfParser.parse(Readable.from([String(source ?? '')]), parseOptions);
         stream.on('prefix', (prefix, value) => {
           prefixes[String(prefix)] = value && value.value ? value.value : String(value);
         });
       
-        let quads = [];
+        const quads = [];
         for await (const quad of stream) quads.push(quad);
-        quads = restoreRdf12TripleTerms(quads, prepared.markerPrefix, dataFactory);
-      
         const triples = quads.map((quad) => {
           const triple = {
             s: rdfJsTermToTerm(quad.subject),
@@ -2639,21 +2486,13 @@
           if (quad.graph && quad.graph.termType !== 'DefaultGraph') triple.graph = rdfJsTermToTerm(quad.graph);
           return triple;
         });
-        const imports = triples
-          .filter((triple) => triple.p.type === 'iri' && triple.p.value === OWL_IMPORTS && triple.o.type === 'iri')
-          .map((triple) => triple.o.value);
       
         return {
           baseIRI: options.baseIRI || options.base || null,
           prefixes,
           triples,
           quads,
-          imports: Array.from(new Set(imports)),
         };
-      }
-      
-      async function parseRdfSyntax(source, options = {}) {
-        return rdfDocumentToProgram(await parseRdfDocument(source, options), options);
       }
       
       function rdfParseOptions(options = {}) {
@@ -2664,118 +2503,12 @@
           const cleanFilename = String(options.filename).replace(/[?#].*$/, '');
           if (/\.[A-Za-z0-9]+$/.test(cleanFilename)) out.path = cleanFilename;
           else out.contentType = 'text/turtle';
-        }
-        else out.contentType = 'text/turtle';
+        } else out.contentType = 'text/turtle';
         if (options.baseIRI || options.base) out.baseIRI = options.baseIRI || options.base;
-        if (options.version) out.version = options.version;
+        // rdf-parse 5.x supports RDF 1.2 parser selection/version announcements.
+        out.version = options.version || '1.2';
         if (options.parseUnsupportedVersions) out.parseUnsupportedVersions = true;
         return out;
-      }
-      
-      // N3.js 2.2 parses RDF 1.2 triple terms in ordinary object position, but not
-      // as RDF collection items. Give each triple term a private reifier while
-      // parsing, then replace that reifier with the RDF/JS Quad term afterwards.
-      function prepareRdf12TripleTerms(source) {
-        let markerPrefix = 'urn:eyeleng:rdf12-triple-term:';
-        while (source.includes(markerPrefix)) markerPrefix += 'x:';
-        const contexts = [];
-        let count = 0;
-        let out = '';
-        let i = 0;
-        while (i < source.length) {
-          const ch = source[i];
-          if (ch === '"' || ch === "'") {
-            const quote = ch;
-            const long = source.startsWith(quote.repeat(3), i);
-            const start = i;
-            i += long ? 3 : 1;
-            while (i < source.length) {
-              if (source[i] === '\\') { i += 2; continue; }
-              if (long ? source.startsWith(quote.repeat(3), i) : source[i] === quote) {
-                i += long ? 3 : 1;
-                break;
-              }
-              i += 1;
-            }
-            out += source.slice(start, i);
-            continue;
-          }
-          if (ch === '<' && !source.startsWith('<<', i)) {
-            const start = i++;
-            while (i < source.length) {
-              if (source[i] === '\\') { i += 2; continue; }
-              if (source[i++] === '>') break;
-            }
-            out += source.slice(start, i);
-            continue;
-          }
-          if (ch === '#') {
-            const start = i++;
-            while (i < source.length && source[i] !== '\n' && source[i] !== '\r') i += 1;
-            out += source.slice(start, i);
-            continue;
-          }
-          if (source.startsWith('<<(', i)) {
-            if (contexts.some((context) => context.type === 'collection')) {
-              const marker = `${markerPrefix}${++count}`;
-              contexts.push({ type: 'preparedTriple', marker });
-              out += '<< ';
-            } else {
-              contexts.push({ type: 'triple' });
-              out += '<<(';
-            }
-            i += 3;
-            continue;
-          }
-          if (source.startsWith(')>>', i) && contexts.length > 0
-            && (contexts.at(-1).type === 'triple' || contexts.at(-1).type === 'preparedTriple')) {
-            const context = contexts.pop();
-            out += context.type === 'preparedTriple' ? ` ~ <${context.marker}> >>` : ')>>';
-            i += 3;
-            continue;
-          }
-          if (ch === '(') contexts.push({ type: 'collection' });
-          else if (ch === ')' && contexts.at(-1)?.type === 'collection') contexts.pop();
-          out += ch;
-          i += 1;
-        }
-        if (contexts.some((context) => context.type !== 'collection')) return { source, markerPrefix: null };
-        return { source: out, markerPrefix: count > 0 ? markerPrefix : null };
-      }
-      
-      function restoreRdf12TripleTerms(quads, markerPrefix, dataFactory) {
-        if (!markerPrefix) return quads;
-        const replacements = new Map();
-        for (const quad of quads) {
-          if (quad.subject.termType === 'NamedNode' && quad.subject.value.startsWith(markerPrefix)
-            && quad.predicate.termType === 'NamedNode' && quad.predicate.value === `${RDF_NS}reifies`
-            && quad.object.termType === 'Quad') {
-            replacements.set(quad.subject.value, quad.object);
-          }
-        }
-        const replace = (term, seen = new Set()) => {
-          if (term.termType === 'NamedNode' && replacements.has(term.value)) {
-            if (seen.has(term.value)) throw new Error('Cyclic RDF 1.2 triple term');
-            const nextSeen = new Set(seen).add(term.value);
-            return replace(replacements.get(term.value), nextSeen);
-          }
-          if (term.termType !== 'Quad') return term;
-          return dataFactory.quad(
-            replace(term.subject, seen),
-            replace(term.predicate, seen),
-            replace(term.object, seen),
-            replace(term.graph, seen),
-          );
-        };
-        return quads
-          .filter((quad) => !(quad.subject.termType === 'NamedNode' && replacements.has(quad.subject.value)
-            && quad.predicate.termType === 'NamedNode' && quad.predicate.value === `${RDF_NS}reifies`))
-          .map((quad) => dataFactory.quad(
-            replace(quad.subject),
-            replace(quad.predicate),
-            replace(quad.object),
-            replace(quad.graph),
-          ));
       }
       
       function rdfJsTermToTerm(term) {
@@ -2790,7 +2523,10 @@
           const value = coerceLexicalLiteral(term.value, datatype);
           return literal(value, datatype === XSD_STRING ? null : datatype, lang, direction);
         }
-        if (term.termType === 'Quad') return tripleTerm(rdfJsTermToTerm(term.subject), rdfJsTermToTerm(term.predicate), rdfJsTermToTerm(term.object));
+        // RDF/JS represents an RDF 1.2 triple term as a Quad in term position.
+        if (term.termType === 'Quad') {
+          return tripleTerm(rdfJsTermToTerm(term.subject), rdfJsTermToTerm(term.predicate), rdfJsTermToTerm(term.object));
+        }
         if (term.termType === 'DefaultGraph') return null;
         throw new Error(`Unsupported RDF/JS term type ${term.termType || typeof term}`);
       }
@@ -2808,292 +2544,13 @@
         return value;
       }
       
-      function rdfDocumentToProgram(document, options = {}) {
-        const graph = new RdfGraph(document.triples, document.prefixes);
-        const ruleSetNodes = chooseRuleSets(graph, options.ruleSet);
-        if (ruleSetNodes.length === 0) throw new Error('No srl:RuleSet found in RDF Rules syntax input');
-      
-        const program = {
-          baseIRI: document.baseIRI || null,
-          version: null,
-          imports: options.rdfImportsAsImports ? document.imports.slice() : [],
-          prefixes: { ...document.prefixes },
-          data: [],
-          rules: [],
-          rdfSyntax: true,
-          options: { shacl12Conformance: !!options.shacl12Conformance },
-          ruleSets: ruleSetNodes.map((term) => formatTerm(term, document.prefixes)),
-        };
-      
-        for (const ruleSet of ruleSetNodes) {
-          for (const dataList of graph.objects(ruleSet, SRL_DATA)) {
-            for (const item of graph.list(dataList)) program.data.push(toDataTriple(item, graph));
-          }
-          for (const rulesList of graph.objects(ruleSet, SRL_RULES)) {
-            for (const ruleNode of graph.list(rulesList)) program.rules.push(toRule(ruleNode, graph, options));
-          }
-        }
-        return program;
-      }
-      
-      function chooseRuleSets(graph, selected) {
-        if (selected) {
-          const term = graph.parseReference(selected);
-          return [term];
-        }
-        const typed = graph.subjects(RDF_TYPE, iri(SRL_RULE_SET));
-        if (typed.length > 0) return uniqueTerms(typed);
-        const byData = graph.subjectsWithPredicate(SRL_DATA);
-        const byRules = graph.subjectsWithPredicate(SRL_RULES);
-        return uniqueTerms([...byData, ...byRules]).filter((term) => graph.objects(term, SRL_RULES).length > 0 || graph.objects(term, SRL_DATA).length > 0);
-      }
-      
-      function toDataTriple(item, graph) {
-        if (item.type === 'triple') return { s: item.s, p: item.p, o: item.o };
-        const triple = toTripleLike(item, graph);
-        if ([triple.s, triple.p, triple.o].some((term) => term.type === 'var')) throw new Error('RDF Rules srl:data may not contain variables');
-        if (triple.p.type !== 'iri') throw new Error('RDF Rules data triple predicate must be an IRI');
-        return triple;
-      }
-      
-      function toRule(ruleNode, graph, options = {}) {
-        const bodyLists = graph.objects(ruleNode, SRL_BODY);
-        const headLists = graph.objects(ruleNode, SRL_HEAD);
-        if (bodyLists.length !== 1 || headLists.length !== 1) throw new Error(`RDF Rule ${graph.label(ruleNode)} must have exactly one srl:body and one srl:head`);
-        const body = graph.list(bodyLists[0]).map((item) => toBodyElement(item, graph));
-        const head = graph.list(headLists[0]).map((item) => toTripleLike(item, graph));
-        return { name: graph.label(ruleNode), head, body, runOnce: ruleNeedsRunOnce(head, body, options) };
-      }
-      
-      function toBodyElement(node, graph) {
-        if (hasTripleShape(node, graph)) return { type: 'triple', triple: toTripleLike(node, graph) };
-        const filters = graph.objects(node, SRL_FILTER).concat(graph.objects(node, SRL_EXPR));
-        if (filters.length > 0) {
-          if (filters.length !== 1) throw new Error(`Filter element ${graph.label(node)} must have exactly one srl:filter`);
-          return { type: 'filter', expr: toExpression(filters[0], graph) };
-        }
-        const assigns = graph.objects(node, SRL_ASSIGN);
-        if (assigns.length > 0) {
-          if (assigns.length !== 1) throw new Error(`Assignment element ${graph.label(node)} must have exactly one srl:assign`);
-          const assign = assigns[0];
-          const vars = graph.objects(assign, SRL_ASSIGN_VAR);
-          const values = graph.objects(assign, SRL_ASSIGN_VALUE);
-          if (vars.length !== 1 || values.length !== 1) throw new Error(`Assignment ${graph.label(assign)} must have exactly one srl:assignVar and srl:assignValue`);
-          const variableTerm = toVarOrTerm(vars[0], graph);
-          if (variableTerm.type !== 'var') throw new Error('srl:assignVar must point to a variable node');
-          return { type: 'set', variable: variableTerm.value, expr: toExpression(values[0], graph) };
-        }
-        const negations = graph.objects(node, SRL_NOT);
-        if (negations.length > 0) {
-          if (negations.length !== 1) throw new Error(`Negation element ${graph.label(node)} must have exactly one srl:not`);
-          const body = graph.list(negations[0]).map((item) => {
-            const clause = toBodyElement(item, graph);
-            if (clause.type === 'set' || clause.type === 'not') throw new Error('RDF Rules srl:not may contain only triple patterns and filters');
-            return clause;
-          });
-          return { type: 'not', body };
-        }
-        throw new Error(`Unsupported RDF Rules body element ${graph.label(node)}`);
-      }
-      
-      function toTripleLike(node, graph) {
-        if (node.type === 'triple') return { s: node.s, p: node.p, o: node.o };
-        const subjects = graph.objects(node, SRL_SUBJECT);
-        const predicates = graph.objects(node, SRL_PREDICATE);
-        const objects = graph.objects(node, SRL_OBJECT);
-        if (subjects.length !== 1 || predicates.length !== 1 || objects.length !== 1) {
-          throw new Error(`Triple node ${graph.label(node)} must have exactly one srl:subject, srl:predicate and srl:object`);
-        }
-        return {
-          s: toVarOrTerm(subjects[0], graph),
-          p: toVarOrTerm(predicates[0], graph),
-          o: toVarOrTerm(objects[0], graph),
-        };
-      }
-      
-      function hasTripleShape(node, graph) {
-        return graph.objects(node, SRL_SUBJECT).length > 0 || graph.objects(node, SRL_PREDICATE).length > 0 || graph.objects(node, SRL_OBJECT).length > 0;
-      }
-      
-      function toVarOrTerm(node, graph) {
-        const varNames = graph.objects(node, SRL_VAR_NAME);
-        if (varNames.length > 0) {
-          if (varNames.length !== 1 || varNames[0].type !== 'literal') throw new Error(`Variable node ${graph.label(node)} must have exactly one string srl:varName`);
-          return variable(String(varNames[0].value));
-        }
-        return node;
-      }
-      
-      function toExpression(node, graph) {
-        const varNames = graph.objects(node, SHNEX_VAR).concat(graph.objects(node, SRL_VAR_NAME));
-        if (varNames.length > 0) {
-          if (varNames.length !== 1 || varNames[0].type !== 'literal') throw new Error(`Expression variable ${graph.label(node)} must name one variable`);
-          return { type: 'var', name: String(varNames[0].value) };
-        }
-        if (node.type === 'literal') {
-          if (node.datatype || node.lang) return { type: 'term', value: node };
-          return { type: 'literal', value: node.value };
-        }
-        if (node.type === 'iri' || node.type === 'blank' || node.type === 'triple') {
-          const call = graph.functionCall(node);
-          if (call) return toFunctionExpression(call.name, call.args.map((arg) => toExpression(arg, graph)));
-          if (node.type === 'blank' && graph.hasOutgoing(node)) return { type: 'term', value: node };
-          return { type: 'term', value: toVarOrTerm(node, graph) };
-        }
-        return { type: 'term', value: node };
-      }
-      
-      function toFunctionExpression(name, args) {
-        if (name.startsWith(SPARQL_NS)) {
-          const local = name.slice(SPARQL_NS.length);
-          if (local === 'less-than' || local === 'lessThan') return binary('<', args);
-          if (local === 'less-than-or-equal' || local === 'lessThanOrEqual') return binary('<=', args);
-          if (local === 'greater-than' || local === 'greaterThan') return binary('>', args);
-          if (local === 'greater-than-or-equal' || local === 'greaterThanOrEqual') return binary('>=', args);
-          if (local === 'equal' || local === 'equals') return binary('=', args);
-          if (local === 'not-equal' || local === 'notEqual') return binary('!=', args);
-          if (local === 'add') return foldBinary('+', args);
-          if (local === 'subtract') return binary('-', args);
-          if (local === 'multiply') return foldBinary('*', args);
-          if (local === 'divide') return binary('/', args);
-          if (local === 'and' || local === 'function-and') return foldBinary('&&', args);
-          if (local === 'or' || local === 'function-or') return foldBinary('||', args);
-          if (local === 'not') return { type: 'unary', op: '!', expr: args[0] };
-          const builtin = sparqlLocalToBuiltin(local);
-          return { type: 'call', name: builtin, args };
-        }
-        return { type: 'call', name, args };
-      }
-      
-      function binary(op, args) {
-        if (args.length !== 2) throw new Error(`sparql operator ${op} expects 2 arguments`);
-        return { type: 'binary', op, left: args[0], right: args[1] };
-      }
-      
-      function foldBinary(op, args) {
-        if (args.length < 2) throw new Error(`sparql operator ${op} expects at least 2 arguments`);
-        return args.slice(1).reduce((left, right) => ({ type: 'binary', op, left, right }), args[0]);
-      }
-      
-      function sparqlLocalToBuiltin(local) {
-        return local.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase()).replace(/^./, (ch) => ch.toUpperCase());
-      }
-      
-      class RdfGraph {
-        constructor(triples, prefixes = {}) {
-          this.triples = triples;
-          this.prefixes = prefixes;
-          this.bySubject = new Map();
-          for (const triple of triples) {
-            const key = termKey(triple.s);
-            if (!this.bySubject.has(key)) this.bySubject.set(key, []);
-            this.bySubject.get(key).push(triple);
-          }
-        }
-      
-        objects(subject, predicateIRI) {
-          const rows = this.bySubject.get(termKey(subject)) || [];
-          return rows.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI).map((triple) => triple.o);
-        }
-      
-        subjects(predicateIRI, object) {
-          return this.triples.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI && termEquals(triple.o, object)).map((triple) => triple.s);
-        }
-      
-        subjectsWithPredicate(predicateIRI) {
-          return this.triples.filter((triple) => triple.p.type === 'iri' && triple.p.value === predicateIRI).map((triple) => triple.s);
-        }
-      
-        hasOutgoing(subject) {
-          return (this.bySubject.get(termKey(subject)) || []).length > 0;
-        }
-      
-        list(head) {
-          const out = [];
-          let node = head;
-          const seen = new Set();
-          while (!(node.type === 'iri' && node.value === RDF_NIL)) {
-            const key = termKey(node);
-            if (seen.has(key)) throw new Error(`Cycle in RDF list at ${this.label(node)}`);
-            seen.add(key);
-            const first = this.objects(node, RDF_FIRST);
-            const rest = this.objects(node, RDF_REST);
-            if (first.length !== 1 || rest.length !== 1) throw new Error(`Expected RDF list node at ${this.label(node)}`);
-            out.push(first[0]);
-            node = rest[0];
-          }
-          return out;
-        }
-      
-        functionCall(node) {
-          if (node.type !== 'blank') return null;
-          const rows = (this.bySubject.get(termKey(node)) || []).filter((triple) => triple.p.type === 'iri');
-          const calls = rows.filter((triple) => triple.p.value.startsWith(SPARQL_NS) || triple.p.value.includes('#') || triple.p.value.includes('/'));
-          const viable = calls.filter((triple) => isRdfListHead(triple.o, this));
-          if (viable.length !== 1) return null;
-          return { name: viable[0].p.value, args: this.list(viable[0].o) };
-        }
-      
-        parseReference(text) {
-          if (typeof text !== 'string') return text;
-          if (text.startsWith('<') && text.endsWith('>')) return iri(text.slice(1, -1));
-          if (text.startsWith('_:')) return blankNode(text.slice(2));
-          const colon = text.indexOf(':');
-          if (colon >= 0) {
-            const prefix = text.slice(0, colon);
-            const local = text.slice(colon + 1);
-            const ns = this.prefixes[prefix] || (prefix === 'srl' ? SRL_NS : null);
-            if (ns) return iri(ns + local);
-          }
-          return iri(text);
-        }
-      
-        label(term) { return formatTerm(term, this.prefixes); }
-      }
-      
-      function isRdfListHead(term, graph) {
-        return (term.type === 'iri' && term.value === RDF_NIL) || graph.objects(term, RDF_FIRST).length === 1;
-      }
-      
-      function uniqueTerms(terms) {
-        const seen = new Set();
-        const out = [];
-        for (const term of terms) {
-          const key = termKey(term);
-          if (!seen.has(key)) { seen.add(key); out.push(term); }
-        }
-        return out;
-      }
-      
-      
-      function looksLikeRdfRules(source, options = {}) {
-        if (options.syntax === 'rdf') return true;
-        if (options.syntax === 'srl') return false;
-        if (options.filename && /\.(ttl|turtle|trig|nt|ntriples|nq|nquads|n3|rdf|rdfxml|owl|json|jsonld|html|htm|xhtml|xml|svg|shaclc|shc)$/i.test(options.filename)) return true;
-        return /\bsrl:RuleSet\b|\bsrl:rules\b|http:\/\/www\.w3\.org\/ns\/shacl-rules#RuleSet/.test(source);
-      }
-      
-      module.exports = {
-        parseRdfDocument,
-        parseRdfSyntax,
-        rdfDocumentToProgram,
-        looksLikeRdfRules,
-        rdfJsTermToTerm,
-        RdfGraph,
-        constants: {
-          SRL_NS,
-          SHNEX_NS,
-          SPARQL_NS,
-          SRL_RULE_SET,
-          SRL_RULE,
-        },
-      };
+      module.exports = { parseRdfDocument, rdfParseOptions, rdfJsTermToTerm, CONTENT_TYPES };
       
     },
     "src/rdfMessages.js": function (require, module, exports) {
       'use strict';
       
-      const { parseRdfDocument } = require('./rdfSyntax.js');
+      const { parseRdfDocument } = require('./rdf.js');
       const {
         iri,
         blankNode,
@@ -3398,7 +2855,10 @@
           version: '1.2-messages',
           imports: [],
           prefixes,
-          data,
+          // RDF Message Logs are an ancillary RDF input format. Their envelope
+          // graph is base data, not a SPARQL-RL DATA block / inference graph.
+          baseData: data,
+          data: [],
           rules: [],
         };
       }
@@ -3426,13 +2886,19 @@
       function evaluate(program, options = {}) {
         const maxIterations = options.maxIterations ?? 10000;
         const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
-        const store = new TripleStore(program.data);
-        // SHACL 1.2 Rules distinguishes the immutable ground-data graph (base graph
-        // plus DATA blocks) from the growing evaluation graph. Snapshot it before
-        // any rules run so WHERE DATA and NOT DATA never see inferred triples.
-        const groundStore = new TripleStore(program.data);
-        const inputKeys = new Set(program.data.map(tripleKey));
+        const baseData = (program.baseData || []).slice();
+        const ruleData = (program.data || []).slice();
+        const store = new TripleStore([...baseData, ...ruleData]);
+        // SPARQL-RL ground data is the external base graph only. DATA blocks are
+        // rule-set facts and therefore belong to the inference graph.
+        const groundStore = new TripleStore(baseData);
+        const inputKeys = new Set(baseData.map(tripleKey));
         const inferred = [];
+        const inferredKeys = new Set();
+        for (const triple of ruleData) {
+          const key = tripleKey(triple);
+          if (!inputKeys.has(key) && !inferredKeys.has(key)) { inferred.push(triple); inferredKeys.add(key); }
+        }
         const trace = options.trace || options.prove ? [] : null;
         let iterations = 0;
         let ruleApplications = 0;
@@ -3455,10 +2921,7 @@
           layerIndexes,
           analysis.dependency ? analysis.dependency.edges : [],
         );
-        const relaxedRecursiveRunOnce = options.relaxedRecursion === false
-          ? new Set()
-          : recursiveTermGenerationRuleIndexes(analysis);
-        const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+        const useHybrid = options.hybrid === true;
         const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
           ? preferredBackwardPredicates(program, options)
           : new Set();
@@ -3485,16 +2948,14 @@
           hybridBackwardRules,
           hybridStats,
           groundStore,
-          targetBindingCache: new Map(),
         };
       
         for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
           const layer = layerIndexes[layerIndex];
           baseContext.layer = layerIndex + 1;
-          prepareTargetBindingsForLayer(program, store, layer, baseContext);
           const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
-          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
+          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
       
           if (runOnce.length > 0) {
             iterations += 1;
@@ -3517,7 +2978,8 @@
           version: program.version || null,
           imports: program.imports || [],
           prefixes: program.prefixes,
-          input: program.data.slice(),
+          input: baseData,
+          data: ruleData,
           inferred,
           closure: store.values(),
           iterations,
@@ -3534,13 +2996,19 @@
       async function evaluateAsync(program, options = {}) {
         const maxIterations = options.maxIterations ?? 10000;
         const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || new Date(), __bnodeLabels: options.__bnodeLabels || new Map() };
-        const store = new TripleStore(program.data);
-        // SHACL 1.2 Rules distinguishes the immutable ground-data graph (base graph
-        // plus DATA blocks) from the growing evaluation graph. Snapshot it before
-        // any rules run so WHERE DATA and NOT DATA never see inferred triples.
-        const groundStore = new TripleStore(program.data);
-        const inputKeys = new Set(program.data.map(tripleKey));
+        const baseData = (program.baseData || []).slice();
+        const ruleData = (program.data || []).slice();
+        const store = new TripleStore([...baseData, ...ruleData]);
+        // SPARQL-RL ground data is the external base graph only. DATA blocks are
+        // rule-set facts and therefore belong to the inference graph.
+        const groundStore = new TripleStore(baseData);
+        const inputKeys = new Set(baseData.map(tripleKey));
         const inferred = [];
+        const inferredKeys = new Set();
+        for (const triple of ruleData) {
+          const key = tripleKey(triple);
+          if (!inputKeys.has(key) && !inferredKeys.has(key)) { inferred.push(triple); inferredKeys.add(key); }
+        }
         const trace = options.trace || options.prove ? [] : null;
         let iterations = 0;
         let ruleApplications = 0;
@@ -3563,10 +3031,7 @@
           layerIndexes,
           analysis.dependency ? analysis.dependency.edges : [],
         );
-        const relaxedRecursiveRunOnce = options.relaxedRecursion === false
-          ? new Set()
-          : recursiveTermGenerationRuleIndexes(analysis);
-        const useHybrid = options.hybrid !== false && !options.shacl12Conformance;
+        const useHybrid = options.hybrid === true;
         const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
           ? preferredBackwardPredicates(program, options)
           : new Set();
@@ -3593,16 +3058,14 @@
           hybridBackwardRules,
           hybridStats,
           groundStore,
-          targetBindingCache: new Map(),
         };
       
         for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
           const layer = layerIndexes[layerIndex];
           baseContext.layer = layerIndex + 1;
-          await prepareTargetBindingsForLayerAsync(program, store, layer, baseContext);
           const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce || relaxedRecursiveRunOnce.has(ruleIndex));
-          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce && !relaxedRecursiveRunOnce.has(ruleIndex));
+          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
       
           if (runOnce.length > 0) {
             iterations += 1;
@@ -3625,7 +3088,8 @@
           version: program.version || null,
           imports: program.imports || [],
           prefixes: program.prefixes,
-          input: program.data.slice(),
+          input: baseData,
+          data: ruleData,
           inferred,
           closure: store.values(),
           iterations,
@@ -3709,7 +3173,7 @@
         if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
           bodyContext.retainedBodyVariables = collectVariables(rule.head);
         }
-        const initialBindings = rule.target ? targetBindingsForRule(program, store, ruleIndex, context) : [{}];
+        const initialBindings = [{}];
         const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
       
         for (const binding of bodyBindings) {
@@ -3758,114 +3222,6 @@
         }
       }
       
-      async function prepareTargetBindingsForLayerAsync(program, store, ruleIndexes, context) {
-        for (const ruleIndex of ruleIndexes) {
-          if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
-            await targetBindingsForRuleAsync(program, store, ruleIndex, context);
-          }
-        }
-      }
-      
-      async function targetBindingsForRuleAsync(program, store, ruleIndex, context) {
-        const cached = context.targetBindingCache && context.targetBindingCache.get(ruleIndex);
-        if (cached) return cached;
-      
-        const rule = program.rules[ruleIndex];
-        const target = rule && rule.target;
-        if (!target) return [{}];
-      
-        let resolved;
-        if (context.shapeEngine && typeof context.shapeEngine.eligibleFocusNodes === 'function') {
-          resolved = await context.shapeEngine.eligibleFocusNodes(target.shape, {
-            variable: target.variable,
-            rule,
-            ruleIndex,
-            layer: context.layer,
-            graph: store.values(),
-            groundGraph: context.groundStore.values(),
-            program,
-          });
-        } else if (typeof context.focusNodeResolver === 'function') {
-          resolved = await context.focusNodeResolver(target.shape, {
-            variable: target.variable,
-            rule,
-            ruleIndex,
-            layer: context.layer,
-            graph: store.values(),
-            groundGraph: context.groundStore.values(),
-            program,
-          });
-        } else {
-          throw new Error(`${rule.name || `rule#${ruleIndex + 1}`} uses FOR ?${target.variable} IN <${target.shape}>; provide shapes/shapeEngine or a focusNodeResolver(shape, context)`);
-        }
-      
-        return cacheTargetBindings(resolved, target, ruleIndex, context);
-      }
-      
-      function cacheTargetBindings(resolved, target, ruleIndex, context) {
-        if (resolved == null || typeof resolved[Symbol.iterator] !== 'function') {
-          throw new Error(`Focus-node resolution for <${target.shape}> must return an iterable of RDF focus nodes`);
-        }
-        const bindings = [];
-        const seen = new Set();
-        for (const node of resolved) {
-          const term = normalizeFocusNode(node);
-          const key = termKey(term);
-          if (seen.has(key)) continue;
-          seen.add(key);
-          bindings.push({ [target.variable]: term });
-        }
-        if (context.targetBindingCache) context.targetBindingCache.set(ruleIndex, bindings);
-        return bindings;
-      }
-      
-      function prepareTargetBindingsForLayer(program, store, ruleIndexes, context) {
-        for (const ruleIndex of ruleIndexes) {
-          if (program.rules[ruleIndex] && program.rules[ruleIndex].target) {
-            targetBindingsForRule(program, store, ruleIndex, context);
-          }
-        }
-      }
-      
-      function targetBindingsForRule(program, store, ruleIndex, context) {
-        const cached = context.targetBindingCache && context.targetBindingCache.get(ruleIndex);
-        if (cached) return cached;
-      
-        const rule = program.rules[ruleIndex];
-        const target = rule && rule.target;
-        if (!target) return [{}];
-      
-        const resolver = context.focusNodeResolver;
-        if (typeof resolver !== 'function') {
-          throw new Error(`${rule.name || `rule#${ruleIndex + 1}`} uses FOR ?${target.variable} IN <${target.shape}>; provide a focusNodeResolver(shape, context) option that returns the conforming target focus nodes`);
-        }
-      
-        const resolved = resolver(target.shape, {
-          variable: target.variable,
-          rule,
-          ruleIndex,
-          layer: context.layer,
-          graph: store.values(),
-          groundGraph: context.groundStore.values(),
-          program,
-        });
-        return cacheTargetBindings(resolved, target, ruleIndex, context);
-      }
-      
-      function normalizeFocusNode(node) {
-        if (node && typeof node === 'object' && node.type) return node;
-        if (typeof node === 'string') return iri(node);
-        if (node && typeof node === 'object' && node.termType) {
-          if (node.termType === 'NamedNode') return iri(node.value);
-          if (node.termType === 'BlankNode') return blankNode(node.value);
-          if (node.termType === 'Literal') {
-            const datatype = node.datatype && node.datatype.value ? node.datatype.value : null;
-            return literal(node.value, datatype, node.language || null, node.direction || null);
-          }
-        }
-        throw new Error('focusNodeResolver returned an unsupported focus node; return an Eyeleng term, an RDF/JS term, or an absolute IRI string');
-      }
-      
       function proofUses(body, binding) {
         return body
           .filter((clause) => clause.type === 'triple')
@@ -3901,17 +3257,6 @@
         total.memoHits += item.memoHits || 0;
         total.memoStores += item.memoStores || 0;
         total.maxDepth = Math.max(total.maxDepth || 0, item.maxDepth || 0);
-      }
-      
-      function recursiveTermGenerationRuleIndexes(analysis) {
-        const out = new Set();
-        if (!analysis || !analysis.dependency || !analysis.diagnostics) return out;
-        const byName = new Map((analysis.dependency.rules || []).map((rule) => [rule.name, rule.index]));
-        for (const diagnostic of analysis.diagnostics) {
-          if (diagnostic.code !== 'recursive-assignment-rule') continue;
-          if (byName.has(diagnostic.rule)) out.add(byName.get(diagnostic.rule));
-        }
-        return out;
       }
       
       function instantiateHeadTriple(pattern, binding, headBlankLabels, headBlankMap, skolemKey) {
@@ -4528,98 +3873,68 @@
       function analyze(program, options = {}) {
         const diagnostics = [];
         const dependency = dependencyGraph(program, options);
-        const hasTermGeneratingRules = dependency.rules.some((rule) => rule.createsTerms);
-        const recursiveIndexes = hasTermGeneratingRules ? recursiveRuleIndexes(dependency) : new Set();
       
         program.rules.forEach((rule, index) => {
           const name = ruleName(rule, index);
-          const initialBound = rule.target ? new Set([rule.target.variable]) : new Set();
-          const bound = boundVariables(rule.body, initialBound);
-          const head = new Set();
-          for (const triple of rule.head) collectTripleVars(triple, head);
+          const initialBound = new Set();
       
-          for (const variable of head) {
-            if (!bound.has(variable)) {
-              diagnostics.push({
-                code: 'unsafe-head-variable',
-                severity: 'error',
-                rule: name,
-                message: `${displayRuleName(name, program.prefixes || {})} has unbound head variable ?${variable}`,
-              });
-            }
-          }
-      
-          for (const triple of rule.head) {
-            if (triple.p.type !== 'iri' && triple.p.type !== 'var') {
-              diagnostics.push({
-                code: 'invalid-head-predicate',
-                severity: 'error',
-                rule: name,
-                message: `${displayRuleName(name, program.prefixes || {})} has a non-IRI/non-variable predicate in the head`,
-              });
-            }
-          }
-      
-          diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}, initialBound));
-      
-          const depRule = dependency.rules[index] || {};
-          if (depRule.createsTerms && recursiveIndexes.has(index)) {
+          // The 25 August 2026 grammar still contains ForClause, but the normative
+          // abstract syntax and evaluation model define no focus/shape component.
+          // Recognize it syntactically, but do not invent target semantics that the abstract evaluation model does not define.
+          if (rule.target) {
             diagnostics.push({
-              code: 'recursive-assignment-rule',
-              severity: 'warning',
-              rule: name,
-              message: `${displayRuleName(name, program.prefixes || {})} creates terms in a recursive dependency cycle; relaxed mode allows this but termination is not guaranteed (use --strict to reject it)`,
+              code: 'for-clause-no-evaluation-semantics', severity: 'error', rule: name,
+              message: `${displayRuleName(name, program.prefixes || {})} uses FOR ?${rule.target.variable} IN <${rule.target.iri}>; the current SPARQL-RL abstract evaluation model does not define FOR execution semantics`,
             });
           }
       
+          const bound = boundVariables(rule.body, initialBound);
+          const head = new Set();
+          for (const triple of rule.head) collectTripleVars(triple, head);
+          for (const variableName of head) {
+            if (!bound.has(variableName)) diagnostics.push({
+              code: 'unsafe-head-variable', severity: 'error', rule: name,
+              message: `${displayRuleName(name, program.prefixes || {})} has unbound head variable ?${variableName}`,
+            });
+          }
+          for (const triple of rule.head) {
+            if (triple.p.type !== 'iri' && triple.p.type !== 'var') diagnostics.push({
+              code: 'invalid-head-predicate', severity: 'error', rule: name,
+              message: `${displayRuleName(name, program.prefixes || {})} has a non-IRI/non-variable predicate in the head`,
+            });
+          }
+          diagnostics.push(...sequentialWellFormednessDiagnostics(rule.body, name, program.prefixes || {}, initialBound));
         });
       
-        for (const cycle of dependency.unstratifiedCycles) {
-          diagnostics.push({
-            code: 'unstratified-negation',
-            severity: 'error',
-            rules: cycle.rules,
-            message: `Unstratified negation through ${cycle.rules.map((name) => displayRuleName(name, program.prefixes || {})).join(' -> ')} using ${cycle.predicate ? compactIRI(cycle.predicate, program.prefixes || {}) : '*'}`,
-          });
-        }
-      
-        for (const cycle of dependency.shapeConstraintCycles || []) {
-          diagnostics.push({
-            code: 'shape-rule-cycle',
-            severity: 'error',
-            rules: cycle.rules,
-            shape: cycle.shape,
-            message: `Closed SHACL shape dependency cycle through ${cycle.rules.map((name) => displayRuleName(name, program.prefixes || {})).join(' -> ')} for <${cycle.shape}>${cycle.predicate ? ` using ${compactIRI(cycle.predicate, program.prefixes || {})}` : ''}`,
+        if (options.checkStratification !== false) {
+          for (const cycle of dependency.unstratifiedCycles) diagnostics.push({
+            code: 'unstratified-closed-dependency', severity: 'error', rules: cycle.rules,
+            message: `Stratification condition violated by a recursive closed dependency through ${cycle.rules.map((name) => displayRuleName(name, program.prefixes || {})).join(' -> ')}`,
           });
         }
       
         return {
-          warnings: diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
-          errors: diagnostics.filter((diagnostic) => diagnostic.severity === 'error'),
+          warnings: diagnostics.filter((d) => d.severity === 'warning'),
+          errors: diagnostics.filter((d) => d.severity === 'error'),
           diagnostics,
           dependency,
         };
       }
       
-      function ruleName(rule, index) {
-        return rule.name || `rule#${index + 1}`;
-      }
-      
-      function displayRuleName(name, prefixes = {}) {
-        return /^https?:/.test(name) ? compactIRI(name, prefixes) : name;
-      }
+      function ruleName(rule, index) { return rule.name || `rule#${index + 1}`; }
+      function displayRuleName(name, prefixes = {}) { return /^https?:/.test(name) ? compactIRI(name, prefixes) : name; }
       
       function dependencyGraph(program, options = {}) {
         const rules = program.rules.map((rule, index) => {
-          const positivePatterns = bodyTriplePatterns(rule.body, false);
-          const negativePatterns = bodyTriplePatterns(rule.body, true);
+          // WHERE DATA and NOT DATA read the immutable base graph. Rule heads can
+          // never add triples to that graph, so those patterns do not create rule
+          // dependencies (§4.3 dependency is about possible head/body matching in
+          // the inference graph).
+          const positivePatterns = rule.groundData ? [] : bodyTriplePatterns(rule.body, false);
+          const negativePatterns = rule.groundData ? [] : bodyTriplePatterns(rule.body, true);
           const headTemplates = effectiveHeadTemplates(rule);
           return {
-            index,
-            name: ruleName(rule, index),
-            headTemplates,
-            positivePatterns,
-            negativePatterns,
+            index, name: ruleName(rule, index), headTemplates, positivePatterns, negativePatterns,
             headPredicates: new Set(headTemplates.map((triple) => predicateIRI(triple)).filter(Boolean)),
             positivePredicates: new Set(positivePatterns.flatMap((triple) => predicateIRIs(triple))),
             negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
@@ -4628,46 +3943,39 @@
             hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
             headHasBlankNode: ruleHeadHasBlankNode(rule),
             createsTerms: ruleCreatesTerms(rule, options),
-            target: rule.target || null,
-            shapeDependencies: rule.target ? resolveShapeDependencies(rule.target.shape, options) : null,
           };
         });
       
         const edgeMap = new Map();
         function addEdge(from, to, kind, predicate) {
-          const label = predicate || '*';
-          const key = `${from.index}->${to.index}:${label}`;
+          const key = `${from.index}->${to.index}`;
           const negated = kind === 'negated';
-          const termGeneration = kind === 'term-generation';
-          const shapeConstraint = kind === 'shape';
+          // Per §4.3, every dependency *from* an assignment rule or a rule with a
+          // blank node in its head is closed, even when the matching pattern itself
+          // is positive.
+          const runOnceConstraint = from.runOnce;
+          const closed = negated || runOnceConstraint;
           const existing = edgeMap.get(key);
           if (existing) {
+            existing.closed = existing.closed || closed;
+            existing.negative = existing.closed;
             existing.negated = existing.negated || negated;
-            existing.termGeneration = existing.termGeneration || termGeneration;
-            existing.shapeConstraint = existing.shapeConstraint || shapeConstraint;
-            if (shapeConstraint && !existing.shape && from.target) existing.shape = from.target.shape;
-            existing.negative = existing.negated || existing.termGeneration || existing.shapeConstraint;
+            existing.runOnceConstraint = existing.runOnceConstraint || runOnceConstraint;
+            if (predicate && !existing.predicates.includes(predicate)) existing.predicates.push(predicate);
+            if (!existing.predicate && predicate) existing.predicate = predicate;
             return;
           }
           edgeMap.set(key, {
-            from: from.index,
-            to: to.index,
-            negative: negated || termGeneration || shapeConstraint,
-            negated,
-            termGeneration,
-            shapeConstraint,
-            predicate,
-            shape: shapeConstraint && from.target ? from.target.shape : null,
+            from: from.index, to: to.index, label: closed ? 'closed' : 'open', closed, negative: closed,
+            negated, runOnceConstraint, predicate: predicate || null, predicates: predicate ? [predicate] : [],
           });
         }
       
         const headIndex = buildHeadTemplateIndex(rules);
-      
         for (const from of rules) {
-          const forceClosed = from.createsTerms;
           for (const pattern of from.positivePatterns) {
             for (const candidate of candidateHeadTemplates(headIndex, pattern)) {
-              if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], forceClosed ? 'term-generation' : 'positive', dependencyPredicateLabel(pattern));
+              if (canPossiblyGenerate(candidate.template, pattern)) addEdge(from, rules[candidate.ruleIndex], 'positive', dependencyPredicateLabel(pattern));
             }
           }
           for (const pattern of from.negativePatterns) {
@@ -4677,97 +3985,39 @@
           }
         }
       
-        for (const from of rules) {
-          if (!from.target || !from.shapeDependencies) continue;
-          const dependencies = from.shapeDependencies;
-          const wanted = new Set(dependencies.predicates || []);
-          for (const producer of rules) {
-            if (!producer.headTemplates || producer.headTemplates.length === 0) continue;
-            const hasVariablePredicate = producer.headTemplates.some((template) => !template.p || template.p.type !== 'iri');
-            if (dependencies.wildcard || hasVariablePredicate) {
-              addEdge(from, producer, 'shape', null);
-              continue;
-            }
-            for (const predicate of wanted) {
-              if (producer.headPredicates.has(predicate)) addEdge(from, producer, 'shape', predicate);
-            }
-          }
-        }
-      
-        const edges = Array.from(edgeMap.values()).sort((a, b) => a.from - b.from || a.to - b.to || String(a.predicate || '').localeCompare(String(b.predicate || '')));
-      
+        const edges = Array.from(edgeMap.values()).sort((a,b) => a.from-b.from || a.to-b.to);
+        for (const edge of edges) edge.label = edge.closed ? 'closed' : 'open';
         const components = stronglyConnectedComponents(rules.length, edges);
         const componentOf = new Map();
-        components.forEach((component, index) => {
-          for (const ruleIndex of component) componentOf.set(ruleIndex, index);
-        });
+        components.forEach((component, i) => component.forEach((ruleIndex) => componentOf.set(ruleIndex, i)));
       
         const unstratifiedCycles = [];
         const seen = new Set();
         for (const edge of edges) {
-          if (!edge.negated) continue;
-          if (edge.from === edge.to && rules[edge.from].runOnce && !rules[edge.from].headHasBlankNode) continue;
-          if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
+          if (!edge.closed || componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
           const component = components[componentOf.get(edge.from)];
-          const key = `${component.slice().sort((a, b) => a - b).join(',')}|${edge.predicate || '*'}`;
+          const isCycle = component.length > 1 || edge.from === edge.to;
+          if (!isCycle) continue;
+          const key = component.join(',');
           if (seen.has(key)) continue;
           seen.add(key);
-          unstratifiedCycles.push({
-            predicate: edge.predicate,
-            rules: component.map((ruleIndex) => rules[ruleIndex].name),
-          });
+          unstratifiedCycles.push({ rules: component.map((i) => rules[i].name) });
         }
       
-        const shapeConstraintCycles = [];
-        const seenShapeCycles = new Set();
-        for (const edge of edges) {
-          if (!edge.shapeConstraint) continue;
-          if (componentOf.get(edge.from) !== componentOf.get(edge.to)) continue;
-          const component = components[componentOf.get(edge.from)];
-          const key = `${component.slice().sort((a, b) => a - b).join(',')}|${edge.shape || ''}|${edge.predicate || '*'}`;
-          if (seenShapeCycles.has(key)) continue;
-          seenShapeCycles.add(key);
-          shapeConstraintCycles.push({
-            predicate: edge.predicate,
-            shape: edge.shape || (rules[edge.from].target && rules[edge.from].target.shape) || '',
-            rules: component.map((ruleIndex) => rules[ruleIndex].name),
-          });
-        }
-      
-        const layers = stratificationLayers(rules.length, components, componentOf, edges);
-      
+        const layers = unstratifiedCycles.length ? [rules.map((r) => r.index)] : stratificationLayers(rules.length, components, componentOf, edges);
         return {
           rules: rules.map((rule) => ({
-            index: rule.index,
-            name: rule.name,
-            headPredicates: Array.from(rule.headPredicates),
-            positivePredicates: Array.from(rule.positivePredicates),
-            negativePredicates: Array.from(rule.negativePredicates),
-            runOnce: rule.runOnce,
-            hasAssignment: rule.hasAssignment,
-            hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
-            headHasBlankNode: rule.headHasBlankNode,
-            createsTerms: rule.createsTerms,
-            target: rule.target,
-            shapeDependencies: rule.shapeDependencies,
+            index: rule.index, name: rule.name,
+            headPredicates: Array.from(rule.headPredicates), positivePredicates: Array.from(rule.positivePredicates), negativePredicates: Array.from(rule.negativePredicates),
+            runOnce: rule.runOnce, hasAssignment: rule.hasAssignment, hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
+            headHasBlankNode: rule.headHasBlankNode, createsTerms: rule.createsTerms,
           })),
           edges,
-          components: components.map((component) => component.map((ruleIndex) => rules[ruleIndex].name)),
-          layers: layers.map((layer) => layer.map((ruleIndex) => rules[ruleIndex].name)),
+          components: components.map((component) => component.map((i) => rules[i].name)),
+          layers: layers.map((layer) => layer.map((i) => rules[i].name)),
           layerIndexes: layers,
           unstratifiedCycles,
-          shapeConstraintCycles,
         };
-      }
-      
-      function resolveShapeDependencies(shapeIRI, options = {}) {
-        if (!shapeIRI) return null;
-        if (options.shapeEngine && typeof options.shapeEngine.dependencies === 'function') {
-          return options.shapeEngine.dependencies(shapeIRI);
-        }
-        if (typeof options.shapeDependencies === 'function') return options.shapeDependencies(shapeIRI);
-        if (options.shapeDependencies && typeof options.shapeDependencies === 'object') return options.shapeDependencies[shapeIRI] || null;
-        return null;
       }
       
       function buildHeadTemplateIndex(rules) {
@@ -4882,77 +4132,24 @@
       
       function stratificationLayers(ruleCount, components, componentOf, edges) {
         if (ruleCount === 0) return [];
-        const outgoing = Array.from({ length: components.length }, () => new Set());
-        const indegree = Array(components.length).fill(0);
-      
-        for (const edge of edges) {
-          const dependent = componentOf.get(edge.from);
-          const dependency = componentOf.get(edge.to);
-          if (dependent === dependency) continue;
-          // Rule edge means "from depends on to". Evaluation must run dependency before dependent.
-          if (!outgoing[dependency].has(dependent)) {
-            outgoing[dependency].add(dependent);
-            indegree[dependent] += 1;
-          }
-        }
-      
-        let ready = [];
-        for (let i = 0; i < indegree.length; i += 1) if (indegree[i] === 0) ready.push(i);
-        const layers = [];
-        const emitted = new Set();
-        while (ready.length > 0) {
-          ready.sort((a, b) => componentMin(components[a]) - componentMin(components[b]));
-          const layerComponents = ready;
-          ready = [];
-          const layer = [];
-          for (const componentIndex of layerComponents) {
-            emitted.add(componentIndex);
-            layer.push(...components[componentIndex]);
-            for (const next of outgoing[componentIndex]) {
-              indegree[next] -= 1;
-              if (indegree[next] === 0) ready.push(next);
+        const levels = Array(ruleCount).fill(0);
+        const limit = ruleCount + 1;
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (const edge of edges) {
+            const required = levels[edge.to] + (edge.closed ? 1 : 0);
+            if (levels[edge.from] < required) {
+              levels[edge.from] = required;
+              if (levels[edge.from] > limit) throw new Error('Stratification error');
+              changed = true;
             }
           }
-          layers.push(layer.sort((a, b) => a - b));
         }
-      
-        if (emitted.size !== components.length) return [Array.from({ length: ruleCount }, (_, i) => i)];
+        const max = Math.max(0, ...levels);
+        const layers = Array.from({ length: max + 1 }, () => []);
+        levels.forEach((level, index) => layers[level].push(index));
         return layers;
-      }
-      
-      
-      function componentMin(component) {
-        let min = Infinity;
-        for (const value of component) if (value < min) min = value;
-        return min;
-      }
-      
-      function recursiveRuleIndexes(dependency) {
-        const out = new Set();
-        const ruleByName = new Map(dependency.rules.map((rule) => [rule.name, rule]));
-        const componentOf = new Map();
-      
-        dependency.components.forEach((component, componentIndex) => {
-          for (const name of component) {
-            const rule = ruleByName.get(name);
-            if (rule) componentOf.set(rule.index, componentIndex);
-          }
-        });
-      
-        for (const component of dependency.components) {
-          if (component.length <= 1) continue;
-          for (const name of component) {
-            const rule = ruleByName.get(name);
-            if (rule) out.add(rule.index);
-          }
-        }
-      
-        for (const edge of dependency.edges) {
-          const rule = (dependency.rules || []).find((candidate) => candidate.index === edge.from);
-          if (edge.from === edge.to && edge.negated && rule && rule.runOnce && !rule.headHasBlankNode) continue;
-          if (edge.from === edge.to || componentOf.get(edge.from) === componentOf.get(edge.to)) out.add(edge.from);
-        }
-        return out;
       }
       
       function stronglyConnectedComponents(size, edges) {
@@ -5067,7 +4264,7 @@
             if (clause.type === 'path') out.push(...pathTriplePatterns(clause.triple));
             else out.push(clause.triple);
           } else if (clause.type === 'not') {
-            out.push(...bodyTriplePatterns(clause.body, wantNegative, true));
+            if (!clause.groundData) out.push(...bodyTriplePatterns(clause.body, wantNegative, true));
           }
         }
         return out;
@@ -5373,7 +4570,7 @@
       }
       
       function ruleSupported(rule, options = {}) {
-        // Targeted rules are seeded from SHACL focus nodes by the forward evaluator.
+        // FOR clauses have no execution hook in the current SPARQL-RL abstract evaluation model.
         // Until the backward prover has an equivalent targeting gate, treating them
         // as ordinary rules would be semantically incorrect.
         if (rule.target) return false;
@@ -6107,7 +5304,7 @@
         }
       
         const runOptions = queryRunOptions(program, querySpec, { ...compiled.options, ...options });
-        const result = await evaluateAsync(program, { ...runOptions, shapeEngine: compiled.shapeEngine, analysis });
+        const result = await evaluateAsync(program, { ...runOptions, analysis });
         result.diagnostics = diagnostics;
         result.query = queryResult(result, querySpec, runOptions);
         return result;
@@ -6164,367 +5361,8 @@
       module.exports = { resultTriples };
       
     },
-    "src/shacl.js": function (require, module, exports) {
-      'use strict';
-      
-      const { parseRdfDocument } = require('./rdfSyntax.js');
-      const { iri, termKey, RDF_TYPE, RDF_FIRST, RDF_REST, RDF_NIL } = require('./term.js');
-      
-      const SH = 'http://www.w3.org/ns/shacl#';
-      const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
-      const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
-      
-      const SH_TARGET_NODE = `${SH}targetNode`;
-      const SH_TARGET_CLASS = `${SH}targetClass`;
-      const SH_TARGET_SUBJECTS_OF = `${SH}targetSubjectsOf`;
-      const SH_TARGET_OBJECTS_OF = `${SH}targetObjectsOf`;
-      const SH_TARGET = `${SH}target`;
-      const SH_PATH = `${SH}path`;
-      const SH_INVERSE_PATH = `${SH}inversePath`;
-      const SH_ALTERNATIVE_PATH = `${SH}alternativePath`;
-      const SH_ZERO_OR_MORE_PATH = `${SH}zeroOrMorePath`;
-      const SH_ONE_OR_MORE_PATH = `${SH}oneOrMorePath`;
-      const SH_ZERO_OR_ONE_PATH = `${SH}zeroOrOnePath`;
-      const SH_CLASS = `${SH}class`;
-      const SH_CLOSED = `${SH}closed`;
-      const SH_SPARQL = `${SH}sparql`;
-      const SH_NODE = `${SH}node`;
-      const SH_PROPERTY = `${SH}property`;
-      const SH_NOT = `${SH}not`;
-      const SH_AND = `${SH}and`;
-      const SH_OR = `${SH}or`;
-      const SH_XONE = `${SH}xone`;
-      const SH_QUALIFIED_VALUE_SHAPE = `${SH}qualifiedValueShape`;
-      const SH_EQUALS = `${SH}equals`;
-      const SH_DISJOINT = `${SH}disjoint`;
-      const SH_LESS_THAN = `${SH}lessThan`;
-      const SH_LESS_THAN_OR_EQUALS = `${SH}lessThanOrEquals`;
-      const RDFS_CLASS = `${RDFS}Class`;
-      const RDFS_SUBCLASS_OF = `${RDFS}subClassOf`;
-      
-      const SHAPE_LINK_PREDICATES = new Set([
-        SH_NODE,
-        SH_PROPERTY,
-        SH_NOT,
-        SH_QUALIFIED_VALUE_SHAPE,
-      ]);
-      const SHAPE_LIST_PREDICATES = new Set([SH_AND, SH_OR, SH_XONE]);
-      const DATA_PREDICATE_PARAMS = new Set([SH_EQUALS, SH_DISJOINT, SH_LESS_THAN, SH_LESS_THAN_OR_EQUALS]);
-      
-      async function createShaclShapeEngine(shapes, options = {}) {
-        const document = typeof shapes === 'string'
-          ? await parseRdfDocument(shapes, {
-            filename: options.shapesFilename || options.filename || '<shapes.ttl>',
-            baseIRI: options.shapesBaseIRI || options.baseIRI || null,
-            contentType: options.shapesContentType,
-          })
-          : normalizeShapesDocument(shapes);
-      
-        const [{ default: Validator }, dataModelModule, datasetModule, sparqlModule] = await Promise.all([
-          import('shacl-engine/Validator.js'),
-          import('@rdfjs/data-model'),
-          import('@rdfjs/dataset'),
-          options.shaclSparql === false ? Promise.resolve(null) : import('shacl-engine/sparql.js'),
-        ]);
-        const dataFactory = dataModelModule.default || dataModelModule;
-        const datasetFactory = datasetModule.default || datasetModule;
-        // shacl-engine's report materializer calls factory.dataset(), while the
-        // standalone @rdfjs/data-model factory intentionally implements only the
-        // RDF/JS DataFactory surface. Compose the two without mutating either
-        // dependency's singleton export.
-        const factory = Object.create(dataFactory);
-        factory.dataset = datasetFactory.dataset.bind(datasetFactory);
-        const shapesDataset = document.dataset || datasetFactory.dataset(document.quads || []);
-        const validatorOptions = { factory, ...(options.shaclValidatorOptions || {}) };
-        if (sparqlModule) {
-          if (!validatorOptions.validations) validatorOptions.validations = sparqlModule.validations;
-          if (!validatorOptions.targetResolvers) validatorOptions.targetResolvers = sparqlModule.targetResolvers;
-        }
-        const validator = new Validator(shapesDataset, validatorOptions);
-      
-        return new ShaclShapeEngine({ document, validator, factory, datasetFactory, options });
-      }
-      
-      class ShaclShapeEngine {
-        constructor({ document, validator, factory, datasetFactory, options }) {
-          this.document = document;
-          this.validator = validator;
-          this.factory = factory;
-          this.datasetFactory = datasetFactory;
-          this.options = options || {};
-          this.graph = new ShapeGraph(document.triples || []);
-          this._dependencyCache = new Map();
-        }
-      
-        dependencies(shapeIRI) {
-          if (this._dependencyCache.has(shapeIRI)) return this._dependencyCache.get(shapeIRI);
-          const result = shapeDependencies(this.graph, iri(shapeIRI));
-          this._dependencyCache.set(shapeIRI, result);
-          return result;
-        }
-      
-        async validate(graph, options = {}) {
-          const dataset = this.datasetFactory.dataset((graph || []).map((triple) => internalTripleToQuad(triple, this.factory)));
-          const selectedShapes = options.shapeIRIs && options.shapeIRIs.length
-            ? options.shapeIRIs.map((shapeIRI) => ({ terms: [this.factory.namedNode(shapeIRI)] }))
-            : undefined;
-          return this.validator.validate({ dataset }, selectedShapes);
-        }
-      
-        async eligibleFocusNodes(shapeIRI, context = {}) {
-          const dataDataset = this.datasetFactory.dataset((context.graph || []).map((triple) => internalTripleToQuad(triple, this.factory)));
-          const shapeTerm = this.factory.namedNode(shapeIRI);
-          const targets = resolveCoreTargets(this.graph, iri(shapeIRI), context.graph || []);
-      
-          if (this.graph.objects(iri(shapeIRI), SH_TARGET).length > 0) {
-            if (typeof this.options.customTargetResolver === 'function') {
-              const extra = await this.options.customTargetResolver(shapeIRI, context);
-              for (const node of extra || []) targets.set(termKey(normalizeInternalNode(node)), normalizeInternalNode(node));
-            } else {
-              throw new Error(`Shape <${shapeIRI}> uses sh:target; provide customTargetResolver for custom/SPARQL targets`);
-            }
-          }
-      
-          const eligible = [];
-          for (const internalNode of targets.values()) {
-            const focus = internalTermToRdfJs(internalNode, this.factory);
-            const report = await this.validator.validate(
-              { dataset: dataDataset, terms: [focus] },
-              [{ terms: [shapeTerm] }],
-            );
-            if (report.conforms) eligible.push(internalNode);
-          }
-          return eligible;
-        }
-      }
-      
-      function normalizeShapesDocument(shapes) {
-        if (!shapes) throw new Error('SHACL shapes are required');
-        if (Array.isArray(shapes.triples) && Array.isArray(shapes.quads)) return shapes;
-        if (shapes.dataset && typeof shapes.dataset[Symbol.iterator] === 'function') {
-          const quads = Array.from(shapes.dataset);
-          const { rdfJsTermToTerm } = require('./rdfSyntax.js');
-          return {
-            baseIRI: shapes.baseIRI || null,
-            prefixes: { ...(shapes.prefixes || {}) },
-            triples: quads.map((quad) => ({ s: rdfJsTermToTerm(quad.subject), p: rdfJsTermToTerm(quad.predicate), o: rdfJsTermToTerm(quad.object) })),
-            quads,
-            imports: [],
-            dataset: shapes.dataset,
-          };
-        }
-        throw new Error('shapes must be RDF source text, a parsed RDF document, or { dataset }');
-      }
-      
-      function resolveCoreTargets(shapeGraph, shape, dataTriples) {
-        const out = new Map();
-        const add = (node) => out.set(termKey(node), node);
-      
-        for (const node of shapeGraph.objects(shape, SH_TARGET_NODE)) add(node);
-        for (const classTerm of shapeGraph.objects(shape, SH_TARGET_CLASS)) {
-          for (const triple of dataTriples) {
-            if (isIri(triple.p, RDF_TYPE) && classMatches(triple.o, classTerm, dataTriples)) add(triple.s);
-          }
-        }
-        for (const predicate of shapeGraph.objects(shape, SH_TARGET_SUBJECTS_OF)) {
-          if (predicate.type !== 'iri') continue;
-          for (const triple of dataTriples) if (isIri(triple.p, predicate.value)) add(triple.s);
-        }
-        for (const predicate of shapeGraph.objects(shape, SH_TARGET_OBJECTS_OF)) {
-          if (predicate.type !== 'iri') continue;
-          for (const triple of dataTriples) if (isIri(triple.p, predicate.value)) add(triple.o);
-        }
-      
-        // SHACL implicit class target: a shape that is itself an rdfs:Class targets its instances.
-        if (shapeGraph.objects(shape, RDF_TYPE).some((term) => isIri(term, RDFS_CLASS))) {
-          for (const triple of dataTriples) {
-            if (isIri(triple.p, RDF_TYPE) && classMatches(triple.o, shape, dataTriples)) add(triple.s);
-          }
-        }
-        return out;
-      }
-      
-      function classMatches(actualClass, targetClass, dataTriples) {
-        if (sameTerm(actualClass, targetClass)) return true;
-        if (!actualClass || actualClass.type !== 'iri' || !targetClass || targetClass.type !== 'iri') return false;
-        const seen = new Set([actualClass.value]);
-        const queue = [actualClass.value];
-        while (queue.length > 0) {
-          const current = queue.shift();
-          for (const triple of dataTriples) {
-            if (!isIri(triple.p, RDFS_SUBCLASS_OF) || !triple.s || triple.s.type !== 'iri' || triple.s.value !== current || !triple.o || triple.o.type !== 'iri') continue;
-            if (triple.o.value === targetClass.value) return true;
-            if (!seen.has(triple.o.value)) {
-              seen.add(triple.o.value);
-              queue.push(triple.o.value);
-            }
-          }
-        }
-        return false;
-      }
-      
-      function shapeDependencies(graph, rootShape) {
-        const predicates = new Set();
-        let wildcard = false;
-        const seenShapes = new Set();
-        const seenPaths = new Set();
-      
-        function visitShape(shape) {
-          const key = termKey(shape);
-          if (seenShapes.has(key)) return;
-          seenShapes.add(key);
-      
-          for (const classTerm of graph.objects(shape, SH_TARGET_CLASS)) {
-            if (classTerm) { predicates.add(RDF_TYPE); predicates.add(RDFS_SUBCLASS_OF); }
-          }
-          if (graph.objects(shape, RDF_TYPE).some((term) => isIri(term, RDFS_CLASS))) { predicates.add(RDF_TYPE); predicates.add(RDFS_SUBCLASS_OF); }
-          for (const predicate of graph.objects(shape, SH_TARGET_SUBJECTS_OF)) if (predicate.type === 'iri') predicates.add(predicate.value);
-          for (const predicate of graph.objects(shape, SH_TARGET_OBJECTS_OF)) if (predicate.type === 'iri') predicates.add(predicate.value);
-          if (graph.objects(shape, SH_TARGET).length > 0) wildcard = true;
-          if (truthyLiteral(graph.objects(shape, SH_CLOSED)[0])) wildcard = true;
-          if (graph.objects(shape, SH_SPARQL).length > 0) wildcard = true;
-          if (graph.objects(shape, SH_CLASS).length > 0) { predicates.add(RDF_TYPE); predicates.add(RDFS_SUBCLASS_OF); }
-      
-          for (const path of graph.objects(shape, SH_PATH)) visitPath(path);
-          for (const parameter of DATA_PREDICATE_PARAMS) {
-            for (const predicate of graph.objects(shape, parameter)) if (predicate.type === 'iri') predicates.add(predicate.value);
-          }
-          for (const link of SHAPE_LINK_PREDICATES) for (const nested of graph.objects(shape, link)) visitShape(nested);
-          for (const link of SHAPE_LIST_PREDICATES) {
-            for (const listHead of graph.objects(shape, link)) {
-              for (const nested of graph.list(listHead)) visitShape(nested);
-            }
-          }
-        }
-      
-        function visitPath(path) {
-          const key = termKey(path);
-          if (seenPaths.has(key)) return;
-          seenPaths.add(key);
-          if (path.type === 'iri') {
-            predicates.add(path.value);
-            return;
-          }
-          for (const nested of graph.objects(path, SH_INVERSE_PATH)) visitPath(nested);
-          for (const nested of graph.objects(path, SH_ZERO_OR_MORE_PATH)) visitPath(nested);
-          for (const nested of graph.objects(path, SH_ONE_OR_MORE_PATH)) visitPath(nested);
-          for (const nested of graph.objects(path, SH_ZERO_OR_ONE_PATH)) visitPath(nested);
-          for (const listHead of graph.objects(path, SH_ALTERNATIVE_PATH)) for (const nested of graph.list(listHead)) visitPath(nested);
-          if (graph.isListHead(path)) for (const nested of graph.list(path)) visitPath(nested);
-        }
-      
-        visitShape(rootShape);
-        return { predicates: Array.from(predicates).sort(), wildcard };
-      }
-      
-      class ShapeGraph {
-        constructor(triples) {
-          this.triples = triples || [];
-          this.bySubject = new Map();
-          for (const triple of this.triples) {
-            const key = termKey(triple.s);
-            if (!this.bySubject.has(key)) this.bySubject.set(key, []);
-            this.bySubject.get(key).push(triple);
-          }
-        }
-      
-        objects(subject, predicate) {
-          return (this.bySubject.get(termKey(subject)) || [])
-            .filter((triple) => isIri(triple.p, predicate))
-            .map((triple) => triple.o);
-        }
-      
-        isListHead(term) {
-          return isIri(term, RDF_NIL) || this.objects(term, RDF_FIRST).length === 1;
-        }
-      
-        list(head) {
-          const out = [];
-          const seen = new Set();
-          let node = head;
-          while (!isIri(node, RDF_NIL)) {
-            const key = termKey(node);
-            if (seen.has(key)) throw new Error('Cycle in SHACL RDF list');
-            seen.add(key);
-            const first = this.objects(node, RDF_FIRST);
-            const rest = this.objects(node, RDF_REST);
-            if (first.length !== 1 || rest.length !== 1) throw new Error('Malformed SHACL RDF list');
-            out.push(first[0]);
-            node = rest[0];
-          }
-          return out;
-        }
-      }
-      
-      function truthyLiteral(term) {
-        if (!term || term.type !== 'literal') return false;
-        return term.value === true || term.value === 'true' || term.value === 1 || term.value === '1';
-      }
-      
-      function sameTerm(a, b) {
-        return termKey(a) === termKey(b);
-      }
-      
-      function isIri(term, value) {
-        return !!term && term.type === 'iri' && term.value === value;
-      }
-      
-      function normalizeInternalNode(node) {
-        if (node && node.type) return node;
-        if (typeof node === 'string') return iri(node);
-        if (node && node.termType) {
-          const { rdfJsTermToTerm } = require('./rdfSyntax.js');
-          return rdfJsTermToTerm(node);
-        }
-        throw new Error('Unsupported SHACL focus node');
-      }
-      
-      function internalTripleToQuad(triple, factory) {
-        return factory.quad(
-          internalTermToRdfJs(triple.s, factory),
-          internalTermToRdfJs(triple.p, factory),
-          internalTermToRdfJs(triple.o, factory),
-          triple.graph ? internalTermToRdfJs(triple.graph, factory) : factory.defaultGraph(),
-        );
-      }
-      
-      function internalTermToRdfJs(term, factory) {
-        if (!term) return factory.defaultGraph();
-        if (term.type === 'iri') return factory.namedNode(term.value);
-        if (term.type === 'blank') return factory.blankNode(term.value);
-        if (term.type === 'var') return factory.variable(term.value);
-        if (term.type === 'triple') return factory.quad(
-          internalTermToRdfJs(term.s, factory),
-          internalTermToRdfJs(term.p, factory),
-          internalTermToRdfJs(term.o, factory),
-        );
-        if (term.type === 'literal') {
-          const lexical = typeof term.value === 'boolean' ? (term.value ? 'true' : 'false') : String(term.value);
-          if (term.lang) {
-            // RDF/JS 1.2 factories may support directional language literals; fall back to normal language literals.
-            if (term.langDir) {
-              try { return factory.literal(lexical, { language: term.lang, direction: term.langDir }); } catch (_) { /* fall through */ }
-            }
-            return factory.literal(lexical, term.lang);
-          }
-          return term.datatype ? factory.literal(lexical, factory.namedNode(term.datatype)) : factory.literal(lexical);
-        }
-        throw new Error(`Unsupported Eyeleng term type ${term.type || typeof term}`);
-      }
-      
-      module.exports = {
-        createShaclShapeEngine,
-        ShaclShapeEngine,
-        shapeDependencies,
-        resolveCoreTargets,
-        internalTermToRdfJs,
-        internalTripleToQuad,
-        constants: { SH, SH_TARGET_NODE, SH_TARGET_CLASS, SH_TARGET_SUBJECTS_OF, SH_TARGET_OBJECTS_OF, SH_TARGET, SH_PATH },
-      };
-      
-    },
   };
-  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdfSyntax.js":{"./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdfSyntax.js":"src/rdfSyntax.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js","./backward.js":"src/backward.js"},"src/format.js":{"./term.js":"src/term.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/shacl.js":{"./rdfSyntax.js":"src/rdfSyntax.js","./term.js":"src/term.js"},"src/api.js":{"./parser.js":"src/parser.js","./rdfSyntax.js":"src/rdfSyntax.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js","./shacl.js":"src/shacl.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
+  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdf.js":{"./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdf.js":"src/rdf.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js","./backward.js":"src/backward.js"},"src/format.js":{"./term.js":"src/term.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/api.js":{"./parser.js":"src/parser.js","./rdf.js":"src/rdf.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
   const __cache = {};
   function __require(id) {
     if (!id.startsWith("src/")) return __nativeRequire(id);
