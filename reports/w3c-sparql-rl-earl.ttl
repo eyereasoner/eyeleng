@@ -11,9 +11,9 @@
 <#report>
     a earl:TestResult ;
     dct:title "Eyeleng W3C SPARQL 1.2 RL EARL report"@en ;
-    dct:description "Generated Eyeleng EARL 1.0 report for the W3C SPARQL 1.2 RL test manifest. 189/204 tests passed."@en ;
-    dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime ;
-    earl:outcome earl:failed .
+    dct:description "Generated Eyeleng EARL 1.0 report for the W3C SPARQL 1.2 RL test manifest. 203/203 tests passed."@en ;
+    dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime ;
+    earl:outcome earl:passed .
 
 <https://github.com/eyereasoner/eyeleng>
     a earl:Software, doap:Project, foaf:Agent ;
@@ -35,7 +35,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_2>
@@ -52,7 +52,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_3>
@@ -69,7 +69,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_4>
@@ -86,7 +86,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_5>
@@ -103,7 +103,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_6>
@@ -120,7 +120,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_7>
@@ -137,7 +137,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_8>
@@ -154,7 +154,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_9>
@@ -171,7 +171,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_10>
@@ -188,7 +188,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_11>
@@ -205,7 +205,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_12>
@@ -222,7 +222,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_13>
@@ -239,7 +239,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_14>
@@ -256,7 +256,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_15>
@@ -273,7 +273,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_16>
@@ -290,7 +290,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_17>
@@ -307,7 +307,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_18>
@@ -324,7 +324,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_19>
@@ -341,7 +341,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_20>
@@ -358,7 +358,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_21>
@@ -375,7 +375,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_22>
@@ -392,7 +392,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_23>
@@ -409,7 +409,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_24>
@@ -426,7 +426,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_25>
@@ -443,7 +443,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_26>
@@ -460,7 +460,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_27>
@@ -477,7 +477,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_28>
@@ -494,7 +494,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_29>
@@ -511,7 +511,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_30>
@@ -528,7 +528,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_31>
@@ -545,7 +545,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_32>
@@ -562,7 +562,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_33>
@@ -579,7 +579,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_34>
@@ -596,7 +596,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_35>
@@ -613,7 +613,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_36>
@@ -630,7 +630,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_37>
@@ -647,7 +647,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_38>
@@ -664,7 +664,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_39>
@@ -681,7 +681,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_40>
@@ -698,7 +698,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_41>
@@ -715,7 +715,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_42>
@@ -732,7 +732,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_43>
@@ -749,7 +749,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_44>
@@ -766,7 +766,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_45>
@@ -783,7 +783,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_46>
@@ -800,7 +800,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_47>
@@ -817,7 +817,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_48>
@@ -834,7 +834,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_49>
@@ -851,7 +851,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_50>
@@ -868,7 +868,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_51>
@@ -885,7 +885,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_52>
@@ -902,7 +902,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_53>
@@ -919,7 +919,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_54>
@@ -936,7 +936,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_55>
@@ -953,7 +953,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_56>
@@ -970,7 +970,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_57>
@@ -987,7 +987,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_58>
@@ -1004,7 +1004,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_59>
@@ -1021,7 +1021,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_60>
@@ -1038,7 +1038,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_61>
@@ -1055,7 +1055,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_62>
@@ -1072,7 +1072,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_63>
@@ -1089,7 +1089,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_64>
@@ -1106,7 +1106,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_65>
@@ -1123,7 +1123,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_66>
@@ -1140,7 +1140,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_67>
@@ -1157,7 +1157,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_68>
@@ -1174,7 +1174,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_69>
@@ -1191,7 +1191,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_70>
@@ -1208,7 +1208,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_71>
@@ -1225,7 +1225,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_72>
@@ -1242,7 +1242,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_73>
@@ -1259,7 +1259,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_74>
@@ -1276,7 +1276,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_75>
@@ -1293,7 +1293,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_76>
@@ -1310,7 +1310,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_77>
@@ -1327,7 +1327,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_78>
@@ -1344,7 +1344,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_79>
@@ -1361,7 +1361,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_80>
@@ -1378,7 +1378,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_81>
@@ -1395,7 +1395,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_82>
@@ -1412,7 +1412,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_83>
@@ -1429,7 +1429,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_84>
@@ -1446,7 +1446,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_85>
@@ -1463,7 +1463,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_86>
@@ -1480,7 +1480,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_87>
@@ -1497,7 +1497,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_88>
@@ -1514,7 +1514,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_89>
@@ -1531,7 +1531,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_90>
@@ -1548,7 +1548,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_91>
@@ -1565,7 +1565,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_92>
@@ -1582,7 +1582,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_93>
@@ -1599,7 +1599,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_94>
@@ -1616,7 +1616,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_95>
@@ -1633,7 +1633,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_96>
@@ -1650,7 +1650,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_97>
@@ -1667,7 +1667,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_98>
@@ -1684,7 +1684,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_99>
@@ -1701,7 +1701,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_100>
@@ -1718,7 +1718,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_101>
@@ -1735,7 +1735,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_102>
@@ -1752,7 +1752,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_103>
@@ -1769,7 +1769,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_104>
@@ -1786,7 +1786,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_105>
@@ -1803,7 +1803,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_106>
@@ -1820,7 +1820,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_107>
@@ -1837,7 +1837,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_108>
@@ -1854,7 +1854,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_109>
@@ -1871,7 +1871,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_110>
@@ -1888,7 +1888,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_111>
@@ -1905,7 +1905,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_112>
@@ -1922,7 +1922,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_113>
@@ -1939,7 +1939,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_114>
@@ -1956,7 +1956,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_115>
@@ -1973,7 +1973,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_116>
@@ -1990,7 +1990,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_117>
@@ -2007,7 +2007,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_118>
@@ -2024,7 +2024,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_119>
@@ -2041,7 +2041,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_120>
@@ -2058,7 +2058,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_121>
@@ -2075,7 +2075,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_122>
@@ -2092,7 +2092,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_123>
@@ -2109,7 +2109,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_124>
@@ -2126,7 +2126,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_125>
@@ -2143,7 +2143,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_126>
@@ -2160,7 +2160,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_127>
@@ -2177,7 +2177,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_128>
@@ -2194,7 +2194,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_129>
@@ -2211,7 +2211,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_130>
@@ -2228,7 +2228,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_131>
@@ -2245,7 +2245,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_132>
@@ -2262,7 +2262,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_133>
@@ -2279,7 +2279,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_134>
@@ -2296,7 +2296,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_135>
@@ -2313,7 +2313,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_136>
@@ -2330,7 +2330,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_137>
@@ -2347,7 +2347,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_138>
@@ -2364,7 +2364,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/syntax/manifest#test_139>
@@ -2381,7 +2381,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_1>
@@ -2398,7 +2398,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_2>
@@ -2415,7 +2415,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_3>
@@ -2430,9 +2430,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#1\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compile (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:30:10)\n    at runSyntaxOrWellformedTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:191:38)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_4>
@@ -2447,9 +2447,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#1\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compile (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:30:10)\n    at runSyntaxOrWellformedTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:191:38)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_5>
@@ -2466,7 +2466,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_6>
@@ -2483,7 +2483,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_7>
@@ -2500,7 +2500,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/wellformed/manifest#test_8>
@@ -2517,7 +2517,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_1>
@@ -2534,7 +2534,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_2>
@@ -2551,7 +2551,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_3>
@@ -2568,7 +2568,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_4>
@@ -2585,7 +2585,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_5>
@@ -2602,7 +2602,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_6>
@@ -2619,7 +2619,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_7>
@@ -2636,7 +2636,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_8>
@@ -2653,7 +2653,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_9>
@@ -2670,7 +2670,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/stratification/manifest#test_10>
@@ -2687,7 +2687,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-01>
@@ -2704,7 +2704,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-02>
@@ -2721,7 +2721,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-1>
@@ -2738,7 +2738,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-2>
@@ -2755,7 +2755,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-3>
@@ -2770,9 +2770,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m []\n\u001b[31m-\u001b[39m [\n\u001b[31m-\u001b[39m   'I:http://example/x I:http://example/p L:\"match\"^^@--'\n\u001b[31m-\u001b[39m ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-basic-bnodes-pattern-4>
@@ -2787,9 +2787,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m []\n\u001b[31m-\u001b[39m [\n\u001b[31m-\u001b[39m   'I:http://example/s1 I:http://example/q I:http://example/o'\n\u001b[31m-\u001b[39m ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-data-01>
@@ -2806,7 +2806,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-data-02>
@@ -2823,7 +2823,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-01>
@@ -2838,9 +2838,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'B:sk_572cf50094daada7cd27dcf6e4ae7bed I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b17_b I:http://example/q L:\"Rule\"^^@--',\n\u001b[39m    'I:http://example/s I:http://example/p I:http://example/o'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-02>
@@ -2855,9 +2855,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'B:sk_38cffe2c0b1d0cf3d08aa80e33ee58dd I:http://example/q L:\"Rule\"^^@--',\n\u001b[32m+\u001b[39m   'B:sk_572cf50094daada7cd27dcf6e4ae7bed I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b19_b0 I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b19_b1 I:http://example/q L:\"Rule\"^^@--',\n\u001b[39m    'I:http://example/s I:http://example/p I:http://example/o'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-03>
@@ -2872,26 +2872,26 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'B:sk_7eecf386a0116074dfecd046b47a7298 I:http://example/q L:\"Rule\"^^@--',\n\u001b[32m+\u001b[39m   'B:sk_8299921cf5d7699673e5c94492357b9a I:http://example/q L:\"Rule\"^^@--',\n\u001b[32m+\u001b[39m   'B:sk_cc98445bd06762d73bddbd1ffa6ba9db I:http://example/q L:\"Rule\"^^@--',\n\u001b[32m+\u001b[39m   'B:sk_d9ef7acd37856de9a63db8f1baa0d5ed I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b21_b0 I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b21_b1 I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b21_b2 I:http://example/q L:\"Rule\"^^@--',\n\u001b[31m-\u001b[39m   'B:b21_b3 I:http://example/q L:\"Rule\"^^@--',\n\u001b[39m    'I:http://example/s I:http://example/p I:http://example/o1',\n\u001b[39m    'I:http://example/s I:http://example/p I:http://example/o2'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
-<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-04>
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-01>
     a earl:TestCase, srt:RulesEvalTest ;
-    dct:title "eval/eval-bnodes-04"@en ;
+    dct:title "eval/eval-negation-01"@en ;
     dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
 
 [] a earl:Assertion ;
     earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
     earl:subject <https://github.com/eyereasoner/eyeleng> ;
-    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-bnodes-04> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-01> ;
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "Error: GET https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/eval/eval-bnodes-04-results.ttl failed: 404 \n    at fetchText (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:46:29)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async parseTurtleTriples (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:196:18)\n    at async Promise.all (index 2)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:210:55)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-subclass-1>
@@ -2908,7 +2908,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-subproperty-1>
@@ -2925,7 +2925,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-domain-1>
@@ -2942,7 +2942,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-domain-2>
@@ -2959,7 +2959,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-range-1>
@@ -2976,7 +2976,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-rdfs-range-2>
@@ -2993,41 +2993,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
-    ] .
-
-<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02a>
-    a earl:TestCase, srt:RulesEvalTest ;
-    dct:title "eval/eval-negation-02a"@en ;
-    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
-
-[] a earl:Assertion ;
-    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
-    earl:subject <https://github.com/eyereasoner/eyeleng> ;
-    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02a> ;
-    earl:mode earl:automatic ;
-    earl:result [
-        a earl:TestResult ;
-        earl:outcome earl:passed ;
-        earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
-    ] .
-
-<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02b>
-    a earl:TestCase, srt:RulesEvalTest ;
-    dct:title "eval/eval-negation-02b"@en ;
-    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
-
-[] a earl:Assertion ;
-    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
-    earl:subject <https://github.com/eyereasoner/eyeleng> ;
-    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02b> ;
-    earl:mode earl:automatic ;
-    earl:result [
-        a earl:TestResult ;
-        earl:outcome earl:passed ;
-        earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-filter-01>
@@ -3044,7 +3010,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-filter-error-1>
@@ -3059,9 +3025,43 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'I:http://example/x0 I:http://example/out L:0^^http://www.w3.org/2001/XMLSchema#integer@--',\n\u001b[39m    'I:http://example/x2 I:http://example/out L:2^^http://www.w3.org/2001/XMLSchema#integer@--'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02a>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-negation-02a"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02a> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
+    ] .
+
+<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02b>
+    a earl:TestCase, srt:RulesEvalTest ;
+    dct:title "eval/eval-negation-02b"@en ;
+    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
+
+[] a earl:Assertion ;
+    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
+    earl:subject <https://github.com/eyereasoner/eyeleng> ;
+    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-02b> ;
+    earl:mode earl:automatic ;
+    earl:result [
+        a earl:TestResult ;
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-01>
@@ -3078,7 +3078,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-02>
@@ -3095,7 +3095,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-03>
@@ -3112,7 +3112,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-error-1>
@@ -3127,9 +3127,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[39m  [\n\u001b[32m+\u001b[39m   'I:http://example/x0 I:http://example/in L:0^^http://www.w3.org/2001/XMLSchema#integer@--',\n\u001b[32m+\u001b[39m   'I:http://example/x0 I:http://example/out L:null^^http://www.w3.org/2001/XMLSchema#decimal@--',\n\u001b[39m    'I:http://example/x2 I:http://example/in L:2^^http://www.w3.org/2001/XMLSchema#integer@--',\n\u001b[39m    'I:http://example/x2 I:http://example/out L:0.5^^http://www.w3.org/2001/XMLSchema#decimal@--'\n\u001b[39m  ]\n\n    at runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:230:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-01>
@@ -3146,7 +3146,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-02>
@@ -3163,7 +3163,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-03>
@@ -3180,7 +3180,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-04>
@@ -3197,7 +3197,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-05>
@@ -3214,7 +3214,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-neg-data-06>
@@ -3231,7 +3231,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-01>
@@ -3248,7 +3248,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-02>
@@ -3265,7 +3265,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-where-data-03>
@@ -3282,7 +3282,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/link-path-1>
@@ -3299,7 +3299,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/link-path-2>
@@ -3316,24 +3316,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
-    ] .
-
-<https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-01>
-    a earl:TestCase, srt:RulesEvalTest ;
-    dct:title "eval2/Eval-assign-01"@en ;
-    dct:isPartOf <https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/manifest-sparql-rl.ttl> .
-
-[] a earl:Assertion ;
-    earl:assertedBy <https://github.com/eyereasoner/eyeleng> ;
-    earl:subject <https://github.com/eyereasoner/eyeleng> ;
-    earl:test <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-assign-01> ;
-    earl:mode earl:automatic ;
-    earl:result [
-        a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "Error: GET https://w3c.github.io/data-shapes/shacl12-test-suite/tests/sparql-rl/eval2/eval-assign-01-results.ttl failed: 404 \n    at fetchText (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:46:29)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async parseTurtleTriples (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:196:18)\n    at async Promise.all (index 2)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:210:55)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-neg-01>
@@ -3348,9 +3331,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#1\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compileAsync (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:37:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:223:20)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-neg-02>
@@ -3365,9 +3348,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#2\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compileAsync (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:37:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:223:20)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-where-01>
@@ -3382,9 +3365,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#2\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compileAsync (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:37:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:223:20)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/eval-dft-value-where-02>
@@ -3399,9 +3382,9 @@
     earl:mode earl:automatic ;
     earl:result [
         a earl:TestResult ;
-        earl:outcome earl:failed ;
-        earl:info "Error: Analysis failed: Stratification condition violated by a recursive closed dependency through rule#2\n    at analyzeCompiled (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:46:11)\n    at Object.compileAsync (/home/jdroo/github.com/eyereasoner/eyeleng/src/api.js:37:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runEvalTest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:223:20)\n    at async runSparqlRlManifest (/home/jdroo/github.com/eyereasoner/eyeleng/src/sparqlRlManifest.js:254:7)\n    at async main (/home/jdroo/github.com/eyereasoner/eyeleng/tools/w3c-sparql-rl.js:41:18)" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        earl:outcome earl:passed ;
+        earl:info "passed" ;
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/example-1>
@@ -3418,7 +3401,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/example-2>
@@ -3435,7 +3418,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/example-3>
@@ -3452,7 +3435,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/example-4>
@@ -3469,7 +3452,7 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
 <https://w3c.github.io/rdf-tests/shacl/shacl12/example-5>
@@ -3486,6 +3469,6 @@
         a earl:TestResult ;
         earl:outcome earl:passed ;
         earl:info "passed" ;
-        dct:date "2026-08-25T22:46:24.887Z"^^xsd:dateTime
+        dct:date "2026-08-25T23:07:02.856Z"^^xsd:dateTime
     ] .
 
