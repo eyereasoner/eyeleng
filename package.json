@@ -1,6 +1,6 @@
 {
   "name": "eyeleng",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "The EYE Logic Engine: a JavaScript implementation of SPARQL 1.2 RL (SRL) with RDF 1.2 input via rdf-parse.",
   "keywords": [
     "SPARQL-RL",
