@@ -28,6 +28,7 @@ function bodySupported(clauses, options = {}) {
   for (const clause of clauses || []) {
     if (clause.type === 'triple' || clause.type === 'filter' || clause.type === 'set' || clause.type === 'bind') continue;
     if (clause.type === 'not') {
+      if (clause.groundData) return false;
       if (options.backwardNegation === false) return false;
       if (!bodySupported(clause.body, options)) return false;
       continue;
@@ -38,15 +39,13 @@ function bodySupported(clauses, options = {}) {
 }
 
 function ruleSupported(rule, options = {}) {
-  // FOR clauses have no execution hook in the current SPARQL-RL abstract evaluation model.
-  // Until the backward prover has an equivalent targeting gate, treating them
-  // as ordinary rules would be semantically incorrect.
-  if (rule.target) return false;
+  if (rule.groundData || rule.runOnce) return false;
   if (!Array.isArray(rule.head) || rule.head.length === 0) return false;
   for (const head of rule.head) {
     if (!head || !head.p || head.p.type !== 'iri') return false;
     if (containsBlank(head.s) || containsBlank(head.p) || containsBlank(head.o)) return false;
   }
+  if (containsGroundDataNegation(rule.body || [])) return false;
   return bodySupported(rule.body || [], options);
 }
 
@@ -54,7 +53,7 @@ class BackwardProver {
   constructor(program, options = {}) {
     this.program = program;
     this.options = options;
-    this.store = options.store || new TripleStore(program.data || []);
+    this.store = options.store || new TripleStore([...(program.baseData || []), ...(program.data || [])]);
     this.maxDepth = options.backwardMaxDepth || options.maxDepth || 10000;
     this.solutionLimit = options.backwardSolutionLimit || options.solutionLimit || 1000000;
     this.allowedPredicates = normalizePredicateSet(options.allowedPredicates || options.backwardPredicates || null);
@@ -340,6 +339,15 @@ function uniqueBindings(bindings) {
   return out;
 }
 
+function containsGroundDataNegation(clauses) {
+  for (const clause of clauses || []) {
+    if (clause.type !== 'not') continue;
+    if (clause.groundData || containsGroundDataNegation(clause.body || [])) return true;
+  }
+  return false;
+}
+
+
 function containsBlank(term) {
   if (!term) return false;
   if (term.type === 'blank') return true;
@@ -427,113 +435,11 @@ function normalizeRuleIndexSet(value) {
   return null;
 }
 
-function supportedBackwardPredicates(program, options = {}) {
-  const explicit = normalizePredicateSet(options.backwardPredicates || options.hybridPredicates || null);
-  const byPredicate = new Map();
-  for (const rule of program.rules || []) {
-    const predicates = new Set();
-    for (const head of rule.head || []) {
-      if (head && head.p && head.p.type === 'iri') predicates.add(head.p.value);
-    }
-    for (const predicate of predicates) {
-      if (!byPredicate.has(predicate)) byPredicate.set(predicate, []);
-      byPredicate.get(predicate).push(rule);
-    }
-  }
-
-  const supported = new Set();
-  for (const [predicate, rules] of byPredicate) {
-    if (explicit && !explicit.has(predicate)) continue;
-    if (rules.length > 0 && rules.every((rule) => ruleSupported(rule, options))) supported.add(predicate);
-  }
-  return supported;
-}
-
-function preferredBackwardPredicates(program, options = {}) {
-  const explicit = normalizePredicateSet(options.hybridPredicates || null);
-  if (explicit) return supportedBackwardPredicates(program, { ...options, hybridPredicates: explicit });
-  const supported = supportedBackwardPredicates(program, options);
-  const preferred = new Set();
-  const force = options.hybrid === true || options.hybridMode === 'force';
-  const demanded = force ? null : demandedBodyPredicates(program);
-  for (const rule of program.rules || []) {
-    if (!ruleIsFunctionLike(rule)) continue;
-    if (!force && ruleCreatesHeadTerms(rule)) continue;
-    for (const head of rule.head || []) {
-      if (!head || !head.p || head.p.type !== 'iri' || !supported.has(head.p.value)) continue;
-      if (force || demanded.has(head.p.value)) preferred.add(head.p.value);
-    }
-  }
-  return preferred;
-}
-
-function demandedBodyPredicates(program) {
-  const out = new Set();
-  for (const rule of program.rules || []) {
-    for (const predicate of bodyPredicateDemands(rule.body || [])) if (predicate) out.add(predicate);
-  }
-  return out;
-}
-
-
-function ruleCreatesHeadTerms(rule) {
-  const headVars = new Set();
-  for (const triple of rule.head || []) {
-    for (const term of [triple.s, triple.p, triple.o]) {
-      if (!term) continue;
-      if (term.type === 'blank') return true;
-      if (term.type === 'var') headVars.add(term.value);
-    }
-  }
-  if (headVars.size === 0) return false;
-  for (const clause of rule.body || []) {
-    if ((clause.type === 'set' || clause.type === 'bind') && headVars.has(clause.variable) && expressionCreatesTerm(clause.expr)) return true;
-  }
-  return false;
-}
-
-function expressionCreatesTerm(expr) {
-  if (!expr) return false;
-  if (expr.type === 'call') {
-    const name = String(expr.name || '').toUpperCase();
-    if (name === 'BNODE' || name === 'IRI' || name === 'URI' || name === 'TRIPLE' || name === 'UUID' || name === 'STRUUID') return true;
-    return (expr.args || []).some(expressionCreatesTerm);
-  }
-  if (expr.type === 'binary') return expressionCreatesTerm(expr.left) || expressionCreatesTerm(expr.right);
-  if (expr.type === 'unary') return expressionCreatesTerm(expr.expr);
-  if (expr.type === 'in') return expressionCreatesTerm(expr.left) || (expr.values || []).some(expressionCreatesTerm);
-  return false;
-}
-
-function ruleIsFunctionLike(rule) {
-  return (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
-}
-
-function ruleHeadPredicates(rule) {
-  const predicates = new Set();
-  for (const head of rule.head || []) {
-    if (!head || !head.p || head.p.type !== 'iri') return null;
-    predicates.add(head.p.value);
-  }
-  return predicates;
-}
-
-function ruleIsBackwardOriented(rule, predicates) {
-  if (!predicates || predicates.size === 0) return false;
-  const heads = ruleHeadPredicates(rule);
-  if (!heads || heads.size === 0) return false;
-  for (const predicate of heads) if (!predicates.has(predicate)) return false;
-  return true;
-}
-
 module.exports = {
   BackwardProver,
   backwardQuery,
   planBackwardQuery,
-  supportedBackwardPredicates,
-  preferredBackwardPredicates,
   reachableBackwardRuleIndexes,
-  ruleIsBackwardOriented,
   ruleSupported,
   resolveBinding,
 };

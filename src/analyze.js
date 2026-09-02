@@ -11,16 +11,6 @@ function analyze(program, options = {}) {
     const name = ruleName(rule, index);
     const initialBound = new Set();
 
-    // The 25 August 2026 grammar still contains ForClause, but the normative
-    // abstract syntax and evaluation model define no focus/shape component.
-    // Recognize it syntactically, but do not invent target semantics that the abstract evaluation model does not define.
-    if (rule.target) {
-      diagnostics.push({
-        code: 'for-clause-no-evaluation-semantics', severity: 'error', rule: name,
-        message: `${displayRuleName(name, program.prefixes || {})} uses FOR ?${rule.target.variable} IN <${rule.target.iri}>; the current SPARQL-RL abstract evaluation model does not define FOR execution semantics`,
-      });
-    }
-
     const bound = boundVariables(rule.body, initialBound);
     const head = new Set();
     for (const triple of rule.head) collectTripleVars(triple, head);

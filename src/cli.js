@@ -9,7 +9,6 @@ const {
   parseQuery,
   queryResult,
   queryProgram,
-  queryRunOptions,
   formatTriples,
   formatProof,
   formatBindings,
@@ -39,7 +38,7 @@ function readPackageVersion() {
 const VERSION = readPackageVersion();
 
 function help() {
-  return `eyeleng ${VERSION}\n\nSPARQL 1.2 RL (SRL) rule engine with RDF 1.2 base-graph input via rdf-parse.\n\nUsage: eyeleng [options] rules.srl\n\nOptions:\n  --data FILE            Add an RDF 1.2 document to the immutable base graph (repeatable)\n  --all                  Print base graph plus inference graph\n  --json                 Print JSON instead of compact triples/bindings\n  --prove                Print proof explanations\n  --stats                Print iteration and triple counts to stderr\n  --check                Parse, check well-formedness, and stratify only\n  --strict               Treat warnings as errors\n  --deps                 Print open/closed rule dependencies during --check\n  --query TEXT           Run a raw SRL body pattern\n  --query-file FILE      Read a raw SRL body pattern from a file\n  --query-mode MODE      Use auto, forward, or backward query planning (default auto)\n  --hybrid               Opt into Eyeleng's hybrid forward/backward optimization\n  --max-iterations N     Stop after N fixpoint iterations within a stratum\n  --no-imports           Reject rule sets containing IMPORTS\n  --rdf-messages         Treat --data input as an RDF Message Log (ancillary feature)\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --version              Print version\n  -h, --help             Print this help\n\nThe rule-set media type is application/sparql-rl and the conventional extension is .srl.\n`;
+  return `eyeleng ${VERSION}\n\nSPARQL 1.2 RL (SRL) rule engine with RDF 1.2 base-graph input via rdf-parse.\n\nUsage: eyeleng [options] rules.srl\n\nOptions:\n  --data FILE            Add an RDF 1.2 document to the immutable base graph (repeatable)\n  --all                  Print base graph plus inference graph\n  --json                 Print JSON instead of compact triples/bindings\n  --prove                Print proof explanations\n  --stats                Print iteration and triple counts to stderr\n  --check                Parse, check well-formedness, and stratify only\n  --strict               Treat warnings as errors\n  --deps                 Print open/closed rule dependencies during --check\n  --query TEXT           Run a raw SRL body pattern\n  --query-file FILE      Read a raw SRL body pattern from a file\n  --query-mode MODE      Use auto, forward, or backward query planning (default auto)\n  --max-iterations N     Stop after N fixpoint iterations within a stratum\n  --no-imports           Reject rule sets containing IMPORTS\n  --rdf-messages         Treat --data input as an RDF Message Log (ancillary feature)\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --version              Print version\n  -h, --help             Print this help\n\nThe rule-set media type is application/sparql-rl and the conventional extension is .srl.\n`;
 }
 
 function parseArgs(argv) {
@@ -54,7 +53,6 @@ function parseArgs(argv) {
     query: null,
     queryFile: null,
     queryMode: 'auto',
-    hybrid: false,
     maxIterations: 10000,
     imports: true,
     dataFiles: [],
@@ -72,8 +70,6 @@ function parseArgs(argv) {
     else if (arg === '--strict') options.strict = true;
     else if (arg === '--deps') options.deps = true;
     else if (arg === '--no-imports') options.imports = false;
-    else if (arg === '--hybrid') options.hybrid = true;
-    else if (arg === '--no-hybrid') options.hybrid = false;
     else if (arg === '--rdf-messages') options.rdfMessages = true;
     else if (arg === '--include-message-facts') options.includeMessageFacts = true;
     else if (arg === '--data') {
@@ -260,10 +256,8 @@ async function main(argv = process.argv.slice(2), io = process) {
     }
 
     if (!result) {
-      const runOptions = querySpec
-        ? queryRunOptions(compiled.program, querySpec, options)
-        : { ...options, hybrid: options.hybrid };
-      result = await evaluateAsync(compiled.program, { ...compiled.options, ...runOptions, analysis: compiled.analysis });
+      const runOptions = { ...compiled.options, ...options };
+      result = await evaluateAsync(compiled.program, { ...runOptions, analysis: compiled.analysis });
       result.diagnostics = compiled.diagnostics;
       result.analysis = compiled.analysis;
       if (querySpec) result.query = queryResult(result, querySpec, runOptions);
@@ -287,7 +281,6 @@ async function main(argv = process.argv.slice(2), io = process) {
     if (options.stats) {
       io.stderr.write(`eyeleng: iterations=${result.iterations} layers=${result.layers.length} input=${result.input.length} inferred=${result.inferred.length} closure=${result.closure.length} ruleApplications=${result.ruleApplications}${result.query && result.query.mode ? ` queryMode=${result.query.mode}` : ''}\n`);
       if (result.query && result.query.stats) io.stderr.write(`eyeleng: backward goals=${result.query.stats.goals} facts=${result.query.stats.facts} rules=${result.query.stats.rules} memoHits=${result.query.stats.memoHits} memoStores=${result.query.stats.memoStores}\n`);
-      if (result.hybridStats) io.stderr.write(`eyeleng: hybridBackward goals=${result.hybridStats.goals} facts=${result.hybridStats.facts} rules=${result.hybridStats.rules} memoHits=${result.hybridStats.memoHits} memoStores=${result.hybridStats.memoStores}\n`);
       for (const rule of result.perRule) {
         if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyeleng: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
       }

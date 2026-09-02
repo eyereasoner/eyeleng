@@ -3,7 +3,7 @@
 const { test, main } = require('./harness.js').createHarness('API');
 const assert = require('node:assert/strict');
 const { parse, compile, run, runToString, runAsync, runToStringAsync, runQuery, parseRdfMessageLog } = require('../src/index.js');
-const { tripleKey } = require('../src/term.js');
+const { tripleKey, iri } = require('../src/term.js');
 
 test('parse reads prefixes, data, and rules', () => {
   const program = parse(`
@@ -183,14 +183,16 @@ RULE { ?x :ancestorOf ?z } WHERE { ?x :parentOf ?y . ?y :ancestorOf ?z }
   assert.match(output, /\?d = :carol/);
 });
 
-test('backward query mode computes function-like rules just in time', () => {
+test('run-once assignment rules fall back to forward query evaluation', () => {
   const { runQuery, formatBindings } = require('../src/index.js');
-  const result = runQuery(`
+  const source = `
 PREFIX : <http://example/>
 DATA { :alice :score 41 . :bob :score 2 . }
 RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
-`, '?who :nextScore ?score', { queryMode: 'backward' });
-  assert.equal(result.iterations, 0);
+`;
+  assert.throws(() => runQuery(source, '?who :nextScore ?score', { queryMode: 'backward' }), /not supported by the backward prover/);
+  const result = runQuery(source, '?who :nextScore ?score');
+  assert.equal(result.query.mode, 'forward');
   const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
   assert.match(output, /\?score = 42; \?who = :alice/);
   assert.match(output, /\?score = 3; \?who = :bob/);
@@ -208,51 +210,46 @@ RULE { ?x :q ?y } WHERE { ?x :p ?y }
 });
 
 
-
-test('hybrid execution proves function-like body predicates backward without materializing them', () => {
-  const result = run(`
-PREFIX : <http://example/>
-DATA { :alice :score 41 . :bob :score 2 . }
-RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
-RULE { ?x :ready true } WHERE { ?x :nextScore 42 }
-`, { hybrid: true });
-  const keys = result.closure.map(tripleKey).join('\n');
-  assert.match(keys, /ready/);
-  assert.doesNotMatch(keys, /nextScore/);
-  assert.equal(result.perRule[0].applications, 0);
-  assert.equal(result.perRule[0].backward, true);
-  assert.ok(result.hybridStats.goals > 0);
-  assert.ok(result.hybridStats.rules > 0);
-});
-
-
-
-test('hybrid execution respects non-recursive run-once assignment rules', () => {
-  const result = run(`
-PREFIX : <http://example/>
-DATA { :alice :score 41 . }
-RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
-RULE { ?x :ready true } WHERE { ?x :nextScore 42 }
-`, { hybrid: true });
-  assert(result.closure.some((triple) => triple.p.value === 'http://example/ready'));
-});
-
-test('hybrid query mode runs forward rules with backward body calls', () => {
-  const { runQuery, formatBindings } = require('../src/index.js');
+test('direct backward query sees external base graph facts', () => {
   const result = runQuery(`
 PREFIX : <http://example/>
-DATA { :alice :score 41 . :bob :score 2 . }
-RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
-RULE { ?x :ready ?score } WHERE { ?x :nextScore ?score . FILTER(?score = 42) }
-`, '?who :ready ?score', { queryMode: 'hybrid', hybrid: true });
-  assert.equal(result.query.mode, 'hybrid');
-  assert.ok(result.hybridStats.goals > 0);
-  const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
-  assert.match(output, /\?score = 42; \?who = :alice/);
-  assert.doesNotMatch(output, /bob/);
+RULE { ?x :q ?y } WHERE { ?x :p ?y }
+`, ':a :q ?y', {
+    queryMode: 'backward',
+    baseGraph: [{ s: iri('http://example/a'), p: iri('http://example/p'), o: iri('http://example/b') }],
+  });
+  assert.equal(result.query.mode, 'backward');
+  assert.equal(result.query.bindings[0].y.value, 'http://example/b');
 });
 
-test('auto query mode uses pure backward planning when unsupported rules are irrelevant', () => {
+test('WHERE DATA rules fall back to forward query evaluation', () => {
+  const source = `
+PREFIX : <http://example/>
+RULE { ?x :q ?y } WHERE DATA { ?x :p ?y }
+`;
+  const options = {
+    baseGraph: [{ s: iri('http://example/a'), p: iri('http://example/p'), o: iri('http://example/b') }],
+  };
+  assert.throws(() => runQuery(source, ':a :q ?y', { ...options, queryMode: 'backward' }), /not supported by the backward prover/);
+  const result = runQuery(source, ':a :q ?y', options);
+  assert.equal(result.query.mode, 'forward');
+  assert.equal(result.query.bindings[0].y.value, 'http://example/b');
+});
+
+test('NOT DATA query clauses use only the immutable base graph', () => {
+  const result = runQuery(`
+PREFIX : <http://example/>
+DATA { :a :seed true . }
+RULE { :a :blocked true } WHERE { :a :seed true }
+`, ':a :seed true . NOT DATA { :a :blocked true }');
+  assert.equal(result.query.mode, 'forward');
+  assert.equal(result.query.bindings.length, 1);
+});
+
+
+
+
+test('auto query mode falls back to forward when the demanded slice contains a run-once rule', () => {
   const { runQuery, formatBindings } = require('../src/index.js');
   const result = runQuery(`
 PREFIX : <http://example/>
@@ -261,8 +258,7 @@ RULE { ?x :nextScore ?m } WHERE { ?x :score ?n . SET(?m := ?n + 1) }
 RULE { ?x :ready ?score } WHERE { ?x :nextScore ?score . FILTER(?score = 42) }
 RULE { [] :unrelated :x } WHERE { :seed :seen :x }
 `, '?who :ready ?score');
-  assert.equal(result.query.mode, 'backward');
-  assert.ok(result.query.stats.goals > 0);
+  assert.equal(result.query.mode, 'forward');
   const output = formatBindings(result.query.bindings, result.prefixes, result.query.select);
   assert.match(output, /\?score = 42; \?who = :alice/);
   assert.doesNotMatch(output, /bob/);
@@ -294,18 +290,16 @@ test('parseQuery accepts raw body text and rejects non-SRL QUERY/SELECT syntax',
 });
 
 test('top-level QUERY, SELECT, and N3 implication are not accepted as SRL', () => {
-  assert.throws(() => parse('PREFIX : <http://example/> QUERY ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF/);
-  assert.throws(() => parse('PREFIX : <http://example/> SELECT ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF/);
-  assert.throws(() => parse('PREFIX : <http://example/> { ?x :p :y } => { ?x :q :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF/);
+  assert.throws(() => parse('PREFIX : <http://example/> QUERY ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, or RULE/);
+  assert.throws(() => parse('PREFIX : <http://example/> SELECT ?x WHERE { ?x :p :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, or RULE/);
+  assert.throws(() => parse('PREFIX : <http://example/> { ?x :p :y } => { ?x :q :y }'), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, or RULE/);
 });
 
-test('IF THEN rule form works', () => {
-  const output = runToString(`
+test('legacy IF THEN rule form is rejected by the current grammar', () => {
+  assert.throws(() => parse(`
 PREFIX : <http://example/>
-DATA { :Socrates a :Man . }
 IF { ?x a :Man } THEN { ?x a :Mortal }
-`);
-  assert.match(output, /:Socrates a :Mortal \./);
+`, { strictGrammar: true }), /Expected PREFIX, BASE, VERSION, IMPORTS, DATA, or RULE/);
 });
 
 test('analysis rejects recursive negation through dependency graph', () => {
@@ -771,31 +765,11 @@ RULE { ?x :allowed :yes } WHERE { ?x :seed :x . NOT DATA { ?x :blocked :yes } }
   assert(keys.some((key) => key.includes('http://example/allowed')));
 });
 
-test('FOR clauses remain recognized by the current grammar', () => {
-  const program = parse(`
+test('legacy FOR clauses are rejected by the current grammar', () => {
+  assert.throws(() => parse(`
 PREFIX : <http://example/>
 RULE :r1 { ?this :status :adult } FOR ?this IN :AdultShape WHERE { ?this :age ?age }
-IF :r2 FOR ?focus IN :PersonShape { ?focus :active true } THEN { ?focus :seen true }
-`, { strictGrammar: true });
-
-  assert.deepEqual(program.rules[0].target, {
-    variable: 'this',
-    iri: 'http://example/AdultShape',
-  });
-  assert.deepEqual(program.rules[1].target, {
-    variable: 'focus',
-    iri: 'http://example/PersonShape',
-  });
-});
-
-test('FOR clauses are rejected for evaluation until the W3C model defines their semantics', () => {
-  const source = `
-PREFIX : <http://example/>
-RULE { ?this :eligible true } FOR ?this IN :AdultShape WHERE { ?this :age ?age }
-`;
-  assert.throws(() => compile(source), /does not define FOR execution semantics/);
-  const unchecked = compile(source, { throwOnDiagnostics: false });
-  assert.equal(unchecked.analysis.errors[0].code, 'for-clause-no-evaluation-semantics');
+`, { strictGrammar: true }), /Expected WHERE, got FOR/);
 });
 
 

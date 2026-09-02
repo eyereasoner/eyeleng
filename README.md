@@ -1,6 +1,6 @@
 # Eyeleng
 
-**Eyeleng** is a JavaScript implementation of **SPARQL 1.2 RL (SRL)**, following the W3C Recommendation-track specification at <https://www.w3.org/TR/sparql-rl/>.
+**Eyeleng** is a JavaScript implementation of **SPARQL 1.2 RL (SRL)**, following the W3C Recommendation-track specification at <https://www.w3.org/TR/sparql12-rl/>.
 
 > Status: SPARQL 1.2 RL is currently a W3C Working Draft. Eyeleng tracks the current specification and may change as the specification advances.
 
@@ -12,7 +12,7 @@
 - Open/closed dependency analysis and stratification.
 - Run-once handling for rules containing `SET` or blank nodes in the head.
 - Local rule-set imports through `IMPORTS`.
-- Forward and hybrid evaluation.
+- Forward inference plus direct backward query evaluation.
 - CLI, JavaScript API, browser bundle, examples, and W3C conformance harness.
 
 ## Graph model
@@ -24,9 +24,9 @@ Eyeleng distinguishes the two graphs used by SPARQL 1.2 RL:
 
 Normal rule bodies participate in rule evaluation over the available data, while ground-data clauses remain pinned to the base graph.
 
-## `FOR` clause
+## Rule syntax
 
-Eyeleng recognizes the current `FOR ?var IN iri` grammar production. Because the current abstract syntax and evaluation model do not define execution semantics for it, a rule using `FOR` produces a well-formedness/evaluation diagnostic rather than non-standard behavior.
+Eyeleng follows the current SPARQL 1.2 RL grammar: rules use `RULE ... WHERE ...`. Legacy `IF ... THEN` and `FOR ?var IN ...` forms are rejected.
 
 ## Install and build
 
@@ -68,7 +68,6 @@ Important options:
 --query TEXT            Run a raw SRL body pattern
 --query-file FILE       Read a raw SRL body pattern from a file
 --query-mode MODE       Use auto, forward, or backward query planning (default auto)
---hybrid                Opt into Eyeleng's hybrid forward/backward optimization
 --max-iterations N      Stop after N fixpoint iterations within a stratum
 --no-imports            Reject rule sets containing IMPORTS
 --rdf-messages          Treat --data input as an RDF Message Log
@@ -150,7 +149,7 @@ The harness covers syntax, well-formedness, stratification, and evaluation tests
 src/parser.js              SPARQL 1.2 RL concrete syntax
 src/analyze.js             well-formedness, open/closed dependencies, stratification
 src/assignments.js         run-once classification
-src/engine.js              forward/hybrid evaluation and graph separation
+src/engine.js              forward evaluation and graph separation
 src/rdf.js                 RDF 1.2 -> internal terms via rdf-parse
 src/api.js                 public API, imports, RDF Message Log support
 src/sparqlRlManifest.js    W3C SPARQL-RL test harness

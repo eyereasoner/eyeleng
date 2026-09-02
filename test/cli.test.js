@@ -46,9 +46,9 @@ test('query mode flag is accepted by parseArgs', () => {
   assert.equal(parseArgs(['--query-mode', 'auto']).options.queryMode, 'auto');
   assert.equal(parseArgs(['--query-mode', 'forward']).options.queryMode, 'forward');
   assert.equal(parseArgs(['--query-mode', 'backward']).options.queryMode, 'backward');
-  assert.equal(parseArgs([]).options.hybrid, false);
-  assert.equal(parseArgs(['--hybrid']).options.hybrid, true);
-  assert.equal(parseArgs(['--no-hybrid']).options.hybrid, false);
+  assert.equal(Object.hasOwn(parseArgs([]).options, 'hybrid'), false);
+  assert.throws(() => parseArgs(['--hybrid']), /Unknown option --hybrid/);
+  assert.throws(() => parseArgs(['--no-hybrid']), /Unknown option --no-hybrid/);
   assert.throws(() => parseArgs(['--query-mode', 'hybrid']), /--query-mode requires auto, forward, or backward/);
   assert.throws(() => parseArgs(['--query-mode', 'sideways']), /--query-mode requires auto, forward, or backward/);
   assert.throws(() => parseArgs(['--stream-messages']), /Unknown option --stream-messages/);

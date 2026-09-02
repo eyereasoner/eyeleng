@@ -15,7 +15,6 @@
         parseQuery,
         queryResult,
         queryProgram,
-        queryRunOptions,
         formatTriples,
         formatProof,
         formatBindings,
@@ -45,7 +44,7 @@
       const VERSION = readPackageVersion();
       
       function help() {
-        return `eyeleng ${VERSION}\n\nSPARQL 1.2 RL (SRL) rule engine with RDF 1.2 base-graph input via rdf-parse.\n\nUsage: eyeleng [options] rules.srl\n\nOptions:\n  --data FILE            Add an RDF 1.2 document to the immutable base graph (repeatable)\n  --all                  Print base graph plus inference graph\n  --json                 Print JSON instead of compact triples/bindings\n  --prove                Print proof explanations\n  --stats                Print iteration and triple counts to stderr\n  --check                Parse, check well-formedness, and stratify only\n  --strict               Treat warnings as errors\n  --deps                 Print open/closed rule dependencies during --check\n  --query TEXT           Run a raw SRL body pattern\n  --query-file FILE      Read a raw SRL body pattern from a file\n  --query-mode MODE      Use auto, forward, or backward query planning (default auto)\n  --hybrid               Opt into Eyeleng's hybrid forward/backward optimization\n  --max-iterations N     Stop after N fixpoint iterations within a stratum\n  --no-imports           Reject rule sets containing IMPORTS\n  --rdf-messages         Treat --data input as an RDF Message Log (ancillary feature)\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --version              Print version\n  -h, --help             Print this help\n\nThe rule-set media type is application/sparql-rl and the conventional extension is .srl.\n`;
+        return `eyeleng ${VERSION}\n\nSPARQL 1.2 RL (SRL) rule engine with RDF 1.2 base-graph input via rdf-parse.\n\nUsage: eyeleng [options] rules.srl\n\nOptions:\n  --data FILE            Add an RDF 1.2 document to the immutable base graph (repeatable)\n  --all                  Print base graph plus inference graph\n  --json                 Print JSON instead of compact triples/bindings\n  --prove                Print proof explanations\n  --stats                Print iteration and triple counts to stderr\n  --check                Parse, check well-formedness, and stratify only\n  --strict               Treat warnings as errors\n  --deps                 Print open/closed rule dependencies during --check\n  --query TEXT           Run a raw SRL body pattern\n  --query-file FILE      Read a raw SRL body pattern from a file\n  --query-mode MODE      Use auto, forward, or backward query planning (default auto)\n  --max-iterations N     Stop after N fixpoint iterations within a stratum\n  --no-imports           Reject rule sets containing IMPORTS\n  --rdf-messages         Treat --data input as an RDF Message Log (ancillary feature)\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --version              Print version\n  -h, --help             Print this help\n\nThe rule-set media type is application/sparql-rl and the conventional extension is .srl.\n`;
       }
       
       function parseArgs(argv) {
@@ -60,7 +59,6 @@
           query: null,
           queryFile: null,
           queryMode: 'auto',
-          hybrid: false,
           maxIterations: 10000,
           imports: true,
           dataFiles: [],
@@ -78,8 +76,6 @@
           else if (arg === '--strict') options.strict = true;
           else if (arg === '--deps') options.deps = true;
           else if (arg === '--no-imports') options.imports = false;
-          else if (arg === '--hybrid') options.hybrid = true;
-          else if (arg === '--no-hybrid') options.hybrid = false;
           else if (arg === '--rdf-messages') options.rdfMessages = true;
           else if (arg === '--include-message-facts') options.includeMessageFacts = true;
           else if (arg === '--data') {
@@ -266,10 +262,8 @@
           }
       
           if (!result) {
-            const runOptions = querySpec
-              ? queryRunOptions(compiled.program, querySpec, options)
-              : { ...options, hybrid: options.hybrid };
-            result = await evaluateAsync(compiled.program, { ...compiled.options, ...runOptions, analysis: compiled.analysis });
+            const runOptions = { ...compiled.options, ...options };
+            result = await evaluateAsync(compiled.program, { ...runOptions, analysis: compiled.analysis });
             result.diagnostics = compiled.diagnostics;
             result.analysis = compiled.analysis;
             if (querySpec) result.query = queryResult(result, querySpec, runOptions);
@@ -293,7 +287,6 @@
           if (options.stats) {
             io.stderr.write(`eyeleng: iterations=${result.iterations} layers=${result.layers.length} input=${result.input.length} inferred=${result.inferred.length} closure=${result.closure.length} ruleApplications=${result.ruleApplications}${result.query && result.query.mode ? ` queryMode=${result.query.mode}` : ''}\n`);
             if (result.query && result.query.stats) io.stderr.write(`eyeleng: backward goals=${result.query.stats.goals} facts=${result.query.stats.facts} rules=${result.query.stats.rules} memoHits=${result.query.stats.memoHits} memoStores=${result.query.stats.memoStores}\n`);
-            if (result.hybridStats) io.stderr.write(`eyeleng: hybridBackward goals=${result.hybridStats.goals} facts=${result.hybridStats.facts} rules=${result.hybridStats.rules} memoHits=${result.hybridStats.memoHits} memoStores=${result.hybridStats.memoStores}\n`);
             for (const rule of result.perRule) {
               if (rule.applications > 0 || rule.added > 0) io.stderr.write(`eyeleng: rule ${rule.name}: applications=${rule.applications} added=${rule.added}${rule.runOnce ? ' runOnce=true' : ''}\n`);
             }
@@ -319,7 +312,7 @@
       const { evaluate, evaluateAsync } = require('./engine.js');
       const { analyze } = require('./analyze.js');
       const { formatTriples, sortTriples, toJSON, formatTrace, formatProof, formatBindings } = require('./format.js');
-      const { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require('./query.js');
+      const { runQuery, runQueryAsync, queryResult, queryProgram } = require('./query.js');
       const { resultTriples } = require('./output.js');
       
       function parseInput(source, options = {}) {
@@ -464,8 +457,8 @@
       module.exports = {
         parse, parseQuery, parseInput, parseInputAsync, parseRdfDocument, parseRdfMessageLog, looksLikeRdfMessageLog,
         compile, compileAsync, resolveImports, resolveImportsAsync, mergePrograms, analyze, evaluate, evaluateAsync,
-        run, runAsync, runToString, runToStringAsync, runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions,
-        shouldUseHybridForQuery, formatTriples, formatBindings, sortTriples, toJSON, formatTrace, formatProof, resultTriples,
+        run, runAsync, runToString, runToStringAsync, runQuery, runQueryAsync, queryResult, queryProgram,
+        formatTriples, formatBindings, sortTriples, toJSON, formatTrace, formatProof, resultTriples,
       };
       
     },
@@ -528,10 +521,8 @@
               data.push(...this.parseTriplesBlock({ allowPath: false, context: 'data' }));
             } else if (this.matchWord('RULE')) {
               rules.push(this.parseRule());
-            } else if (this.matchWord('IF')) {
-              rules.push(this.parseIfThenRule());
             } else {
-              throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF; got ${this.peek().value}`);
+              throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, or RULE; got ${this.peek().value}`);
             }
           }
           return {
@@ -582,25 +573,11 @@
           if (!this.checkValue('{')) name = this.parseIRIValue().value;
           this.expectValue('{');
           const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-          const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
           this.expectWord('WHERE');
           const groundData = this.matchWord('DATA');
           this.expectValue('{');
           const body = this.parseRuleBodyWithBlankNodeScope();
-          return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
-        }
-      
-        parseIfThenRule() {
-          let name = null;
-          if (!this.checkValue('{') && !this.checkWord('FOR') && !this.checkWord('DATA')) name = this.parseIRIValue().value;
-          const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
-          const groundData = this.matchWord('DATA');
-          this.expectValue('{');
-          const body = this.parseRuleBodyWithBlankNodeScope();
-          this.expectWord('THEN');
-          this.expectValue('{');
-          const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-          return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+          return { name, head, body, groundData, runOnce: ruleNeedsRunOnce(head, body, this.options) };
         }
       
         parseRuleBodyWithBlankNodeScope() {
@@ -620,13 +597,6 @@
             this.bodyBnodeLabels.set(label, variable(`__b${this.bnodeCounter}`));
           }
           return this.bodyBnodeLabels.get(label);
-        }
-      
-        parseForClauseAfterFor() {
-          const focusVariable = this.expectType('variable');
-          this.expectWord('IN');
-          const shape = this.parseIRIValue();
-          return { variable: focusVariable.value, iri: shape.value };
         }
       
         parseIRIValue() {
@@ -2881,7 +2851,6 @@
       const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm } = require('./term.js');
       const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
       const { analyze } = require('./analyze.js');
-      const { BackwardProver, preferredBackwardPredicates, ruleIsBackwardOriented } = require('./backward.js');
       
       function evaluate(program, options = {}) {
         const maxIterations = options.maxIterations ?? 10000;
@@ -2907,7 +2876,6 @@
           applications: 0,
           added: 0,
           runOnce: !!rule.runOnce,
-          backward: false,
         }));
       
         const analysis = options.analysis || analyze(program, options);
@@ -2921,18 +2889,6 @@
           layerIndexes,
           analysis.dependency ? analysis.dependency.edges : [],
         );
-        const useHybrid = options.hybrid === true;
-        const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
-          ? preferredBackwardPredicates(program, options)
-          : new Set();
-        const hybridBackwardRules = new Set();
-        if (hybridBackwardPredicates.size > 0) {
-          for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
-            if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
-          }
-        }
-        const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
-        for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
         const baseContext = {
           ...evalOptions,
           maxIterations,
@@ -2944,18 +2900,14 @@
           iteration: 0,
           startingIterations: 0,
           recursiveLayer: false,
-          hybridBackwardPredicates,
-          hybridBackwardRules,
-          hybridStats,
           groundStore,
         };
       
         for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
           const layer = layerIndexes[layerIndex];
           baseContext.layer = layerIndex + 1;
-          const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
-          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
+          const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+          const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
       
           if (runOnce.length > 0) {
             iterations += 1;
@@ -2987,7 +2939,6 @@
           ruleApplications,
           perRule,
           trace: trace || [],
-          hybridStats,
           groundStore,
         };
       }
@@ -3017,7 +2968,6 @@
           applications: 0,
           added: 0,
           runOnce: !!rule.runOnce,
-          backward: false,
         }));
       
         const analysis = options.analysis || analyze(program, options);
@@ -3031,18 +2981,6 @@
           layerIndexes,
           analysis.dependency ? analysis.dependency.edges : [],
         );
-        const useHybrid = options.hybrid === true;
-        const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
-          ? preferredBackwardPredicates(program, options)
-          : new Set();
-        const hybridBackwardRules = new Set();
-        if (hybridBackwardPredicates.size > 0) {
-          for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
-            if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
-          }
-        }
-        const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
-        for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
         const baseContext = {
           ...evalOptions,
           maxIterations,
@@ -3054,18 +2992,14 @@
           iteration: 0,
           startingIterations: 0,
           recursiveLayer: false,
-          hybridBackwardPredicates,
-          hybridBackwardRules,
-          hybridStats,
           groundStore,
         };
       
         for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
           const layer = layerIndexes[layerIndex];
           baseContext.layer = layerIndex + 1;
-          const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
-          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
+          const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+          const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
       
           if (runOnce.length > 0) {
             iterations += 1;
@@ -3097,7 +3031,6 @@
           ruleApplications,
           perRule,
           trace: trace || [],
-          hybridStats,
           groundStore,
         };
       }
@@ -3169,7 +3102,7 @@
         const headBlankLabels = collectHeadBlankLabels(rule.head);
       
         const bodyStore = rule.groundData ? context.groundStore : store;
-        const bodyContext = { ...prepareBodyContext(program, bodyStore, context) };
+        const bodyContext = { ...context };
         if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
           bodyContext.retainedBodyVariables = collectVariables(rule.head);
         }
@@ -3208,13 +3141,12 @@
           }
         }
       
-        if (bodyContext.backwardProver && context.hybridStats) mergeBackwardStats(context.hybridStats, bodyContext.backwardProver.stats);
         return { applications, added };
       }
       
       function* evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings) {
         for (const initialBinding of initialBindings) {
-          if (rule.body.length === 1 && rule.body[0].type === 'triple' && !shouldUseBackwardForTriple(rule.body[0].triple, initialBinding, bodyContext)) {
+          if (rule.body.length === 1 && rule.body[0].type === 'triple') {
             yield* bodyStore.match(rule.body[0].triple, initialBinding);
           } else {
             yield* evaluateBodyStream(rule.body, bodyStore, initialBinding, bodyContext);
@@ -3231,32 +3163,6 @@
             o: instantiateTerm(clause.triple.o, binding),
           }))
           .filter((triple) => ![triple.s, triple.p, triple.o].some((term) => term && term.type === 'var'));
-      }
-      
-      function prepareBodyContext(program, store, context) {
-        if (!context.hybridBackwardPredicates || context.hybridBackwardPredicates.size === 0) return context;
-        return {
-          ...context,
-          backwardProver: new BackwardProver(program, {
-            ...context,
-            store,
-            allowedPredicates: context.hybridBackwardPredicates,
-          }),
-        };
-      }
-      
-      function emptyBackwardStats() {
-        return { mode: 'hybrid', goals: 0, facts: 0, rules: 0, memoHits: 0, memoStores: 0, maxDepth: 0 };
-      }
-      
-      function mergeBackwardStats(total, item) {
-        if (!total || !item) return;
-        total.goals += item.goals || 0;
-        total.facts += item.facts || 0;
-        total.rules += item.rules || 0;
-        total.memoHits += item.memoHits || 0;
-        total.memoStores += item.memoStores || 0;
-        total.maxDepth = Math.max(total.maxDepth || 0, item.maxDepth || 0);
       }
       
       function instantiateHeadTriple(pattern, binding, headBlankLabels, headBlankMap, skolemKey) {
@@ -3452,23 +3358,7 @@
           return;
         }
         if (clause.type === 'triple') {
-          const useBackward = shouldUseBackwardForTriple(clause.triple, initialBinding, options);
-          if (!useBackward) {
-            yield* store.match(clause.triple, initialBinding);
-            return;
-          }
-          const seen = new Set();
-          for (const matched of store.match(clause.triple, initialBinding)) {
-            const key = bindingKey(matched);
-            seen.add(key);
-            yield matched;
-          }
-          for (const matched of options.backwardProver.solveTriple(clause.triple, initialBinding)) {
-            const key = bindingKey(matched);
-            if (seen.has(key)) continue;
-            seen.add(key);
-            yield matched;
-          }
+          yield* store.match(clause.triple, initialBinding);
           return;
         }
       
@@ -3513,12 +3403,6 @@
         }
       
         throw new Error(`Unsupported body clause ${clause.type}`);
-      }
-      
-      function shouldUseBackwardForTriple(pattern, binding, options = {}) {
-        if (!options.backwardProver || !options.hybridBackwardPredicates || options.hybridBackwardPredicates.size === 0) return false;
-        const predicate = instantiateTerm(pattern.p, binding);
-        return !!(predicate && predicate.type === 'iri' && options.hybridBackwardPredicates.has(predicate.value));
       }
       
       function bodyHasAny(clauses, store, initialBinding, options) {
@@ -3877,16 +3761,6 @@
         program.rules.forEach((rule, index) => {
           const name = ruleName(rule, index);
           const initialBound = new Set();
-      
-          // The 25 August 2026 grammar still contains ForClause, but the normative
-          // abstract syntax and evaluation model define no focus/shape component.
-          // Recognize it syntactically, but do not invent target semantics that the abstract evaluation model does not define.
-          if (rule.target) {
-            diagnostics.push({
-              code: 'for-clause-no-evaluation-semantics', severity: 'error', rule: name,
-              message: `${displayRuleName(name, program.prefixes || {})} uses FOR ?${rule.target.variable} IN <${rule.target.iri}>; the current SPARQL-RL abstract evaluation model does not define FOR execution semantics`,
-            });
-          }
       
           const bound = boundVariables(rule.body, initialBound);
           const head = new Set();
@@ -4529,6 +4403,271 @@
       };
       
     },
+    "src/format.js": function (require, module, exports) {
+      'use strict';
+      
+      const { formatTriple, formatTerm } = require('./term.js');
+      
+      function sortTriples(triples, prefixes = {}) {
+        return triples
+          .map((triple) => ({ triple, text: formatTriple(triple, prefixes) }))
+          .sort((a, b) => a.text.localeCompare(b.text))
+          .map((entry) => entry.triple);
+      }
+      
+      function formatTriples(triples, prefixes = {}) {
+        return triples
+          .map((triple) => formatTriple(triple, prefixes))
+          .sort((a, b) => a.localeCompare(b))
+          .join('\n');
+      }
+      
+      function formatTrace(trace, prefixes = {}) {
+        return trace.map((entry) => `#${entry.iteration} ${entry.rule} => ${formatTriple(entry.triple, prefixes)}`).join('\n');
+      }
+      
+      function formatProof(trace, prefixes = {}) {
+        if (!trace.length) return '';
+        const lines = ['@prefix pe: <https://eyereasoner.github.io/pe#> .', ''];
+        for (const entry of trace) {
+          const conclusion = formatTriple(entry.triple, prefixes);
+          lines.push(`{ ${conclusion} } pe:why {`);
+          lines.push(`  { ${conclusion} }`);
+          lines.push(`    pe:by [ pe:rule ${quoteString(entry.rule)} ]${proofDetails(entry, prefixes)} .`);
+          lines.push('}.', '');
+        }
+        return lines.join('\n').trimEnd();
+      }
+      
+      function proofDetails(entry, prefixes) {
+        const details = [];
+        const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
+        if (bindings.length > 0) {
+          details.push(`\n    pe:binding ${bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`).join(', ')}`);
+        }
+        if (entry.uses && entry.uses.length > 0) {
+          details.push(`\n    pe:uses ${entry.uses.map((triple) => `{ ${formatTriple(triple, prefixes)} }`).join(', ')}`);
+        }
+        return details.length ? `;${details.join(';')}` : '';
+      }
+      
+      function quoteString(value) {
+        return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`;
+      }
+      
+      function formatBindings(bindings, prefixes = {}, select = null) {
+        const columns = select && select.length > 0 ? select : inferColumns(bindings);
+        return bindings
+          .slice()
+          .sort((a, b) => formatBinding(a, prefixes, columns).localeCompare(formatBinding(b, prefixes, columns)))
+          .map((binding) => formatBinding(binding, prefixes, columns))
+          .join('\n');
+      }
+      
+      function formatBinding(binding, prefixes = {}, columns = null) {
+        const names = columns || Object.keys(binding).sort();
+        if (names.length === 0) return 'true';
+        return names.map((name) => `?${name} = ${binding[name] ? formatTerm(binding[name], prefixes) : 'UNDEF'}`).join('; ');
+      }
+      
+      function inferColumns(bindings) {
+        const columns = new Set();
+        for (const binding of bindings) for (const name of Object.keys(binding)) columns.add(name);
+        return Array.from(columns).sort();
+      }
+      
+      function toJSON(result, options = {}) {
+        const triples = options.all ? result.closure : result.inferred;
+        const json = {
+          baseIRI: result.baseIRI || null,
+          iterations: result.iterations,
+          ruleApplications: result.ruleApplications,
+          perRule: result.perRule,
+          prefixes: result.prefixes,
+          diagnostics: result.diagnostics || [],
+          triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
+          proof: options.proof ? result.trace : undefined,
+          validation: result.validationReport ? {
+            conforms: result.validationReport.conforms,
+            results: Array.isArray(result.validationReport.results) ? result.validationReport.results.length : undefined,
+          } : undefined,
+        };
+        if (result.query) json.query = jsonSafeValue(result.query);
+        if (result.analysis && options.analysis) json.analysis = result.analysis;
+        return json;
+      }
+      
+      
+      function jsonSafeTriple(triple) {
+        return { s: jsonSafeTerm(triple.s), p: jsonSafeTerm(triple.p), o: jsonSafeTerm(triple.o) };
+      }
+      
+      function jsonSafeTerm(term) {
+        if (!term || typeof term !== 'object') return jsonSafeValue(term);
+        if (term.type === 'triple') return { type: 'triple', s: jsonSafeTerm(term.s), p: jsonSafeTerm(term.p), o: jsonSafeTerm(term.o) };
+        if (term.type === 'literal' && typeof term.value === 'bigint') return { ...term, value: term.value.toString() };
+        return { ...term };
+      }
+      
+      function jsonSafeValue(value) {
+        if (typeof value === 'bigint') return value.toString();
+        if (Array.isArray(value)) return value.map(jsonSafeValue);
+        if (value && typeof value === 'object') {
+          if (value.type) return jsonSafeTerm(value);
+          return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, jsonSafeValue(val)]));
+        }
+        return value;
+      }
+      
+      module.exports = { sortTriples, formatTriples, formatTrace, formatProof, formatBindings, formatBinding, toJSON };
+      
+    },
+    "src/query.js": function (require, module, exports) {
+      'use strict';
+      
+      const { parseQuery } = require('./parser.js');
+      const { TripleStore, bindingKey } = require('./store.js');
+      const { evaluateBody } = require('./engine.js');
+      const { backwardQuery, planBackwardQuery } = require('./backward.js');
+      
+      function queryResult(result, querySpec, options = {}) {
+        const store = new TripleStore(result.closure || []);
+        const bindings = evaluateBody(querySpec.body, store, {}, { ...options, groundStore: result.groundStore });
+        const select = normalizeSelect(querySpec.select, bindings);
+        return {
+          baseIRI: result.baseIRI,
+          prefixes: result.prefixes,
+          select,
+          bindings: projectBindings(bindings, select),
+          mode: 'forward',
+        };
+      }
+      
+      function queryProgram(program, querySpec, options = {}) {
+        const mode = options.queryMode || 'auto';
+        if (mode !== 'forward') {
+          const planned = planBackwardQuery(program, querySpec, options);
+          if (planned.ok) {
+            const result = backwardQuery(program, querySpec, options);
+            if (result.ok) {
+              const select = normalizeSelect(querySpec.select, result.bindings);
+              return {
+                baseIRI: program.baseIRI,
+                prefixes: program.prefixes,
+                select,
+                bindings: projectBindings(result.bindings, select),
+                mode: 'backward',
+                stats: result.stats,
+              };
+            }
+            if (mode === 'backward') throw new Error(result.reason || 'Backward query failed');
+          } else if (mode === 'backward') {
+            throw new Error(`Backward query is not supported for this ruleset: ${planned.reason}`);
+          }
+        }
+        return null;
+      }
+      
+      function runQuery(source, querySource = null, options = {}) {
+        const { run, compile } = require('./api.js');
+        const { program, diagnostics, analysis } = compile(source, options);
+      
+        let querySpec;
+        if (querySource) querySpec = parseQuery(querySource, { ...options, prefixes: program.prefixes, baseIRI: program.baseIRI });
+        else throw new Error('No query supplied. Use --query or --query-file with a raw body pattern.');
+      
+        const direct = queryProgram(program, querySpec, options);
+        if (direct) {
+          return {
+            baseIRI: program.baseIRI,
+            version: program.version || null,
+            imports: program.imports || [],
+            prefixes: program.prefixes,
+            input: (program.baseData || []).slice(),
+            data: (program.data || []).slice(),
+            inferred: (program.data || []).slice(),
+            closure: [...(program.baseData || []), ...(program.data || [])],
+            iterations: 0,
+            layers: [],
+            ruleApplications: 0,
+            perRule: [],
+            trace: [],
+            diagnostics,
+            analysis,
+            query: direct,
+          };
+        }
+      
+        const result = run(program, options);
+        result.diagnostics = diagnostics;
+        result.query = queryResult(result, querySpec, options);
+        return result;
+      }
+      
+      async function runQueryAsync(source, querySource = null, options = {}) {
+        const { compileAsync } = require('./api.js');
+        const { evaluateAsync } = require('./engine.js');
+        const compiled = await compileAsync(source, options);
+        const { program, diagnostics, analysis } = compiled;
+      
+        let querySpec;
+        if (querySource) querySpec = parseQuery(querySource, { ...options, prefixes: program.prefixes, baseIRI: program.baseIRI });
+        else throw new Error('No query supplied. Use --query or --query-file with a raw body pattern.');
+      
+        const direct = queryProgram(program, querySpec, options);
+        if (direct) {
+          return {
+            baseIRI: program.baseIRI,
+            version: program.version || null,
+            imports: program.imports || [],
+            prefixes: program.prefixes,
+            input: (program.baseData || []).slice(),
+            data: (program.data || []).slice(),
+            inferred: (program.data || []).slice(),
+            closure: [...(program.baseData || []), ...(program.data || [])],
+            iterations: 0,
+            layers: [],
+            ruleApplications: 0,
+            perRule: [],
+            trace: [],
+            diagnostics,
+            analysis,
+            query: direct,
+          };
+        }
+      
+        const runOptions = { ...compiled.options, ...options };
+        const result = await evaluateAsync(program, { ...runOptions, analysis });
+        result.diagnostics = diagnostics;
+        result.query = queryResult(result, querySpec, runOptions);
+        return result;
+      }
+      
+      function normalizeSelect(select, bindings) {
+        if (select && select.length > 0) return select.slice();
+        const vars = new Set();
+        for (const binding of bindings) for (const key of Object.keys(binding)) vars.add(key);
+        return Array.from(vars).sort().filter((name) => !name.includes('__b'));
+      }
+      
+      function projectBindings(bindings, select) {
+        const seen = new Set();
+        const out = [];
+        for (const binding of bindings) {
+          const projected = {};
+          for (const name of select) if (binding[name]) projected[name] = binding[name];
+          const key = bindingKey(projected);
+          if (!seen.has(key)) {
+            seen.add(key);
+            out.push(projected);
+          }
+        }
+        return out;
+      }
+      
+      module.exports = { runQuery, runQueryAsync, queryResult, queryProgram, parseQuery, normalizeSelect, projectBindings };
+      
+    },
     "src/backward.js": function (require, module, exports) {
       'use strict';
       
@@ -4560,6 +4699,7 @@
         for (const clause of clauses || []) {
           if (clause.type === 'triple' || clause.type === 'filter' || clause.type === 'set' || clause.type === 'bind') continue;
           if (clause.type === 'not') {
+            if (clause.groundData) return false;
             if (options.backwardNegation === false) return false;
             if (!bodySupported(clause.body, options)) return false;
             continue;
@@ -4570,15 +4710,13 @@
       }
       
       function ruleSupported(rule, options = {}) {
-        // FOR clauses have no execution hook in the current SPARQL-RL abstract evaluation model.
-        // Until the backward prover has an equivalent targeting gate, treating them
-        // as ordinary rules would be semantically incorrect.
-        if (rule.target) return false;
+        if (rule.groundData || rule.runOnce) return false;
         if (!Array.isArray(rule.head) || rule.head.length === 0) return false;
         for (const head of rule.head) {
           if (!head || !head.p || head.p.type !== 'iri') return false;
           if (containsBlank(head.s) || containsBlank(head.p) || containsBlank(head.o)) return false;
         }
+        if (containsGroundDataNegation(rule.body || [])) return false;
         return bodySupported(rule.body || [], options);
       }
       
@@ -4586,7 +4724,7 @@
         constructor(program, options = {}) {
           this.program = program;
           this.options = options;
-          this.store = options.store || new TripleStore(program.data || []);
+          this.store = options.store || new TripleStore([...(program.baseData || []), ...(program.data || [])]);
           this.maxDepth = options.backwardMaxDepth || options.maxDepth || 10000;
           this.solutionLimit = options.backwardSolutionLimit || options.solutionLimit || 1000000;
           this.allowedPredicates = normalizePredicateSet(options.allowedPredicates || options.backwardPredicates || null);
@@ -4872,6 +5010,15 @@
         return out;
       }
       
+      function containsGroundDataNegation(clauses) {
+        for (const clause of clauses || []) {
+          if (clause.type !== 'not') continue;
+          if (clause.groundData || containsGroundDataNegation(clause.body || [])) return true;
+        }
+        return false;
+      }
+      
+      
       function containsBlank(term) {
         if (!term) return false;
         if (term.type === 'blank') return true;
@@ -4959,396 +5106,14 @@
         return null;
       }
       
-      function supportedBackwardPredicates(program, options = {}) {
-        const explicit = normalizePredicateSet(options.backwardPredicates || options.hybridPredicates || null);
-        const byPredicate = new Map();
-        for (const rule of program.rules || []) {
-          const predicates = new Set();
-          for (const head of rule.head || []) {
-            if (head && head.p && head.p.type === 'iri') predicates.add(head.p.value);
-          }
-          for (const predicate of predicates) {
-            if (!byPredicate.has(predicate)) byPredicate.set(predicate, []);
-            byPredicate.get(predicate).push(rule);
-          }
-        }
-      
-        const supported = new Set();
-        for (const [predicate, rules] of byPredicate) {
-          if (explicit && !explicit.has(predicate)) continue;
-          if (rules.length > 0 && rules.every((rule) => ruleSupported(rule, options))) supported.add(predicate);
-        }
-        return supported;
-      }
-      
-      function preferredBackwardPredicates(program, options = {}) {
-        const explicit = normalizePredicateSet(options.hybridPredicates || null);
-        if (explicit) return supportedBackwardPredicates(program, { ...options, hybridPredicates: explicit });
-        const supported = supportedBackwardPredicates(program, options);
-        const preferred = new Set();
-        const force = options.hybrid === true || options.hybridMode === 'force';
-        const demanded = force ? null : demandedBodyPredicates(program);
-        for (const rule of program.rules || []) {
-          if (!ruleIsFunctionLike(rule)) continue;
-          if (!force && ruleCreatesHeadTerms(rule)) continue;
-          for (const head of rule.head || []) {
-            if (!head || !head.p || head.p.type !== 'iri' || !supported.has(head.p.value)) continue;
-            if (force || demanded.has(head.p.value)) preferred.add(head.p.value);
-          }
-        }
-        return preferred;
-      }
-      
-      function demandedBodyPredicates(program) {
-        const out = new Set();
-        for (const rule of program.rules || []) {
-          for (const predicate of bodyPredicateDemands(rule.body || [])) if (predicate) out.add(predicate);
-        }
-        return out;
-      }
-      
-      
-      function ruleCreatesHeadTerms(rule) {
-        const headVars = new Set();
-        for (const triple of rule.head || []) {
-          for (const term of [triple.s, triple.p, triple.o]) {
-            if (!term) continue;
-            if (term.type === 'blank') return true;
-            if (term.type === 'var') headVars.add(term.value);
-          }
-        }
-        if (headVars.size === 0) return false;
-        for (const clause of rule.body || []) {
-          if ((clause.type === 'set' || clause.type === 'bind') && headVars.has(clause.variable) && expressionCreatesTerm(clause.expr)) return true;
-        }
-        return false;
-      }
-      
-      function expressionCreatesTerm(expr) {
-        if (!expr) return false;
-        if (expr.type === 'call') {
-          const name = String(expr.name || '').toUpperCase();
-          if (name === 'BNODE' || name === 'IRI' || name === 'URI' || name === 'TRIPLE' || name === 'UUID' || name === 'STRUUID') return true;
-          return (expr.args || []).some(expressionCreatesTerm);
-        }
-        if (expr.type === 'binary') return expressionCreatesTerm(expr.left) || expressionCreatesTerm(expr.right);
-        if (expr.type === 'unary') return expressionCreatesTerm(expr.expr);
-        if (expr.type === 'in') return expressionCreatesTerm(expr.left) || (expr.values || []).some(expressionCreatesTerm);
-        return false;
-      }
-      
-      function ruleIsFunctionLike(rule) {
-        return (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
-      }
-      
-      function ruleHeadPredicates(rule) {
-        const predicates = new Set();
-        for (const head of rule.head || []) {
-          if (!head || !head.p || head.p.type !== 'iri') return null;
-          predicates.add(head.p.value);
-        }
-        return predicates;
-      }
-      
-      function ruleIsBackwardOriented(rule, predicates) {
-        if (!predicates || predicates.size === 0) return false;
-        const heads = ruleHeadPredicates(rule);
-        if (!heads || heads.size === 0) return false;
-        for (const predicate of heads) if (!predicates.has(predicate)) return false;
-        return true;
-      }
-      
       module.exports = {
         BackwardProver,
         backwardQuery,
         planBackwardQuery,
-        supportedBackwardPredicates,
-        preferredBackwardPredicates,
         reachableBackwardRuleIndexes,
-        ruleIsBackwardOriented,
         ruleSupported,
         resolveBinding,
       };
-      
-    },
-    "src/format.js": function (require, module, exports) {
-      'use strict';
-      
-      const { formatTriple, formatTerm } = require('./term.js');
-      
-      function sortTriples(triples, prefixes = {}) {
-        return triples
-          .map((triple) => ({ triple, text: formatTriple(triple, prefixes) }))
-          .sort((a, b) => a.text.localeCompare(b.text))
-          .map((entry) => entry.triple);
-      }
-      
-      function formatTriples(triples, prefixes = {}) {
-        return triples
-          .map((triple) => formatTriple(triple, prefixes))
-          .sort((a, b) => a.localeCompare(b))
-          .join('\n');
-      }
-      
-      function formatTrace(trace, prefixes = {}) {
-        return trace.map((entry) => `#${entry.iteration} ${entry.rule} => ${formatTriple(entry.triple, prefixes)}`).join('\n');
-      }
-      
-      function formatProof(trace, prefixes = {}) {
-        if (!trace.length) return '';
-        const lines = ['@prefix pe: <https://eyereasoner.github.io/pe#> .', ''];
-        for (const entry of trace) {
-          const conclusion = formatTriple(entry.triple, prefixes);
-          lines.push(`{ ${conclusion} } pe:why {`);
-          lines.push(`  { ${conclusion} }`);
-          lines.push(`    pe:by [ pe:rule ${quoteString(entry.rule)} ]${proofDetails(entry, prefixes)} .`);
-          lines.push('}.', '');
-        }
-        return lines.join('\n').trimEnd();
-      }
-      
-      function proofDetails(entry, prefixes) {
-        const details = [];
-        const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
-        if (bindings.length > 0) {
-          details.push(`\n    pe:binding ${bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`).join(', ')}`);
-        }
-        if (entry.uses && entry.uses.length > 0) {
-          details.push(`\n    pe:uses ${entry.uses.map((triple) => `{ ${formatTriple(triple, prefixes)} }`).join(', ')}`);
-        }
-        return details.length ? `;${details.join(';')}` : '';
-      }
-      
-      function quoteString(value) {
-        return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`;
-      }
-      
-      function formatBindings(bindings, prefixes = {}, select = null) {
-        const columns = select && select.length > 0 ? select : inferColumns(bindings);
-        return bindings
-          .slice()
-          .sort((a, b) => formatBinding(a, prefixes, columns).localeCompare(formatBinding(b, prefixes, columns)))
-          .map((binding) => formatBinding(binding, prefixes, columns))
-          .join('\n');
-      }
-      
-      function formatBinding(binding, prefixes = {}, columns = null) {
-        const names = columns || Object.keys(binding).sort();
-        if (names.length === 0) return 'true';
-        return names.map((name) => `?${name} = ${binding[name] ? formatTerm(binding[name], prefixes) : 'UNDEF'}`).join('; ');
-      }
-      
-      function inferColumns(bindings) {
-        const columns = new Set();
-        for (const binding of bindings) for (const name of Object.keys(binding)) columns.add(name);
-        return Array.from(columns).sort();
-      }
-      
-      function toJSON(result, options = {}) {
-        const triples = options.all ? result.closure : result.inferred;
-        const json = {
-          baseIRI: result.baseIRI || null,
-          iterations: result.iterations,
-          ruleApplications: result.ruleApplications,
-          perRule: result.perRule,
-          prefixes: result.prefixes,
-          diagnostics: result.diagnostics || [],
-          triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
-          proof: options.proof ? result.trace : undefined,
-          validation: result.validationReport ? {
-            conforms: result.validationReport.conforms,
-            results: Array.isArray(result.validationReport.results) ? result.validationReport.results.length : undefined,
-          } : undefined,
-        };
-        if (result.query) json.query = jsonSafeValue(result.query);
-        if (result.analysis && options.analysis) json.analysis = result.analysis;
-        return json;
-      }
-      
-      
-      function jsonSafeTriple(triple) {
-        return { s: jsonSafeTerm(triple.s), p: jsonSafeTerm(triple.p), o: jsonSafeTerm(triple.o) };
-      }
-      
-      function jsonSafeTerm(term) {
-        if (!term || typeof term !== 'object') return jsonSafeValue(term);
-        if (term.type === 'triple') return { type: 'triple', s: jsonSafeTerm(term.s), p: jsonSafeTerm(term.p), o: jsonSafeTerm(term.o) };
-        if (term.type === 'literal' && typeof term.value === 'bigint') return { ...term, value: term.value.toString() };
-        return { ...term };
-      }
-      
-      function jsonSafeValue(value) {
-        if (typeof value === 'bigint') return value.toString();
-        if (Array.isArray(value)) return value.map(jsonSafeValue);
-        if (value && typeof value === 'object') {
-          if (value.type) return jsonSafeTerm(value);
-          return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, jsonSafeValue(val)]));
-        }
-        return value;
-      }
-      
-      module.exports = { sortTriples, formatTriples, formatTrace, formatProof, formatBindings, formatBinding, toJSON };
-      
-    },
-    "src/query.js": function (require, module, exports) {
-      'use strict';
-      
-      const { parseQuery } = require('./parser.js');
-      const { TripleStore, bindingKey } = require('./store.js');
-      const { evaluateBody } = require('./engine.js');
-      const { backwardQuery, planBackwardQuery, preferredBackwardPredicates } = require('./backward.js');
-      
-      function queryResult(result, querySpec, options = {}) {
-        const store = new TripleStore(result.closure || []);
-        const bindings = evaluateBody(querySpec.body, store, {}, options);
-        const select = normalizeSelect(querySpec.select, bindings);
-        return {
-          baseIRI: result.baseIRI,
-          prefixes: result.prefixes,
-          select,
-          bindings: projectBindings(bindings, select),
-          mode: result.hybridStats ? 'hybrid' : 'forward',
-        };
-      }
-      
-      function queryProgram(program, querySpec, options = {}) {
-        const mode = options.queryMode || 'auto';
-        if (mode !== 'forward' && mode !== 'hybrid') {
-          const planned = planBackwardQuery(program, querySpec, options);
-          if (planned.ok) {
-            const result = backwardQuery(program, querySpec, options);
-            if (result.ok) {
-              const select = normalizeSelect(querySpec.select, result.bindings);
-              return {
-                baseIRI: program.baseIRI,
-                prefixes: program.prefixes,
-                select,
-                bindings: projectBindings(result.bindings, select),
-                mode: 'backward',
-                stats: result.stats,
-              };
-            }
-            if (mode === 'backward') throw new Error(result.reason || 'Backward query failed');
-          } else if (mode === 'backward') {
-            throw new Error(`Backward query is not supported for this ruleset: ${planned.reason}`);
-          }
-        }
-        return null;
-      }
-      
-      function runQuery(source, querySource = null, options = {}) {
-        const { run, compile } = require('./api.js');
-        const { program, diagnostics, analysis } = compile(source, options);
-      
-        let querySpec;
-        if (querySource) querySpec = parseQuery(querySource, { ...options, prefixes: program.prefixes, baseIRI: program.baseIRI });
-        else throw new Error('No query supplied. Use --query or --query-file with a raw body pattern.');
-      
-        const direct = queryProgram(program, querySpec, options);
-        if (direct) {
-          return {
-            baseIRI: program.baseIRI,
-            version: program.version || null,
-            imports: program.imports || [],
-            prefixes: program.prefixes,
-            input: program.data.slice(),
-            inferred: [],
-            closure: program.data.slice(),
-            iterations: 0,
-            layers: [],
-            ruleApplications: 0,
-            perRule: [],
-            trace: [],
-            diagnostics,
-            analysis,
-            query: direct,
-          };
-        }
-      
-        const runOptions = queryRunOptions(program, querySpec, options);
-        const result = run(program, runOptions);
-        result.diagnostics = diagnostics;
-        result.query = queryResult(result, querySpec, runOptions);
-        return result;
-      }
-      
-      async function runQueryAsync(source, querySource = null, options = {}) {
-        const { compileAsync } = require('./api.js');
-        const { evaluateAsync } = require('./engine.js');
-        const compiled = await compileAsync(source, options);
-        const { program, diagnostics, analysis } = compiled;
-      
-        let querySpec;
-        if (querySource) querySpec = parseQuery(querySource, { ...options, prefixes: program.prefixes, baseIRI: program.baseIRI });
-        else throw new Error('No query supplied. Use --query or --query-file with a raw body pattern.');
-      
-        const direct = queryProgram(program, querySpec, options);
-        if (direct) {
-          return {
-            baseIRI: program.baseIRI,
-            version: program.version || null,
-            imports: program.imports || [],
-            prefixes: program.prefixes,
-            input: program.data.slice(),
-            inferred: [],
-            closure: program.data.slice(),
-            iterations: 0,
-            layers: [],
-            ruleApplications: 0,
-            perRule: [],
-            trace: [],
-            diagnostics,
-            analysis,
-            query: direct,
-          };
-        }
-      
-        const runOptions = queryRunOptions(program, querySpec, { ...compiled.options, ...options });
-        const result = await evaluateAsync(program, { ...runOptions, analysis });
-        result.diagnostics = diagnostics;
-        result.query = queryResult(result, querySpec, runOptions);
-        return result;
-      }
-      
-      function queryRunOptions(program, querySpec, options = {}) {
-        const mode = options.queryMode || 'auto';
-        if (mode === 'forward') return { ...options, hybrid: false };
-        if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: options.hybrid ?? 'auto' };
-        return options;
-      }
-      
-      function shouldUseHybridForQuery(program, querySpec, options = {}) {
-        const mode = options.queryMode || 'auto';
-        if (options.hybrid === false) return false;
-        if (options.hybrid === true) return true;
-        if (mode !== 'auto') return false;
-        if (!querySpec) return false;
-        return preferredBackwardPredicates(program, options).size > 0;
-      }
-      
-      function normalizeSelect(select, bindings) {
-        if (select && select.length > 0) return select.slice();
-        const vars = new Set();
-        for (const binding of bindings) for (const key of Object.keys(binding)) vars.add(key);
-        return Array.from(vars).sort().filter((name) => !name.includes('__b'));
-      }
-      
-      function projectBindings(bindings, select) {
-        const seen = new Set();
-        const out = [];
-        for (const binding of bindings) {
-          const projected = {};
-          for (const name of select) if (binding[name]) projected[name] = binding[name];
-          const key = bindingKey(projected);
-          if (!seen.has(key)) {
-            seen.add(key);
-            out.push(projected);
-          }
-        }
-        return out;
-      }
-      
-      module.exports = { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery, parseQuery, normalizeSelect, projectBindings };
       
     },
     "src/output.js": function (require, module, exports) {
@@ -5362,7 +5127,7 @@
       
     },
   };
-  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdf.js":{"./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdf.js":"src/rdf.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js","./backward.js":"src/backward.js"},"src/format.js":{"./term.js":"src/term.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/api.js":{"./parser.js":"src/parser.js","./rdf.js":"src/rdf.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
+  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdf.js":{"./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdf.js":"src/rdf.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js"},"src/format.js":{"./term.js":"src/term.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/api.js":{"./parser.js":"src/parser.js","./rdf.js":"src/rdf.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
   const __cache = {};
   function __require(id) {
     if (!id.startsWith("src/")) return __nativeRequire(id);

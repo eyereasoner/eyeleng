@@ -4,7 +4,6 @@ const { TripleStore, bindingKey, instantiateTerm } = require('./store.js');
 const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm } = require('./term.js');
 const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
 const { analyze } = require('./analyze.js');
-const { BackwardProver, preferredBackwardPredicates, ruleIsBackwardOriented } = require('./backward.js');
 
 function evaluate(program, options = {}) {
   const maxIterations = options.maxIterations ?? 10000;
@@ -30,7 +29,6 @@ function evaluate(program, options = {}) {
     applications: 0,
     added: 0,
     runOnce: !!rule.runOnce,
-    backward: false,
   }));
 
   const analysis = options.analysis || analyze(program, options);
@@ -44,18 +42,6 @@ function evaluate(program, options = {}) {
     layerIndexes,
     analysis.dependency ? analysis.dependency.edges : [],
   );
-  const useHybrid = options.hybrid === true;
-  const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
-    ? preferredBackwardPredicates(program, options)
-    : new Set();
-  const hybridBackwardRules = new Set();
-  if (hybridBackwardPredicates.size > 0) {
-    for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
-      if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
-    }
-  }
-  const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
-  for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
   const baseContext = {
     ...evalOptions,
     maxIterations,
@@ -67,18 +53,14 @@ function evaluate(program, options = {}) {
     iteration: 0,
     startingIterations: 0,
     recursiveLayer: false,
-    hybridBackwardPredicates,
-    hybridBackwardRules,
-    hybridStats,
     groundStore,
   };
 
   for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
     const layer = layerIndexes[layerIndex];
     baseContext.layer = layerIndex + 1;
-    const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-    const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
-    const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
+    const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+    const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
 
     if (runOnce.length > 0) {
       iterations += 1;
@@ -110,7 +92,6 @@ function evaluate(program, options = {}) {
     ruleApplications,
     perRule,
     trace: trace || [],
-    hybridStats,
     groundStore,
   };
 }
@@ -140,7 +121,6 @@ async function evaluateAsync(program, options = {}) {
     applications: 0,
     added: 0,
     runOnce: !!rule.runOnce,
-    backward: false,
   }));
 
   const analysis = options.analysis || analyze(program, options);
@@ -154,18 +134,6 @@ async function evaluateAsync(program, options = {}) {
     layerIndexes,
     analysis.dependency ? analysis.dependency.edges : [],
   );
-  const useHybrid = options.hybrid === true;
-  const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls
-    ? preferredBackwardPredicates(program, options)
-    : new Set();
-  const hybridBackwardRules = new Set();
-  if (hybridBackwardPredicates.size > 0) {
-    for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
-      if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
-    }
-  }
-  const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
-  for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
   const baseContext = {
     ...evalOptions,
     maxIterations,
@@ -177,18 +145,14 @@ async function evaluateAsync(program, options = {}) {
     iteration: 0,
     startingIterations: 0,
     recursiveLayer: false,
-    hybridBackwardPredicates,
-    hybridBackwardRules,
-    hybridStats,
     groundStore,
   };
 
   for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
     const layer = layerIndexes[layerIndex];
     baseContext.layer = layerIndex + 1;
-    const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-    const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
-    const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
+    const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+    const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
 
     if (runOnce.length > 0) {
       iterations += 1;
@@ -220,7 +184,6 @@ async function evaluateAsync(program, options = {}) {
     ruleApplications,
     perRule,
     trace: trace || [],
-    hybridStats,
     groundStore,
   };
 }
@@ -292,7 +255,7 @@ function applyRuleOnce(program, store, ruleIndex, context) {
   const headBlankLabels = collectHeadBlankLabels(rule.head);
 
   const bodyStore = rule.groundData ? context.groundStore : store;
-  const bodyContext = { ...prepareBodyContext(program, bodyStore, context) };
+  const bodyContext = { ...context };
   if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
     bodyContext.retainedBodyVariables = collectVariables(rule.head);
   }
@@ -331,13 +294,12 @@ function applyRuleOnce(program, store, ruleIndex, context) {
     }
   }
 
-  if (bodyContext.backwardProver && context.hybridStats) mergeBackwardStats(context.hybridStats, bodyContext.backwardProver.stats);
   return { applications, added };
 }
 
 function* evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings) {
   for (const initialBinding of initialBindings) {
-    if (rule.body.length === 1 && rule.body[0].type === 'triple' && !shouldUseBackwardForTriple(rule.body[0].triple, initialBinding, bodyContext)) {
+    if (rule.body.length === 1 && rule.body[0].type === 'triple') {
       yield* bodyStore.match(rule.body[0].triple, initialBinding);
     } else {
       yield* evaluateBodyStream(rule.body, bodyStore, initialBinding, bodyContext);
@@ -354,32 +316,6 @@ function proofUses(body, binding) {
       o: instantiateTerm(clause.triple.o, binding),
     }))
     .filter((triple) => ![triple.s, triple.p, triple.o].some((term) => term && term.type === 'var'));
-}
-
-function prepareBodyContext(program, store, context) {
-  if (!context.hybridBackwardPredicates || context.hybridBackwardPredicates.size === 0) return context;
-  return {
-    ...context,
-    backwardProver: new BackwardProver(program, {
-      ...context,
-      store,
-      allowedPredicates: context.hybridBackwardPredicates,
-    }),
-  };
-}
-
-function emptyBackwardStats() {
-  return { mode: 'hybrid', goals: 0, facts: 0, rules: 0, memoHits: 0, memoStores: 0, maxDepth: 0 };
-}
-
-function mergeBackwardStats(total, item) {
-  if (!total || !item) return;
-  total.goals += item.goals || 0;
-  total.facts += item.facts || 0;
-  total.rules += item.rules || 0;
-  total.memoHits += item.memoHits || 0;
-  total.memoStores += item.memoStores || 0;
-  total.maxDepth = Math.max(total.maxDepth || 0, item.maxDepth || 0);
 }
 
 function instantiateHeadTriple(pattern, binding, headBlankLabels, headBlankMap, skolemKey) {
@@ -575,23 +511,7 @@ function* evaluateBodyClause(clause, store, initialBinding, options) {
     return;
   }
   if (clause.type === 'triple') {
-    const useBackward = shouldUseBackwardForTriple(clause.triple, initialBinding, options);
-    if (!useBackward) {
-      yield* store.match(clause.triple, initialBinding);
-      return;
-    }
-    const seen = new Set();
-    for (const matched of store.match(clause.triple, initialBinding)) {
-      const key = bindingKey(matched);
-      seen.add(key);
-      yield matched;
-    }
-    for (const matched of options.backwardProver.solveTriple(clause.triple, initialBinding)) {
-      const key = bindingKey(matched);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      yield matched;
-    }
+    yield* store.match(clause.triple, initialBinding);
     return;
   }
 
@@ -636,12 +556,6 @@ function* evaluateBodyClause(clause, store, initialBinding, options) {
   }
 
   throw new Error(`Unsupported body clause ${clause.type}`);
-}
-
-function shouldUseBackwardForTriple(pattern, binding, options = {}) {
-  if (!options.backwardProver || !options.hybridBackwardPredicates || options.hybridBackwardPredicates.size === 0) return false;
-  const predicate = instantiateTerm(pattern.p, binding);
-  return !!(predicate && predicate.type === 'iri' && options.hybridBackwardPredicates.has(predicate.value));
 }
 
 function bodyHasAny(clauses, store, initialBinding, options) {

@@ -3,24 +3,24 @@
 const { parseQuery } = require('./parser.js');
 const { TripleStore, bindingKey } = require('./store.js');
 const { evaluateBody } = require('./engine.js');
-const { backwardQuery, planBackwardQuery, preferredBackwardPredicates } = require('./backward.js');
+const { backwardQuery, planBackwardQuery } = require('./backward.js');
 
 function queryResult(result, querySpec, options = {}) {
   const store = new TripleStore(result.closure || []);
-  const bindings = evaluateBody(querySpec.body, store, {}, options);
+  const bindings = evaluateBody(querySpec.body, store, {}, { ...options, groundStore: result.groundStore });
   const select = normalizeSelect(querySpec.select, bindings);
   return {
     baseIRI: result.baseIRI,
     prefixes: result.prefixes,
     select,
     bindings: projectBindings(bindings, select),
-    mode: result.hybridStats ? 'hybrid' : 'forward',
+    mode: 'forward',
   };
 }
 
 function queryProgram(program, querySpec, options = {}) {
   const mode = options.queryMode || 'auto';
-  if (mode !== 'forward' && mode !== 'hybrid') {
+  if (mode !== 'forward') {
     const planned = planBackwardQuery(program, querySpec, options);
     if (planned.ok) {
       const result = backwardQuery(program, querySpec, options);
@@ -58,9 +58,10 @@ function runQuery(source, querySource = null, options = {}) {
       version: program.version || null,
       imports: program.imports || [],
       prefixes: program.prefixes,
-      input: program.data.slice(),
-      inferred: [],
-      closure: program.data.slice(),
+      input: (program.baseData || []).slice(),
+      data: (program.data || []).slice(),
+      inferred: (program.data || []).slice(),
+      closure: [...(program.baseData || []), ...(program.data || [])],
       iterations: 0,
       layers: [],
       ruleApplications: 0,
@@ -72,10 +73,9 @@ function runQuery(source, querySource = null, options = {}) {
     };
   }
 
-  const runOptions = queryRunOptions(program, querySpec, options);
-  const result = run(program, runOptions);
+  const result = run(program, options);
   result.diagnostics = diagnostics;
-  result.query = queryResult(result, querySpec, runOptions);
+  result.query = queryResult(result, querySpec, options);
   return result;
 }
 
@@ -96,9 +96,10 @@ async function runQueryAsync(source, querySource = null, options = {}) {
       version: program.version || null,
       imports: program.imports || [],
       prefixes: program.prefixes,
-      input: program.data.slice(),
-      inferred: [],
-      closure: program.data.slice(),
+      input: (program.baseData || []).slice(),
+      data: (program.data || []).slice(),
+      inferred: (program.data || []).slice(),
+      closure: [...(program.baseData || []), ...(program.data || [])],
       iterations: 0,
       layers: [],
       ruleApplications: 0,
@@ -110,27 +111,11 @@ async function runQueryAsync(source, querySource = null, options = {}) {
     };
   }
 
-  const runOptions = queryRunOptions(program, querySpec, { ...compiled.options, ...options });
+  const runOptions = { ...compiled.options, ...options };
   const result = await evaluateAsync(program, { ...runOptions, analysis });
   result.diagnostics = diagnostics;
   result.query = queryResult(result, querySpec, runOptions);
   return result;
-}
-
-function queryRunOptions(program, querySpec, options = {}) {
-  const mode = options.queryMode || 'auto';
-  if (mode === 'forward') return { ...options, hybrid: false };
-  if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: options.hybrid ?? 'auto' };
-  return options;
-}
-
-function shouldUseHybridForQuery(program, querySpec, options = {}) {
-  const mode = options.queryMode || 'auto';
-  if (options.hybrid === false) return false;
-  if (options.hybrid === true) return true;
-  if (mode !== 'auto') return false;
-  if (!querySpec) return false;
-  return preferredBackwardPredicates(program, options).size > 0;
 }
 
 function normalizeSelect(select, bindings) {
@@ -155,4 +140,4 @@ function projectBindings(bindings, select) {
   return out;
 }
 
-module.exports = { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery, parseQuery, normalizeSelect, projectBindings };
+module.exports = { runQuery, runQueryAsync, queryResult, queryProgram, parseQuery, normalizeSelect, projectBindings };

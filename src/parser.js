@@ -56,10 +56,8 @@ class Parser {
         data.push(...this.parseTriplesBlock({ allowPath: false, context: 'data' }));
       } else if (this.matchWord('RULE')) {
         rules.push(this.parseRule());
-      } else if (this.matchWord('IF')) {
-        rules.push(this.parseIfThenRule());
       } else {
-        throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF; got ${this.peek().value}`);
+        throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, or RULE; got ${this.peek().value}`);
       }
     }
     return {
@@ -110,25 +108,11 @@ class Parser {
     if (!this.checkValue('{')) name = this.parseIRIValue().value;
     this.expectValue('{');
     const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-    const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
     this.expectWord('WHERE');
     const groundData = this.matchWord('DATA');
     this.expectValue('{');
     const body = this.parseRuleBodyWithBlankNodeScope();
-    return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
-  }
-
-  parseIfThenRule() {
-    let name = null;
-    if (!this.checkValue('{') && !this.checkWord('FOR') && !this.checkWord('DATA')) name = this.parseIRIValue().value;
-    const target = this.matchWord('FOR') ? this.parseForClauseAfterFor() : null;
-    const groundData = this.matchWord('DATA');
-    this.expectValue('{');
-    const body = this.parseRuleBodyWithBlankNodeScope();
-    this.expectWord('THEN');
-    this.expectValue('{');
-    const head = this.parseTriplesBlock({ allowPath: false, context: 'head' });
-    return { name, head, body, groundData, target, runOnce: ruleNeedsRunOnce(head, body, this.options) };
+    return { name, head, body, groundData, runOnce: ruleNeedsRunOnce(head, body, this.options) };
   }
 
   parseRuleBodyWithBlankNodeScope() {
@@ -148,13 +132,6 @@ class Parser {
       this.bodyBnodeLabels.set(label, variable(`__b${this.bnodeCounter}`));
     }
     return this.bodyBnodeLabels.get(label);
-  }
-
-  parseForClauseAfterFor() {
-    const focusVariable = this.expectType('variable');
-    this.expectWord('IN');
-    const shape = this.parseIRIValue();
-    return { variable: focusVariable.value, iri: shape.value };
   }
 
   parseIRIValue() {

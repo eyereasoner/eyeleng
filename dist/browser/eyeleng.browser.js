@@ -1197,10 +1197,8 @@ var eyeleng = (() => {
               data.push(...this.parseTriplesBlock({ allowPath: false, context: "data" }));
             } else if (this.matchWord("RULE")) {
               rules.push(this.parseRule());
-            } else if (this.matchWord("IF")) {
-              rules.push(this.parseIfThenRule());
             } else {
-              throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, RULE, or IF; got ${this.peek().value}`);
+              throw this.error(`Expected PREFIX, BASE, VERSION, IMPORTS, DATA, or RULE; got ${this.peek().value}`);
             }
           }
           return {
@@ -1246,24 +1244,11 @@ var eyeleng = (() => {
           if (!this.checkValue("{")) name = this.parseIRIValue().value;
           this.expectValue("{");
           const head2 = this.parseTriplesBlock({ allowPath: false, context: "head" });
-          const target = this.matchWord("FOR") ? this.parseForClauseAfterFor() : null;
           this.expectWord("WHERE");
           const groundData = this.matchWord("DATA");
           this.expectValue("{");
           const body = this.parseRuleBodyWithBlankNodeScope();
-          return { name, head: head2, body, groundData, target, runOnce: ruleNeedsRunOnce(head2, body, this.options) };
-        }
-        parseIfThenRule() {
-          let name = null;
-          if (!this.checkValue("{") && !this.checkWord("FOR") && !this.checkWord("DATA")) name = this.parseIRIValue().value;
-          const target = this.matchWord("FOR") ? this.parseForClauseAfterFor() : null;
-          const groundData = this.matchWord("DATA");
-          this.expectValue("{");
-          const body = this.parseRuleBodyWithBlankNodeScope();
-          this.expectWord("THEN");
-          this.expectValue("{");
-          const head2 = this.parseTriplesBlock({ allowPath: false, context: "head" });
-          return { name, head: head2, body, groundData, target, runOnce: ruleNeedsRunOnce(head2, body, this.options) };
+          return { name, head: head2, body, groundData, runOnce: ruleNeedsRunOnce(head2, body, this.options) };
         }
         parseRuleBodyWithBlankNodeScope() {
           const previous = this.bodyBnodeLabels;
@@ -1281,12 +1266,6 @@ var eyeleng = (() => {
             this.bodyBnodeLabels.set(label, variable(`__b${this.bnodeCounter}`));
           }
           return this.bodyBnodeLabels.get(label);
-        }
-        parseForClauseAfterFor() {
-          const focusVariable = this.expectType("variable");
-          this.expectWord("IN");
-          const shape = this.parseIRIValue();
-          return { variable: focusVariable.value, iri: shape.value };
         }
         parseIRIValue() {
           const token = this.advance();
@@ -46506,14 +46485,6 @@ ${stripDirectiveLines(chunk)}`;
         program.rules.forEach((rule, index) => {
           const name = ruleName(rule, index);
           const initialBound = /* @__PURE__ */ new Set();
-          if (rule.target) {
-            diagnostics.push({
-              code: "for-clause-no-evaluation-semantics",
-              severity: "error",
-              rule: name,
-              message: `${displayRuleName(name, program.prefixes || {})} uses FOR ?${rule.target.variable} IN <${rule.target.iri}>; the current SPARQL-RL abstract evaluation model does not define FOR execution semantics`
-            });
-          }
           const bound = boundVariables(rule.body, initialBound);
           const head2 = /* @__PURE__ */ new Set();
           for (const triple of rule.head) collectTripleVars(triple, head2);
@@ -47089,6 +47060,628 @@ ${stripDirectiveLines(chunk)}`;
     }
   });
 
+  // src/engine.js
+  var require_engine = __commonJS({
+    "src/engine.js"(exports, module) {
+      "use strict";
+      var { TripleStore, bindingKey, instantiateTerm } = require_store();
+      var { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm } = require_term();
+      var { evalExpression, booleanValue, asTerm } = require_builtins();
+      var { analyze } = require_analyze();
+      function evaluate(program, options = {}) {
+        const maxIterations = options.maxIterations ?? 1e4;
+        const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || /* @__PURE__ */ new Date(), __bnodeLabels: options.__bnodeLabels || /* @__PURE__ */ new Map() };
+        const baseData = (program.baseData || []).slice();
+        const ruleData = (program.data || []).slice();
+        const store = new TripleStore([...baseData, ...ruleData]);
+        const groundStore = new TripleStore(baseData);
+        const inputKeys = new Set(baseData.map(tripleKey));
+        const inferred = [];
+        const inferredKeys = /* @__PURE__ */ new Set();
+        for (const triple of ruleData) {
+          const key = tripleKey(triple);
+          if (!inputKeys.has(key) && !inferredKeys.has(key)) {
+            inferred.push(triple);
+            inferredKeys.add(key);
+          }
+        }
+        const trace = options.trace || options.prove ? [] : null;
+        let iterations = 0;
+        let ruleApplications = 0;
+        const perRule = program.rules.map((rule, index) => ({
+          name: rule.name || `rule#${index + 1}`,
+          applications: 0,
+          added: 0,
+          runOnce: !!rule.runOnce
+        }));
+        const analysis = options.analysis || analyze(program, options);
+        if (analysis.errors && analysis.errors.length > 0 && !options.ignoreAnalysisErrors) {
+          throw new Error(`Analysis failed: ${analysis.errors.map((error) => error.message).join("; ")}`);
+        }
+        const layerIndexes = analysis.dependency && analysis.dependency.layerIndexes ? analysis.dependency.layerIndexes : [program.rules.map((_, index) => index)];
+        const recursiveLayerFlags = computeRecursiveLayerFlags(
+          layerIndexes,
+          analysis.dependency ? analysis.dependency.edges : []
+        );
+        const baseContext = {
+          ...evalOptions,
+          maxIterations,
+          inputKeys,
+          inferred,
+          trace,
+          perRule,
+          layer: 0,
+          iteration: 0,
+          startingIterations: 0,
+          recursiveLayer: false,
+          groundStore
+        };
+        for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
+          const layer = layerIndexes[layerIndex];
+          baseContext.layer = layerIndex + 1;
+          const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+          const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
+          if (runOnce.length > 0) {
+            iterations += 1;
+            for (const ruleIndex of runOnce) {
+              baseContext.iteration = iterations;
+              const added = applyRuleOnce(program, store, ruleIndex, baseContext);
+              ruleApplications += added.applications;
+            }
+          }
+          baseContext.startingIterations = iterations;
+          baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
+          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
+          iterations = ordinaryResult.iterations;
+          ruleApplications += ordinaryResult.ruleApplications;
+        }
+        return {
+          baseIRI: program.baseIRI,
+          version: program.version || null,
+          imports: program.imports || [],
+          prefixes: program.prefixes,
+          input: baseData,
+          data: ruleData,
+          inferred,
+          closure: store.values(),
+          iterations,
+          layers: layerIndexes.map((layer) => layer.map((ruleIndex) => perRule[ruleIndex].name)),
+          ruleApplications,
+          perRule,
+          trace: trace || [],
+          groundStore
+        };
+      }
+      async function evaluateAsync(program, options = {}) {
+        const maxIterations = options.maxIterations ?? 1e4;
+        const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || /* @__PURE__ */ new Date(), __bnodeLabels: options.__bnodeLabels || /* @__PURE__ */ new Map() };
+        const baseData = (program.baseData || []).slice();
+        const ruleData = (program.data || []).slice();
+        const store = new TripleStore([...baseData, ...ruleData]);
+        const groundStore = new TripleStore(baseData);
+        const inputKeys = new Set(baseData.map(tripleKey));
+        const inferred = [];
+        const inferredKeys = /* @__PURE__ */ new Set();
+        for (const triple of ruleData) {
+          const key = tripleKey(triple);
+          if (!inputKeys.has(key) && !inferredKeys.has(key)) {
+            inferred.push(triple);
+            inferredKeys.add(key);
+          }
+        }
+        const trace = options.trace || options.prove ? [] : null;
+        let iterations = 0;
+        let ruleApplications = 0;
+        const perRule = program.rules.map((rule, index) => ({
+          name: rule.name || `rule#${index + 1}`,
+          applications: 0,
+          added: 0,
+          runOnce: !!rule.runOnce
+        }));
+        const analysis = options.analysis || analyze(program, options);
+        if (analysis.errors && analysis.errors.length > 0 && !options.ignoreAnalysisErrors) {
+          throw new Error(`Analysis failed: ${analysis.errors.map((error) => error.message).join("; ")}`);
+        }
+        const layerIndexes = analysis.dependency && analysis.dependency.layerIndexes ? analysis.dependency.layerIndexes : [program.rules.map((_, index) => index)];
+        const recursiveLayerFlags = computeRecursiveLayerFlags(
+          layerIndexes,
+          analysis.dependency ? analysis.dependency.edges : []
+        );
+        const baseContext = {
+          ...evalOptions,
+          maxIterations,
+          inputKeys,
+          inferred,
+          trace,
+          perRule,
+          layer: 0,
+          iteration: 0,
+          startingIterations: 0,
+          recursiveLayer: false,
+          groundStore
+        };
+        for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
+          const layer = layerIndexes[layerIndex];
+          baseContext.layer = layerIndex + 1;
+          const ordinary = layer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
+          const runOnce = layer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
+          if (runOnce.length > 0) {
+            iterations += 1;
+            for (const ruleIndex of runOnce) {
+              baseContext.iteration = iterations;
+              const added = applyRuleOnce(program, store, ruleIndex, baseContext);
+              ruleApplications += added.applications;
+            }
+          }
+          baseContext.startingIterations = iterations;
+          baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
+          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
+          iterations = ordinaryResult.iterations;
+          ruleApplications += ordinaryResult.ruleApplications;
+        }
+        return {
+          baseIRI: program.baseIRI,
+          version: program.version || null,
+          imports: program.imports || [],
+          prefixes: program.prefixes,
+          input: baseData,
+          data: ruleData,
+          inferred,
+          closure: store.values(),
+          iterations,
+          layers: layerIndexes.map((layer) => layer.map((ruleIndex) => perRule[ruleIndex].name)),
+          ruleApplications,
+          perRule,
+          trace: trace || [],
+          groundStore
+        };
+      }
+      function runRulesToFixpoint(program, store, ruleIndexes, context) {
+        if (ruleIndexes.length === 0) return { iterations: context.startingIterations, ruleApplications: 0 };
+        if (!context.recursiveLayer) {
+          const iteration = context.startingIterations + 1;
+          let ruleApplications2 = 0;
+          for (const ruleIndex of ruleIndexes) {
+            context.iteration = iteration;
+            const applied = applyRuleOnce(program, store, ruleIndex, context);
+            ruleApplications2 += applied.applications;
+          }
+          return { iterations: iteration, ruleApplications: ruleApplications2 };
+        }
+        let iterations = context.startingIterations;
+        let localIterations = 0;
+        let ruleApplications = 0;
+        while (localIterations < context.maxIterations) {
+          localIterations += 1;
+          iterations += 1;
+          let addedInIteration = 0;
+          for (const ruleIndex of ruleIndexes) {
+            context.iteration = iterations;
+            const applied = applyRuleOnce(program, store, ruleIndex, context);
+            addedInIteration += applied.added;
+            ruleApplications += applied.applications;
+          }
+          if (addedInIteration === 0) break;
+        }
+        if (localIterations >= context.maxIterations) {
+          throw new Error(`Reached maxIterations=${context.maxIterations} within layer ${context.layer}; rules may not terminate`);
+        }
+        return { iterations, ruleApplications };
+      }
+      function computeRecursiveLayerFlags(layerIndexes, edges = []) {
+        const flags = Array(layerIndexes.length).fill(false);
+        const layerOfRule = /* @__PURE__ */ new Map();
+        for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
+          for (const ruleIndex of layerIndexes[layerIndex]) layerOfRule.set(ruleIndex, layerIndex);
+        }
+        for (const edge of edges) {
+          const fromLayer = layerOfRule.get(edge.from);
+          if (fromLayer === void 0) continue;
+          if (fromLayer === layerOfRule.get(edge.to)) flags[fromLayer] = true;
+        }
+        return flags;
+      }
+      function applyRuleOnce(program, store, ruleIndex, context) {
+        const rule = program.rules[ruleIndex];
+        let applications = 0;
+        let added = 0;
+        const dedupeBindings = rule.body.some((clause) => clause.type === "path");
+        const seenBindings = dedupeBindings ? /* @__PURE__ */ new Set() : null;
+        const headBlankLabels = collectHeadBlankLabels(rule.head);
+        const bodyStore = rule.groundData ? context.groundStore : store;
+        const bodyContext = { ...context };
+        if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === "triple")) {
+          bodyContext.retainedBodyVariables = collectVariables(rule.head);
+        }
+        const initialBindings = [{}];
+        const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
+        for (const binding of bodyBindings) {
+          if (seenBindings) {
+            const key = bindingKey(binding);
+            if (seenBindings.has(key)) continue;
+            seenBindings.add(key);
+          }
+          applications += 1;
+          context.perRule[ruleIndex].applications += 1;
+          const headBlankMap = headBlankLabels.size > 0 ? /* @__PURE__ */ new Map() : null;
+          const skolemKey = headBlankMap ? skolemizationKey(ruleIndex, binding) : null;
+          for (const head2 of rule.head) {
+            const triple = instantiateHeadTriple(head2, binding, headBlankLabels, headBlankMap, skolemKey);
+            if (!triple) continue;
+            if (store.add(triple)) {
+              added += 1;
+              context.perRule[ruleIndex].added += 1;
+              if (!context.inputKeys.has(tripleKey(triple))) context.inferred.push(triple);
+              if (context.trace) {
+                context.trace.push({
+                  layer: context.layer,
+                  iteration: context.iteration,
+                  rule: rule.name || `rule#${ruleIndex + 1}`,
+                  triple,
+                  binding,
+                  uses: proofUses(rule.body, binding)
+                });
+              }
+            }
+          }
+        }
+        return { applications, added };
+      }
+      function* evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings) {
+        for (const initialBinding of initialBindings) {
+          if (rule.body.length === 1 && rule.body[0].type === "triple") {
+            yield* bodyStore.match(rule.body[0].triple, initialBinding);
+          } else {
+            yield* evaluateBodyStream(rule.body, bodyStore, initialBinding, bodyContext);
+          }
+        }
+      }
+      function proofUses(body, binding) {
+        return body.filter((clause) => clause.type === "triple").map((clause) => ({
+          s: instantiateTerm(clause.triple.s, binding),
+          p: instantiateTerm(clause.triple.p, binding),
+          o: instantiateTerm(clause.triple.o, binding)
+        })).filter((triple) => ![triple.s, triple.p, triple.o].some((term) => term && term.type === "var"));
+      }
+      function instantiateHeadTriple(pattern, binding, headBlankLabels, headBlankMap, skolemKey) {
+        const s = instantiateHeadTerm(pattern.s, binding, headBlankLabels, headBlankMap, skolemKey);
+        const p = instantiateHeadTerm(pattern.p, binding, headBlankLabels, headBlankMap, skolemKey);
+        const o = instantiateHeadTerm(pattern.o, binding, headBlankLabels, headBlankMap, skolemKey);
+        if (!s || !p || !o) return null;
+        if (p.type !== "iri") return null;
+        return { s, p, o };
+      }
+      function instantiateHeadTerm(term, binding, headBlankLabels, headBlankMap, skolemKey) {
+        if (term.type === "var") return binding[term.value] || null;
+        if (term.type === "blank" && headBlankLabels.has(term.value)) {
+          let label = headBlankMap.get(term.value);
+          if (!label) {
+            label = `sk_${deterministicSkolemIdFromKey(`${skolemKey}|${term.value}`).replace(/-/g, "_")}`;
+            headBlankMap.set(term.value, label);
+          }
+          return blankNode(label);
+        }
+        if (term.type === "triple") {
+          const s = instantiateHeadTerm(term.s, binding, headBlankLabels, headBlankMap, skolemKey);
+          const p = instantiateHeadTerm(term.p, binding, headBlankLabels, headBlankMap, skolemKey);
+          const o = instantiateHeadTerm(term.o, binding, headBlankLabels, headBlankMap, skolemKey);
+          if (!s || !p || !o) return null;
+          return tripleTerm(s, p, o);
+        }
+        return term;
+      }
+      function collectHeadBlankLabels(head2) {
+        const labels = /* @__PURE__ */ new Set();
+        for (const triple of head2 || []) {
+          collectBlankLabelsFromTerm(triple.s, labels);
+          collectBlankLabelsFromTerm(triple.p, labels);
+          collectBlankLabelsFromTerm(triple.o, labels);
+        }
+        return labels;
+      }
+      function collectBlankLabelsFromTerm(term, labels) {
+        if (!term) return;
+        if (term.type === "blank") {
+          labels.add(term.value);
+          return;
+        }
+        if (term.type === "triple") {
+          collectBlankLabelsFromTerm(term.s, labels);
+          collectBlankLabelsFromTerm(term.p, labels);
+          collectBlankLabelsFromTerm(term.o, labels);
+        }
+      }
+      function skolemizationKey(ruleIndex, binding) {
+        let out = `rule:${ruleIndex}`;
+        for (const name of Object.keys(binding).sort()) {
+          const value = binding[name];
+          out += `|${name}=${value ? termKey(value) : "unbound"}`;
+        }
+        return out;
+      }
+      function deterministicSkolemIdFromKey(key) {
+        let h1 = 2166136261;
+        let h2 = 2166136261;
+        let h3 = 2166136261;
+        let h4 = 2166136261;
+        for (let i = 0; i < key.length; i += 1) {
+          const c = key.charCodeAt(i);
+          h1 ^= c;
+          h1 = Math.imul(h1, 16777619) >>> 0;
+          h2 ^= c + 1;
+          h2 = Math.imul(h2, 16777619) >>> 0;
+          h3 ^= c + 2;
+          h3 = Math.imul(h3, 16777619) >>> 0;
+          h4 ^= c + 3;
+          h4 = Math.imul(h4, 16777619) >>> 0;
+        }
+        return [h1, h2, h3, h4].map((h) => h.toString(16).padStart(8, "0")).join("");
+      }
+      function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
+        const bindings = [];
+        const seen = /* @__PURE__ */ new Set();
+        for (const binding of evaluateBodyStream(clauses, store, initialBinding, options)) {
+          const key = bindingKey(binding);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          bindings.push(binding);
+        }
+        return bindings;
+      }
+      function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, index = 0) {
+        const plannedClauses = options.trace ? clauses : planBodyClauses(clauses);
+        if (index >= plannedClauses.length) {
+          yield initialBinding;
+          return;
+        }
+        const stack = [{
+          index,
+          iterator: evaluateBodyClause(plannedClauses[index], store, initialBinding, options)
+        }];
+        const dropAfter = options.retainedBodyVariables ? bodyVariableLastUses(plannedClauses, options.retainedBodyVariables) : null;
+        while (stack.length > 0) {
+          const frame = stack[stack.length - 1];
+          const next = frame.iterator.next();
+          if (next.done) {
+            stack.pop();
+            continue;
+          }
+          const binding = dropAfter ? dropBindingVariables(next.value, dropAfter[frame.index]) : next.value;
+          const nextIndex = frame.index + 1;
+          if (nextIndex >= plannedClauses.length) {
+            yield binding;
+            continue;
+          }
+          stack.push({
+            index: nextIndex,
+            iterator: evaluateBodyClause(plannedClauses[nextIndex], store, binding, options)
+          });
+        }
+      }
+      function planBodyClauses(clauses) {
+        const planned = [];
+        for (let index = 0; index < clauses.length; ) {
+          const tuple = listTuplePatternAt(clauses, index);
+          if (tuple) {
+            planned.push({ type: "listTuple", tuple });
+            index += 7;
+          } else {
+            planned.push(clauses[index]);
+            index += 1;
+          }
+        }
+        return planned;
+      }
+      function listTuplePatternAt(clauses, index) {
+        const group = clauses.slice(index, index + 7);
+        if (group.length !== 7 || group.some((clause) => clause.type !== "triple")) return null;
+        const triples = group.map((clause) => clause.triple);
+        const [first1, rest1, first2, rest2, first3, rest3, relation] = triples;
+        if (!isPredicate(first1, "first") || !isPredicate(rest1, "rest") || !isPredicate(first2, "first") || !isPredicate(rest2, "rest") || !isPredicate(first3, "first") || !isPredicate(rest3, "rest")) return null;
+        if (!sameVariable(first1.s, rest1.s) || !sameVariable(rest1.o, first2.s) || !sameVariable(first2.s, rest2.s) || !sameVariable(rest2.o, first3.s) || !sameVariable(first3.s, rest3.s) || !sameVariable(first1.s, relation.s)) return null;
+        if (!rest3.o || rest3.o.type !== "iri" || rest3.o.value !== "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil") return null;
+        return { s: first1.s, p: relation.p, o: relation.o, items: [first1.o, first2.o, first3.o] };
+      }
+      function isPredicate(triple, localName) {
+        return triple.p && triple.p.type === "iri" && triple.p.value === `http://www.w3.org/1999/02/22-rdf-syntax-ns#${localName}`;
+      }
+      function sameVariable(left, right) {
+        return left && right && left.type === "var" && right.type === "var" && left.value === right.value;
+      }
+      function bodyVariableLastUses(clauses, retainedVariables) {
+        const lastUse = /* @__PURE__ */ new Map();
+        for (let index = 0; index < clauses.length; index += 1) {
+          for (const name of collectVariables(clauses[index])) lastUse.set(name, index);
+        }
+        const dropAfter = Array.from({ length: clauses.length }, () => []);
+        for (const [name, index] of lastUse) {
+          if (!retainedVariables.has(name)) dropAfter[index].push(name);
+        }
+        return dropAfter;
+      }
+      function collectVariables(value, variables = /* @__PURE__ */ new Set(), seen = /* @__PURE__ */ new Set()) {
+        if (!value || typeof value !== "object" || seen.has(value)) return variables;
+        seen.add(value);
+        if (value.type === "var" && typeof value.value === "string") {
+          variables.add(value.value);
+          return variables;
+        }
+        if (Array.isArray(value)) {
+          for (const item of value) collectVariables(item, variables, seen);
+        } else {
+          for (const item of Object.values(value)) collectVariables(item, variables, seen);
+        }
+        return variables;
+      }
+      function dropBindingVariables(binding, names) {
+        if (names.length === 0 || !names.some((name) => Object.hasOwn(binding, name))) return binding;
+        const projected = { ...binding };
+        for (const name of names) delete projected[name];
+        return projected;
+      }
+      function* evaluateBodyClause(clause, store, initialBinding, options) {
+        if (clause.type === "listTuple") {
+          yield* store.matchListTuple(clause.tuple, initialBinding);
+          return;
+        }
+        if (clause.type === "triple") {
+          yield* store.match(clause.triple, initialBinding);
+          return;
+        }
+        if (clause.type === "path") {
+          for (const matched of store.matchPath(clause.triple, initialBinding)) {
+            yield matched;
+          }
+          return;
+        }
+        if (clause.type === "filter") {
+          try {
+            if (booleanValue(evalExpression(clause.expr, initialBinding, options))) {
+              yield initialBinding;
+            }
+          } catch (_) {
+          }
+          return;
+        }
+        if (clause.type === "set" || clause.type === "bind") {
+          try {
+            const value = asTerm(evalExpression(clause.expr, initialBinding, options));
+            if (!initialBinding[clause.variable]) {
+              yield { ...initialBinding, [clause.variable]: value };
+            } else if (termEquals(initialBinding[clause.variable], value)) {
+              yield initialBinding;
+            }
+          } catch (_) {
+          }
+          return;
+        }
+        if (clause.type === "not") {
+          const negationStore = clause.groundData ? options.groundStore || store : store;
+          if (!bodyHasAny(clause.body, negationStore, initialBinding, options)) {
+            yield initialBinding;
+          }
+          return;
+        }
+        throw new Error(`Unsupported body clause ${clause.type}`);
+      }
+      function bodyHasAny(clauses, store, initialBinding, options) {
+        for (const _ of evaluateBodyStream(clauses, store, initialBinding, options)) return true;
+        return false;
+      }
+      function uniqueBindings(bindings) {
+        const seen = /* @__PURE__ */ new Set();
+        const out = [];
+        for (const binding of bindings) {
+          const key = bindingKey(binding);
+          if (!seen.has(key)) {
+            seen.add(key);
+            out.push(binding);
+          }
+        }
+        return out;
+      }
+      module.exports = { evaluate, evaluateAsync, evaluateBody, uniqueBindings };
+    }
+  });
+
+  // src/format.js
+  var require_format = __commonJS({
+    "src/format.js"(exports, module) {
+      "use strict";
+      var { formatTriple, formatTerm } = require_term();
+      function sortTriples(triples, prefixes = {}) {
+        return triples.map((triple) => ({ triple, text: formatTriple(triple, prefixes) })).sort((a, b) => a.text.localeCompare(b.text)).map((entry) => entry.triple);
+      }
+      function formatTriples(triples, prefixes = {}) {
+        return triples.map((triple) => formatTriple(triple, prefixes)).sort((a, b) => a.localeCompare(b)).join("\n");
+      }
+      function formatTrace(trace, prefixes = {}) {
+        return trace.map((entry) => `#${entry.iteration} ${entry.rule} => ${formatTriple(entry.triple, prefixes)}`).join("\n");
+      }
+      function formatProof(trace, prefixes = {}) {
+        if (!trace.length) return "";
+        const lines = ["@prefix pe: <https://eyereasoner.github.io/pe#> .", ""];
+        for (const entry of trace) {
+          const conclusion = formatTriple(entry.triple, prefixes);
+          lines.push(`{ ${conclusion} } pe:why {`);
+          lines.push(`  { ${conclusion} }`);
+          lines.push(`    pe:by [ pe:rule ${quoteString(entry.rule)} ]${proofDetails(entry, prefixes)} .`);
+          lines.push("}.", "");
+        }
+        return lines.join("\n").trimEnd();
+      }
+      function proofDetails(entry, prefixes) {
+        const details = [];
+        const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
+        if (bindings.length > 0) {
+          details.push(`
+    pe:binding ${bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`).join(", ")}`);
+        }
+        if (entry.uses && entry.uses.length > 0) {
+          details.push(`
+    pe:uses ${entry.uses.map((triple) => `{ ${formatTriple(triple, prefixes)} }`).join(", ")}`);
+        }
+        return details.length ? `;${details.join(";")}` : "";
+      }
+      function quoteString(value) {
+        return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`;
+      }
+      function formatBindings(bindings, prefixes = {}, select = null) {
+        const columns = select && select.length > 0 ? select : inferColumns(bindings);
+        return bindings.slice().sort((a, b) => formatBinding(a, prefixes, columns).localeCompare(formatBinding(b, prefixes, columns))).map((binding) => formatBinding(binding, prefixes, columns)).join("\n");
+      }
+      function formatBinding(binding, prefixes = {}, columns = null) {
+        const names = columns || Object.keys(binding).sort();
+        if (names.length === 0) return "true";
+        return names.map((name) => `?${name} = ${binding[name] ? formatTerm(binding[name], prefixes) : "UNDEF"}`).join("; ");
+      }
+      function inferColumns(bindings) {
+        const columns = /* @__PURE__ */ new Set();
+        for (const binding of bindings) for (const name of Object.keys(binding)) columns.add(name);
+        return Array.from(columns).sort();
+      }
+      function toJSON(result, options = {}) {
+        const triples = options.all ? result.closure : result.inferred;
+        const json = {
+          baseIRI: result.baseIRI || null,
+          iterations: result.iterations,
+          ruleApplications: result.ruleApplications,
+          perRule: result.perRule,
+          prefixes: result.prefixes,
+          diagnostics: result.diagnostics || [],
+          triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
+          proof: options.proof ? result.trace : void 0,
+          validation: result.validationReport ? {
+            conforms: result.validationReport.conforms,
+            results: Array.isArray(result.validationReport.results) ? result.validationReport.results.length : void 0
+          } : void 0
+        };
+        if (result.query) json.query = jsonSafeValue(result.query);
+        if (result.analysis && options.analysis) json.analysis = result.analysis;
+        return json;
+      }
+      function jsonSafeTriple(triple) {
+        return { s: jsonSafeTerm(triple.s), p: jsonSafeTerm(triple.p), o: jsonSafeTerm(triple.o) };
+      }
+      function jsonSafeTerm(term) {
+        if (!term || typeof term !== "object") return jsonSafeValue(term);
+        if (term.type === "triple") return { type: "triple", s: jsonSafeTerm(term.s), p: jsonSafeTerm(term.p), o: jsonSafeTerm(term.o) };
+        if (term.type === "literal" && typeof term.value === "bigint") return { ...term, value: term.value.toString() };
+        return { ...term };
+      }
+      function jsonSafeValue(value) {
+        if (typeof value === "bigint") return value.toString();
+        if (Array.isArray(value)) return value.map(jsonSafeValue);
+        if (value && typeof value === "object") {
+          if (value.type) return jsonSafeTerm(value);
+          return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, jsonSafeValue(val)]));
+        }
+        return value;
+      }
+      module.exports = { sortTriples, formatTriples, formatTrace, formatProof, formatBindings, formatBinding, toJSON };
+    }
+  });
+
   // src/backward.js
   var require_backward = __commonJS({
     "src/backward.js"(exports, module) {
@@ -47117,6 +47710,7 @@ ${stripDirectiveLines(chunk)}`;
         for (const clause of clauses || []) {
           if (clause.type === "triple" || clause.type === "filter" || clause.type === "set" || clause.type === "bind") continue;
           if (clause.type === "not") {
+            if (clause.groundData) return false;
             if (options.backwardNegation === false) return false;
             if (!bodySupported(clause.body, options)) return false;
             continue;
@@ -47126,19 +47720,20 @@ ${stripDirectiveLines(chunk)}`;
         return true;
       }
       function ruleSupported(rule, options = {}) {
-        if (rule.target) return false;
+        if (rule.groundData || rule.runOnce) return false;
         if (!Array.isArray(rule.head) || rule.head.length === 0) return false;
         for (const head2 of rule.head) {
           if (!head2 || !head2.p || head2.p.type !== "iri") return false;
           if (containsBlank(head2.s) || containsBlank(head2.p) || containsBlank(head2.o)) return false;
         }
+        if (containsGroundDataNegation(rule.body || [])) return false;
         return bodySupported(rule.body || [], options);
       }
       var BackwardProver = class {
         constructor(program, options = {}) {
           this.program = program;
           this.options = options;
-          this.store = options.store || new TripleStore(program.data || []);
+          this.store = options.store || new TripleStore([...program.baseData || [], ...program.data || []]);
           this.maxDepth = options.backwardMaxDepth || options.maxDepth || 1e4;
           this.solutionLimit = options.backwardSolutionLimit || options.solutionLimit || 1e6;
           this.allowedPredicates = normalizePredicateSet(options.allowedPredicates || options.backwardPredicates || null);
@@ -47395,6 +47990,13 @@ ${stripDirectiveLines(chunk)}`;
         }
         return out;
       }
+      function containsGroundDataNegation(clauses) {
+        for (const clause of clauses || []) {
+          if (clause.type !== "not") continue;
+          if (clause.groundData || containsGroundDataNegation(clause.body || [])) return true;
+        }
+        return false;
+      }
       function containsBlank(term) {
         if (!term) return false;
         if (term.type === "blank") return true;
@@ -47470,806 +48072,14 @@ ${stripDirectiveLines(chunk)}`;
         if (Array.isArray(value)) return new Set(value);
         return null;
       }
-      function supportedBackwardPredicates(program, options = {}) {
-        const explicit = normalizePredicateSet(options.backwardPredicates || options.hybridPredicates || null);
-        const byPredicate = /* @__PURE__ */ new Map();
-        for (const rule of program.rules || []) {
-          const predicates = /* @__PURE__ */ new Set();
-          for (const head2 of rule.head || []) {
-            if (head2 && head2.p && head2.p.type === "iri") predicates.add(head2.p.value);
-          }
-          for (const predicate of predicates) {
-            if (!byPredicate.has(predicate)) byPredicate.set(predicate, []);
-            byPredicate.get(predicate).push(rule);
-          }
-        }
-        const supported = /* @__PURE__ */ new Set();
-        for (const [predicate, rules] of byPredicate) {
-          if (explicit && !explicit.has(predicate)) continue;
-          if (rules.length > 0 && rules.every((rule) => ruleSupported(rule, options))) supported.add(predicate);
-        }
-        return supported;
-      }
-      function preferredBackwardPredicates(program, options = {}) {
-        const explicit = normalizePredicateSet(options.hybridPredicates || null);
-        if (explicit) return supportedBackwardPredicates(program, { ...options, hybridPredicates: explicit });
-        const supported = supportedBackwardPredicates(program, options);
-        const preferred = /* @__PURE__ */ new Set();
-        const force = options.hybrid === true || options.hybridMode === "force";
-        const demanded = force ? null : demandedBodyPredicates(program);
-        for (const rule of program.rules || []) {
-          if (!ruleIsFunctionLike(rule)) continue;
-          if (!force && ruleCreatesHeadTerms(rule)) continue;
-          for (const head2 of rule.head || []) {
-            if (!head2 || !head2.p || head2.p.type !== "iri" || !supported.has(head2.p.value)) continue;
-            if (force || demanded.has(head2.p.value)) preferred.add(head2.p.value);
-          }
-        }
-        return preferred;
-      }
-      function demandedBodyPredicates(program) {
-        const out = /* @__PURE__ */ new Set();
-        for (const rule of program.rules || []) {
-          for (const predicate of bodyPredicateDemands(rule.body || [])) if (predicate) out.add(predicate);
-        }
-        return out;
-      }
-      function ruleCreatesHeadTerms(rule) {
-        const headVars = /* @__PURE__ */ new Set();
-        for (const triple of rule.head || []) {
-          for (const term of [triple.s, triple.p, triple.o]) {
-            if (!term) continue;
-            if (term.type === "blank") return true;
-            if (term.type === "var") headVars.add(term.value);
-          }
-        }
-        if (headVars.size === 0) return false;
-        for (const clause of rule.body || []) {
-          if ((clause.type === "set" || clause.type === "bind") && headVars.has(clause.variable) && expressionCreatesTerm(clause.expr)) return true;
-        }
-        return false;
-      }
-      function expressionCreatesTerm(expr) {
-        if (!expr) return false;
-        if (expr.type === "call") {
-          const name = String(expr.name || "").toUpperCase();
-          if (name === "BNODE" || name === "IRI" || name === "URI" || name === "TRIPLE" || name === "UUID" || name === "STRUUID") return true;
-          return (expr.args || []).some(expressionCreatesTerm);
-        }
-        if (expr.type === "binary") return expressionCreatesTerm(expr.left) || expressionCreatesTerm(expr.right);
-        if (expr.type === "unary") return expressionCreatesTerm(expr.expr);
-        if (expr.type === "in") return expressionCreatesTerm(expr.left) || (expr.values || []).some(expressionCreatesTerm);
-        return false;
-      }
-      function ruleIsFunctionLike(rule) {
-        return (rule.body || []).some((clause) => clause.type === "set" || clause.type === "bind");
-      }
-      function ruleHeadPredicates(rule) {
-        const predicates = /* @__PURE__ */ new Set();
-        for (const head2 of rule.head || []) {
-          if (!head2 || !head2.p || head2.p.type !== "iri") return null;
-          predicates.add(head2.p.value);
-        }
-        return predicates;
-      }
-      function ruleIsBackwardOriented(rule, predicates) {
-        if (!predicates || predicates.size === 0) return false;
-        const heads = ruleHeadPredicates(rule);
-        if (!heads || heads.size === 0) return false;
-        for (const predicate of heads) if (!predicates.has(predicate)) return false;
-        return true;
-      }
       module.exports = {
         BackwardProver,
         backwardQuery,
         planBackwardQuery,
-        supportedBackwardPredicates,
-        preferredBackwardPredicates,
         reachableBackwardRuleIndexes,
-        ruleIsBackwardOriented,
         ruleSupported,
         resolveBinding
       };
-    }
-  });
-
-  // src/engine.js
-  var require_engine = __commonJS({
-    "src/engine.js"(exports, module) {
-      "use strict";
-      var { TripleStore, bindingKey, instantiateTerm } = require_store();
-      var { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm } = require_term();
-      var { evalExpression, booleanValue, asTerm } = require_builtins();
-      var { analyze } = require_analyze();
-      var { BackwardProver, preferredBackwardPredicates, ruleIsBackwardOriented } = require_backward();
-      function evaluate(program, options = {}) {
-        const maxIterations = options.maxIterations ?? 1e4;
-        const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || /* @__PURE__ */ new Date(), __bnodeLabels: options.__bnodeLabels || /* @__PURE__ */ new Map() };
-        const baseData = (program.baseData || []).slice();
-        const ruleData = (program.data || []).slice();
-        const store = new TripleStore([...baseData, ...ruleData]);
-        const groundStore = new TripleStore(baseData);
-        const inputKeys = new Set(baseData.map(tripleKey));
-        const inferred = [];
-        const inferredKeys = /* @__PURE__ */ new Set();
-        for (const triple of ruleData) {
-          const key = tripleKey(triple);
-          if (!inputKeys.has(key) && !inferredKeys.has(key)) {
-            inferred.push(triple);
-            inferredKeys.add(key);
-          }
-        }
-        const trace = options.trace || options.prove ? [] : null;
-        let iterations = 0;
-        let ruleApplications = 0;
-        const perRule = program.rules.map((rule, index) => ({
-          name: rule.name || `rule#${index + 1}`,
-          applications: 0,
-          added: 0,
-          runOnce: !!rule.runOnce,
-          backward: false
-        }));
-        const analysis = options.analysis || analyze(program, options);
-        if (analysis.errors && analysis.errors.length > 0 && !options.ignoreAnalysisErrors) {
-          throw new Error(`Analysis failed: ${analysis.errors.map((error) => error.message).join("; ")}`);
-        }
-        const layerIndexes = analysis.dependency && analysis.dependency.layerIndexes ? analysis.dependency.layerIndexes : [program.rules.map((_, index) => index)];
-        const recursiveLayerFlags = computeRecursiveLayerFlags(
-          layerIndexes,
-          analysis.dependency ? analysis.dependency.edges : []
-        );
-        const useHybrid = options.hybrid === true;
-        const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls ? preferredBackwardPredicates(program, options) : /* @__PURE__ */ new Set();
-        const hybridBackwardRules = /* @__PURE__ */ new Set();
-        if (hybridBackwardPredicates.size > 0) {
-          for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
-            if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
-          }
-        }
-        const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
-        for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
-        const baseContext = {
-          ...evalOptions,
-          maxIterations,
-          inputKeys,
-          inferred,
-          trace,
-          perRule,
-          layer: 0,
-          iteration: 0,
-          startingIterations: 0,
-          recursiveLayer: false,
-          hybridBackwardPredicates,
-          hybridBackwardRules,
-          hybridStats,
-          groundStore
-        };
-        for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
-          const layer = layerIndexes[layerIndex];
-          baseContext.layer = layerIndex + 1;
-          const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
-          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
-          if (runOnce.length > 0) {
-            iterations += 1;
-            for (const ruleIndex of runOnce) {
-              baseContext.iteration = iterations;
-              const added = applyRuleOnce(program, store, ruleIndex, baseContext);
-              ruleApplications += added.applications;
-            }
-          }
-          baseContext.startingIterations = iterations;
-          baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
-          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
-          iterations = ordinaryResult.iterations;
-          ruleApplications += ordinaryResult.ruleApplications;
-        }
-        return {
-          baseIRI: program.baseIRI,
-          version: program.version || null,
-          imports: program.imports || [],
-          prefixes: program.prefixes,
-          input: baseData,
-          data: ruleData,
-          inferred,
-          closure: store.values(),
-          iterations,
-          layers: layerIndexes.map((layer) => layer.map((ruleIndex) => perRule[ruleIndex].name)),
-          ruleApplications,
-          perRule,
-          trace: trace || [],
-          hybridStats,
-          groundStore
-        };
-      }
-      async function evaluateAsync(program, options = {}) {
-        const maxIterations = options.maxIterations ?? 1e4;
-        const evalOptions = { ...options, baseIRI: options.baseIRI || program.baseIRI || null, now: options.now || /* @__PURE__ */ new Date(), __bnodeLabels: options.__bnodeLabels || /* @__PURE__ */ new Map() };
-        const baseData = (program.baseData || []).slice();
-        const ruleData = (program.data || []).slice();
-        const store = new TripleStore([...baseData, ...ruleData]);
-        const groundStore = new TripleStore(baseData);
-        const inputKeys = new Set(baseData.map(tripleKey));
-        const inferred = [];
-        const inferredKeys = /* @__PURE__ */ new Set();
-        for (const triple of ruleData) {
-          const key = tripleKey(triple);
-          if (!inputKeys.has(key) && !inferredKeys.has(key)) {
-            inferred.push(triple);
-            inferredKeys.add(key);
-          }
-        }
-        const trace = options.trace || options.prove ? [] : null;
-        let iterations = 0;
-        let ruleApplications = 0;
-        const perRule = program.rules.map((rule, index) => ({
-          name: rule.name || `rule#${index + 1}`,
-          applications: 0,
-          added: 0,
-          runOnce: !!rule.runOnce,
-          backward: false
-        }));
-        const analysis = options.analysis || analyze(program, options);
-        if (analysis.errors && analysis.errors.length > 0 && !options.ignoreAnalysisErrors) {
-          throw new Error(`Analysis failed: ${analysis.errors.map((error) => error.message).join("; ")}`);
-        }
-        const layerIndexes = analysis.dependency && analysis.dependency.layerIndexes ? analysis.dependency.layerIndexes : [program.rules.map((_, index) => index)];
-        const recursiveLayerFlags = computeRecursiveLayerFlags(
-          layerIndexes,
-          analysis.dependency ? analysis.dependency.edges : []
-        );
-        const useHybrid = options.hybrid === true;
-        const hybridBackwardPredicates = useHybrid || options.backwardBodyCalls ? preferredBackwardPredicates(program, options) : /* @__PURE__ */ new Set();
-        const hybridBackwardRules = /* @__PURE__ */ new Set();
-        if (hybridBackwardPredicates.size > 0) {
-          for (let ruleIndex = 0; ruleIndex < program.rules.length; ruleIndex += 1) {
-            if (ruleIsBackwardOriented(program.rules[ruleIndex], hybridBackwardPredicates)) hybridBackwardRules.add(ruleIndex);
-          }
-        }
-        const hybridStats = hybridBackwardPredicates.size > 0 ? emptyBackwardStats() : null;
-        for (const ruleIndex of hybridBackwardRules) perRule[ruleIndex].backward = true;
-        const baseContext = {
-          ...evalOptions,
-          maxIterations,
-          inputKeys,
-          inferred,
-          trace,
-          perRule,
-          layer: 0,
-          iteration: 0,
-          startingIterations: 0,
-          recursiveLayer: false,
-          hybridBackwardPredicates,
-          hybridBackwardRules,
-          hybridStats,
-          groundStore
-        };
-        for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
-          const layer = layerIndexes[layerIndex];
-          baseContext.layer = layerIndex + 1;
-          const forwardLayer = hybridBackwardRules.size > 0 ? layer.filter((ruleIndex) => !hybridBackwardRules.has(ruleIndex)) : layer;
-          const ordinary = forwardLayer.filter((ruleIndex) => !program.rules[ruleIndex].runOnce);
-          const runOnce = forwardLayer.filter((ruleIndex) => program.rules[ruleIndex].runOnce);
-          if (runOnce.length > 0) {
-            iterations += 1;
-            for (const ruleIndex of runOnce) {
-              baseContext.iteration = iterations;
-              const added = applyRuleOnce(program, store, ruleIndex, baseContext);
-              ruleApplications += added.applications;
-            }
-          }
-          baseContext.startingIterations = iterations;
-          baseContext.recursiveLayer = recursiveLayerFlags[layerIndex];
-          const ordinaryResult = runRulesToFixpoint(program, store, ordinary, baseContext);
-          iterations = ordinaryResult.iterations;
-          ruleApplications += ordinaryResult.ruleApplications;
-        }
-        return {
-          baseIRI: program.baseIRI,
-          version: program.version || null,
-          imports: program.imports || [],
-          prefixes: program.prefixes,
-          input: baseData,
-          data: ruleData,
-          inferred,
-          closure: store.values(),
-          iterations,
-          layers: layerIndexes.map((layer) => layer.map((ruleIndex) => perRule[ruleIndex].name)),
-          ruleApplications,
-          perRule,
-          trace: trace || [],
-          hybridStats,
-          groundStore
-        };
-      }
-      function runRulesToFixpoint(program, store, ruleIndexes, context) {
-        if (ruleIndexes.length === 0) return { iterations: context.startingIterations, ruleApplications: 0 };
-        if (!context.recursiveLayer) {
-          const iteration = context.startingIterations + 1;
-          let ruleApplications2 = 0;
-          for (const ruleIndex of ruleIndexes) {
-            context.iteration = iteration;
-            const applied = applyRuleOnce(program, store, ruleIndex, context);
-            ruleApplications2 += applied.applications;
-          }
-          return { iterations: iteration, ruleApplications: ruleApplications2 };
-        }
-        let iterations = context.startingIterations;
-        let localIterations = 0;
-        let ruleApplications = 0;
-        while (localIterations < context.maxIterations) {
-          localIterations += 1;
-          iterations += 1;
-          let addedInIteration = 0;
-          for (const ruleIndex of ruleIndexes) {
-            context.iteration = iterations;
-            const applied = applyRuleOnce(program, store, ruleIndex, context);
-            addedInIteration += applied.added;
-            ruleApplications += applied.applications;
-          }
-          if (addedInIteration === 0) break;
-        }
-        if (localIterations >= context.maxIterations) {
-          throw new Error(`Reached maxIterations=${context.maxIterations} within layer ${context.layer}; rules may not terminate`);
-        }
-        return { iterations, ruleApplications };
-      }
-      function computeRecursiveLayerFlags(layerIndexes, edges = []) {
-        const flags = Array(layerIndexes.length).fill(false);
-        const layerOfRule = /* @__PURE__ */ new Map();
-        for (let layerIndex = 0; layerIndex < layerIndexes.length; layerIndex += 1) {
-          for (const ruleIndex of layerIndexes[layerIndex]) layerOfRule.set(ruleIndex, layerIndex);
-        }
-        for (const edge of edges) {
-          const fromLayer = layerOfRule.get(edge.from);
-          if (fromLayer === void 0) continue;
-          if (fromLayer === layerOfRule.get(edge.to)) flags[fromLayer] = true;
-        }
-        return flags;
-      }
-      function applyRuleOnce(program, store, ruleIndex, context) {
-        const rule = program.rules[ruleIndex];
-        let applications = 0;
-        let added = 0;
-        const dedupeBindings = rule.body.some((clause) => clause.type === "path");
-        const seenBindings = dedupeBindings ? /* @__PURE__ */ new Set() : null;
-        const headBlankLabels = collectHeadBlankLabels(rule.head);
-        const bodyStore = rule.groundData ? context.groundStore : store;
-        const bodyContext = { ...prepareBodyContext(program, bodyStore, context) };
-        if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === "triple")) {
-          bodyContext.retainedBodyVariables = collectVariables(rule.head);
-        }
-        const initialBindings = [{}];
-        const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
-        for (const binding of bodyBindings) {
-          if (seenBindings) {
-            const key = bindingKey(binding);
-            if (seenBindings.has(key)) continue;
-            seenBindings.add(key);
-          }
-          applications += 1;
-          context.perRule[ruleIndex].applications += 1;
-          const headBlankMap = headBlankLabels.size > 0 ? /* @__PURE__ */ new Map() : null;
-          const skolemKey = headBlankMap ? skolemizationKey(ruleIndex, binding) : null;
-          for (const head2 of rule.head) {
-            const triple = instantiateHeadTriple(head2, binding, headBlankLabels, headBlankMap, skolemKey);
-            if (!triple) continue;
-            if (store.add(triple)) {
-              added += 1;
-              context.perRule[ruleIndex].added += 1;
-              if (!context.inputKeys.has(tripleKey(triple))) context.inferred.push(triple);
-              if (context.trace) {
-                context.trace.push({
-                  layer: context.layer,
-                  iteration: context.iteration,
-                  rule: rule.name || `rule#${ruleIndex + 1}`,
-                  triple,
-                  binding,
-                  uses: proofUses(rule.body, binding)
-                });
-              }
-            }
-          }
-        }
-        if (bodyContext.backwardProver && context.hybridStats) mergeBackwardStats(context.hybridStats, bodyContext.backwardProver.stats);
-        return { applications, added };
-      }
-      function* evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings) {
-        for (const initialBinding of initialBindings) {
-          if (rule.body.length === 1 && rule.body[0].type === "triple" && !shouldUseBackwardForTriple(rule.body[0].triple, initialBinding, bodyContext)) {
-            yield* bodyStore.match(rule.body[0].triple, initialBinding);
-          } else {
-            yield* evaluateBodyStream(rule.body, bodyStore, initialBinding, bodyContext);
-          }
-        }
-      }
-      function proofUses(body, binding) {
-        return body.filter((clause) => clause.type === "triple").map((clause) => ({
-          s: instantiateTerm(clause.triple.s, binding),
-          p: instantiateTerm(clause.triple.p, binding),
-          o: instantiateTerm(clause.triple.o, binding)
-        })).filter((triple) => ![triple.s, triple.p, triple.o].some((term) => term && term.type === "var"));
-      }
-      function prepareBodyContext(program, store, context) {
-        if (!context.hybridBackwardPredicates || context.hybridBackwardPredicates.size === 0) return context;
-        return {
-          ...context,
-          backwardProver: new BackwardProver(program, {
-            ...context,
-            store,
-            allowedPredicates: context.hybridBackwardPredicates
-          })
-        };
-      }
-      function emptyBackwardStats() {
-        return { mode: "hybrid", goals: 0, facts: 0, rules: 0, memoHits: 0, memoStores: 0, maxDepth: 0 };
-      }
-      function mergeBackwardStats(total, item) {
-        if (!total || !item) return;
-        total.goals += item.goals || 0;
-        total.facts += item.facts || 0;
-        total.rules += item.rules || 0;
-        total.memoHits += item.memoHits || 0;
-        total.memoStores += item.memoStores || 0;
-        total.maxDepth = Math.max(total.maxDepth || 0, item.maxDepth || 0);
-      }
-      function instantiateHeadTriple(pattern, binding, headBlankLabels, headBlankMap, skolemKey) {
-        const s = instantiateHeadTerm(pattern.s, binding, headBlankLabels, headBlankMap, skolemKey);
-        const p = instantiateHeadTerm(pattern.p, binding, headBlankLabels, headBlankMap, skolemKey);
-        const o = instantiateHeadTerm(pattern.o, binding, headBlankLabels, headBlankMap, skolemKey);
-        if (!s || !p || !o) return null;
-        if (p.type !== "iri") return null;
-        return { s, p, o };
-      }
-      function instantiateHeadTerm(term, binding, headBlankLabels, headBlankMap, skolemKey) {
-        if (term.type === "var") return binding[term.value] || null;
-        if (term.type === "blank" && headBlankLabels.has(term.value)) {
-          let label = headBlankMap.get(term.value);
-          if (!label) {
-            label = `sk_${deterministicSkolemIdFromKey(`${skolemKey}|${term.value}`).replace(/-/g, "_")}`;
-            headBlankMap.set(term.value, label);
-          }
-          return blankNode(label);
-        }
-        if (term.type === "triple") {
-          const s = instantiateHeadTerm(term.s, binding, headBlankLabels, headBlankMap, skolemKey);
-          const p = instantiateHeadTerm(term.p, binding, headBlankLabels, headBlankMap, skolemKey);
-          const o = instantiateHeadTerm(term.o, binding, headBlankLabels, headBlankMap, skolemKey);
-          if (!s || !p || !o) return null;
-          return tripleTerm(s, p, o);
-        }
-        return term;
-      }
-      function collectHeadBlankLabels(head2) {
-        const labels = /* @__PURE__ */ new Set();
-        for (const triple of head2 || []) {
-          collectBlankLabelsFromTerm(triple.s, labels);
-          collectBlankLabelsFromTerm(triple.p, labels);
-          collectBlankLabelsFromTerm(triple.o, labels);
-        }
-        return labels;
-      }
-      function collectBlankLabelsFromTerm(term, labels) {
-        if (!term) return;
-        if (term.type === "blank") {
-          labels.add(term.value);
-          return;
-        }
-        if (term.type === "triple") {
-          collectBlankLabelsFromTerm(term.s, labels);
-          collectBlankLabelsFromTerm(term.p, labels);
-          collectBlankLabelsFromTerm(term.o, labels);
-        }
-      }
-      function skolemizationKey(ruleIndex, binding) {
-        let out = `rule:${ruleIndex}`;
-        for (const name of Object.keys(binding).sort()) {
-          const value = binding[name];
-          out += `|${name}=${value ? termKey(value) : "unbound"}`;
-        }
-        return out;
-      }
-      function deterministicSkolemIdFromKey(key) {
-        let h1 = 2166136261;
-        let h2 = 2166136261;
-        let h3 = 2166136261;
-        let h4 = 2166136261;
-        for (let i = 0; i < key.length; i += 1) {
-          const c = key.charCodeAt(i);
-          h1 ^= c;
-          h1 = Math.imul(h1, 16777619) >>> 0;
-          h2 ^= c + 1;
-          h2 = Math.imul(h2, 16777619) >>> 0;
-          h3 ^= c + 2;
-          h3 = Math.imul(h3, 16777619) >>> 0;
-          h4 ^= c + 3;
-          h4 = Math.imul(h4, 16777619) >>> 0;
-        }
-        return [h1, h2, h3, h4].map((h) => h.toString(16).padStart(8, "0")).join("");
-      }
-      function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
-        const bindings = [];
-        const seen = /* @__PURE__ */ new Set();
-        for (const binding of evaluateBodyStream(clauses, store, initialBinding, options)) {
-          const key = bindingKey(binding);
-          if (seen.has(key)) continue;
-          seen.add(key);
-          bindings.push(binding);
-        }
-        return bindings;
-      }
-      function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, index = 0) {
-        const plannedClauses = options.trace ? clauses : planBodyClauses(clauses);
-        if (index >= plannedClauses.length) {
-          yield initialBinding;
-          return;
-        }
-        const stack = [{
-          index,
-          iterator: evaluateBodyClause(plannedClauses[index], store, initialBinding, options)
-        }];
-        const dropAfter = options.retainedBodyVariables ? bodyVariableLastUses(plannedClauses, options.retainedBodyVariables) : null;
-        while (stack.length > 0) {
-          const frame = stack[stack.length - 1];
-          const next = frame.iterator.next();
-          if (next.done) {
-            stack.pop();
-            continue;
-          }
-          const binding = dropAfter ? dropBindingVariables(next.value, dropAfter[frame.index]) : next.value;
-          const nextIndex = frame.index + 1;
-          if (nextIndex >= plannedClauses.length) {
-            yield binding;
-            continue;
-          }
-          stack.push({
-            index: nextIndex,
-            iterator: evaluateBodyClause(plannedClauses[nextIndex], store, binding, options)
-          });
-        }
-      }
-      function planBodyClauses(clauses) {
-        const planned = [];
-        for (let index = 0; index < clauses.length; ) {
-          const tuple = listTuplePatternAt(clauses, index);
-          if (tuple) {
-            planned.push({ type: "listTuple", tuple });
-            index += 7;
-          } else {
-            planned.push(clauses[index]);
-            index += 1;
-          }
-        }
-        return planned;
-      }
-      function listTuplePatternAt(clauses, index) {
-        const group = clauses.slice(index, index + 7);
-        if (group.length !== 7 || group.some((clause) => clause.type !== "triple")) return null;
-        const triples = group.map((clause) => clause.triple);
-        const [first1, rest1, first2, rest2, first3, rest3, relation] = triples;
-        if (!isPredicate(first1, "first") || !isPredicate(rest1, "rest") || !isPredicate(first2, "first") || !isPredicate(rest2, "rest") || !isPredicate(first3, "first") || !isPredicate(rest3, "rest")) return null;
-        if (!sameVariable(first1.s, rest1.s) || !sameVariable(rest1.o, first2.s) || !sameVariable(first2.s, rest2.s) || !sameVariable(rest2.o, first3.s) || !sameVariable(first3.s, rest3.s) || !sameVariable(first1.s, relation.s)) return null;
-        if (!rest3.o || rest3.o.type !== "iri" || rest3.o.value !== "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil") return null;
-        return { s: first1.s, p: relation.p, o: relation.o, items: [first1.o, first2.o, first3.o] };
-      }
-      function isPredicate(triple, localName) {
-        return triple.p && triple.p.type === "iri" && triple.p.value === `http://www.w3.org/1999/02/22-rdf-syntax-ns#${localName}`;
-      }
-      function sameVariable(left, right) {
-        return left && right && left.type === "var" && right.type === "var" && left.value === right.value;
-      }
-      function bodyVariableLastUses(clauses, retainedVariables) {
-        const lastUse = /* @__PURE__ */ new Map();
-        for (let index = 0; index < clauses.length; index += 1) {
-          for (const name of collectVariables(clauses[index])) lastUse.set(name, index);
-        }
-        const dropAfter = Array.from({ length: clauses.length }, () => []);
-        for (const [name, index] of lastUse) {
-          if (!retainedVariables.has(name)) dropAfter[index].push(name);
-        }
-        return dropAfter;
-      }
-      function collectVariables(value, variables = /* @__PURE__ */ new Set(), seen = /* @__PURE__ */ new Set()) {
-        if (!value || typeof value !== "object" || seen.has(value)) return variables;
-        seen.add(value);
-        if (value.type === "var" && typeof value.value === "string") {
-          variables.add(value.value);
-          return variables;
-        }
-        if (Array.isArray(value)) {
-          for (const item of value) collectVariables(item, variables, seen);
-        } else {
-          for (const item of Object.values(value)) collectVariables(item, variables, seen);
-        }
-        return variables;
-      }
-      function dropBindingVariables(binding, names) {
-        if (names.length === 0 || !names.some((name) => Object.hasOwn(binding, name))) return binding;
-        const projected = { ...binding };
-        for (const name of names) delete projected[name];
-        return projected;
-      }
-      function* evaluateBodyClause(clause, store, initialBinding, options) {
-        if (clause.type === "listTuple") {
-          yield* store.matchListTuple(clause.tuple, initialBinding);
-          return;
-        }
-        if (clause.type === "triple") {
-          const useBackward = shouldUseBackwardForTriple(clause.triple, initialBinding, options);
-          if (!useBackward) {
-            yield* store.match(clause.triple, initialBinding);
-            return;
-          }
-          const seen = /* @__PURE__ */ new Set();
-          for (const matched of store.match(clause.triple, initialBinding)) {
-            const key = bindingKey(matched);
-            seen.add(key);
-            yield matched;
-          }
-          for (const matched of options.backwardProver.solveTriple(clause.triple, initialBinding)) {
-            const key = bindingKey(matched);
-            if (seen.has(key)) continue;
-            seen.add(key);
-            yield matched;
-          }
-          return;
-        }
-        if (clause.type === "path") {
-          for (const matched of store.matchPath(clause.triple, initialBinding)) {
-            yield matched;
-          }
-          return;
-        }
-        if (clause.type === "filter") {
-          try {
-            if (booleanValue(evalExpression(clause.expr, initialBinding, options))) {
-              yield initialBinding;
-            }
-          } catch (_) {
-          }
-          return;
-        }
-        if (clause.type === "set" || clause.type === "bind") {
-          try {
-            const value = asTerm(evalExpression(clause.expr, initialBinding, options));
-            if (!initialBinding[clause.variable]) {
-              yield { ...initialBinding, [clause.variable]: value };
-            } else if (termEquals(initialBinding[clause.variable], value)) {
-              yield initialBinding;
-            }
-          } catch (_) {
-          }
-          return;
-        }
-        if (clause.type === "not") {
-          const negationStore = clause.groundData ? options.groundStore || store : store;
-          if (!bodyHasAny(clause.body, negationStore, initialBinding, options)) {
-            yield initialBinding;
-          }
-          return;
-        }
-        throw new Error(`Unsupported body clause ${clause.type}`);
-      }
-      function shouldUseBackwardForTriple(pattern, binding, options = {}) {
-        if (!options.backwardProver || !options.hybridBackwardPredicates || options.hybridBackwardPredicates.size === 0) return false;
-        const predicate = instantiateTerm(pattern.p, binding);
-        return !!(predicate && predicate.type === "iri" && options.hybridBackwardPredicates.has(predicate.value));
-      }
-      function bodyHasAny(clauses, store, initialBinding, options) {
-        for (const _ of evaluateBodyStream(clauses, store, initialBinding, options)) return true;
-        return false;
-      }
-      function uniqueBindings(bindings) {
-        const seen = /* @__PURE__ */ new Set();
-        const out = [];
-        for (const binding of bindings) {
-          const key = bindingKey(binding);
-          if (!seen.has(key)) {
-            seen.add(key);
-            out.push(binding);
-          }
-        }
-        return out;
-      }
-      module.exports = { evaluate, evaluateAsync, evaluateBody, uniqueBindings };
-    }
-  });
-
-  // src/format.js
-  var require_format = __commonJS({
-    "src/format.js"(exports, module) {
-      "use strict";
-      var { formatTriple, formatTerm } = require_term();
-      function sortTriples(triples, prefixes = {}) {
-        return triples.map((triple) => ({ triple, text: formatTriple(triple, prefixes) })).sort((a, b) => a.text.localeCompare(b.text)).map((entry) => entry.triple);
-      }
-      function formatTriples(triples, prefixes = {}) {
-        return triples.map((triple) => formatTriple(triple, prefixes)).sort((a, b) => a.localeCompare(b)).join("\n");
-      }
-      function formatTrace(trace, prefixes = {}) {
-        return trace.map((entry) => `#${entry.iteration} ${entry.rule} => ${formatTriple(entry.triple, prefixes)}`).join("\n");
-      }
-      function formatProof(trace, prefixes = {}) {
-        if (!trace.length) return "";
-        const lines = ["@prefix pe: <https://eyereasoner.github.io/pe#> .", ""];
-        for (const entry of trace) {
-          const conclusion = formatTriple(entry.triple, prefixes);
-          lines.push(`{ ${conclusion} } pe:why {`);
-          lines.push(`  { ${conclusion} }`);
-          lines.push(`    pe:by [ pe:rule ${quoteString(entry.rule)} ]${proofDetails(entry, prefixes)} .`);
-          lines.push("}.", "");
-        }
-        return lines.join("\n").trimEnd();
-      }
-      function proofDetails(entry, prefixes) {
-        const details = [];
-        const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
-        if (bindings.length > 0) {
-          details.push(`
-    pe:binding ${bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`).join(", ")}`);
-        }
-        if (entry.uses && entry.uses.length > 0) {
-          details.push(`
-    pe:uses ${entry.uses.map((triple) => `{ ${formatTriple(triple, prefixes)} }`).join(", ")}`);
-        }
-        return details.length ? `;${details.join(";")}` : "";
-      }
-      function quoteString(value) {
-        return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`;
-      }
-      function formatBindings(bindings, prefixes = {}, select = null) {
-        const columns = select && select.length > 0 ? select : inferColumns(bindings);
-        return bindings.slice().sort((a, b) => formatBinding(a, prefixes, columns).localeCompare(formatBinding(b, prefixes, columns))).map((binding) => formatBinding(binding, prefixes, columns)).join("\n");
-      }
-      function formatBinding(binding, prefixes = {}, columns = null) {
-        const names = columns || Object.keys(binding).sort();
-        if (names.length === 0) return "true";
-        return names.map((name) => `?${name} = ${binding[name] ? formatTerm(binding[name], prefixes) : "UNDEF"}`).join("; ");
-      }
-      function inferColumns(bindings) {
-        const columns = /* @__PURE__ */ new Set();
-        for (const binding of bindings) for (const name of Object.keys(binding)) columns.add(name);
-        return Array.from(columns).sort();
-      }
-      function toJSON(result, options = {}) {
-        const triples = options.all ? result.closure : result.inferred;
-        const json = {
-          baseIRI: result.baseIRI || null,
-          iterations: result.iterations,
-          ruleApplications: result.ruleApplications,
-          perRule: result.perRule,
-          prefixes: result.prefixes,
-          diagnostics: result.diagnostics || [],
-          triples: sortTriples(triples, result.prefixes).map(jsonSafeTriple),
-          proof: options.proof ? result.trace : void 0,
-          validation: result.validationReport ? {
-            conforms: result.validationReport.conforms,
-            results: Array.isArray(result.validationReport.results) ? result.validationReport.results.length : void 0
-          } : void 0
-        };
-        if (result.query) json.query = jsonSafeValue(result.query);
-        if (result.analysis && options.analysis) json.analysis = result.analysis;
-        return json;
-      }
-      function jsonSafeTriple(triple) {
-        return { s: jsonSafeTerm(triple.s), p: jsonSafeTerm(triple.p), o: jsonSafeTerm(triple.o) };
-      }
-      function jsonSafeTerm(term) {
-        if (!term || typeof term !== "object") return jsonSafeValue(term);
-        if (term.type === "triple") return { type: "triple", s: jsonSafeTerm(term.s), p: jsonSafeTerm(term.p), o: jsonSafeTerm(term.o) };
-        if (term.type === "literal" && typeof term.value === "bigint") return { ...term, value: term.value.toString() };
-        return { ...term };
-      }
-      function jsonSafeValue(value) {
-        if (typeof value === "bigint") return value.toString();
-        if (Array.isArray(value)) return value.map(jsonSafeValue);
-        if (value && typeof value === "object") {
-          if (value.type) return jsonSafeTerm(value);
-          return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, jsonSafeValue(val)]));
-        }
-        return value;
-      }
-      module.exports = { sortTriples, formatTriples, formatTrace, formatProof, formatBindings, formatBinding, toJSON };
     }
   });
 
@@ -48280,22 +48090,22 @@ ${stripDirectiveLines(chunk)}`;
       var { parseQuery } = require_parser();
       var { TripleStore, bindingKey } = require_store();
       var { evaluateBody } = require_engine();
-      var { backwardQuery, planBackwardQuery, preferredBackwardPredicates } = require_backward();
+      var { backwardQuery, planBackwardQuery } = require_backward();
       function queryResult(result, querySpec, options = {}) {
         const store = new TripleStore(result.closure || []);
-        const bindings = evaluateBody(querySpec.body, store, {}, options);
+        const bindings = evaluateBody(querySpec.body, store, {}, { ...options, groundStore: result.groundStore });
         const select = normalizeSelect(querySpec.select, bindings);
         return {
           baseIRI: result.baseIRI,
           prefixes: result.prefixes,
           select,
           bindings: projectBindings(bindings, select),
-          mode: result.hybridStats ? "hybrid" : "forward"
+          mode: "forward"
         };
       }
       function queryProgram(program, querySpec, options = {}) {
         const mode = options.queryMode || "auto";
-        if (mode !== "forward" && mode !== "hybrid") {
+        if (mode !== "forward") {
           const planned = planBackwardQuery(program, querySpec, options);
           if (planned.ok) {
             const result = backwardQuery(program, querySpec, options);
@@ -48330,9 +48140,10 @@ ${stripDirectiveLines(chunk)}`;
             version: program.version || null,
             imports: program.imports || [],
             prefixes: program.prefixes,
-            input: program.data.slice(),
-            inferred: [],
-            closure: program.data.slice(),
+            input: (program.baseData || []).slice(),
+            data: (program.data || []).slice(),
+            inferred: (program.data || []).slice(),
+            closure: [...program.baseData || [], ...program.data || []],
             iterations: 0,
             layers: [],
             ruleApplications: 0,
@@ -48343,10 +48154,9 @@ ${stripDirectiveLines(chunk)}`;
             query: direct
           };
         }
-        const runOptions = queryRunOptions(program, querySpec, options);
-        const result = run(program, runOptions);
+        const result = run(program, options);
         result.diagnostics = diagnostics;
-        result.query = queryResult(result, querySpec, runOptions);
+        result.query = queryResult(result, querySpec, options);
         return result;
       }
       async function runQueryAsync(source, querySource = null, options = {}) {
@@ -48364,9 +48174,10 @@ ${stripDirectiveLines(chunk)}`;
             version: program.version || null,
             imports: program.imports || [],
             prefixes: program.prefixes,
-            input: program.data.slice(),
-            inferred: [],
-            closure: program.data.slice(),
+            input: (program.baseData || []).slice(),
+            data: (program.data || []).slice(),
+            inferred: (program.data || []).slice(),
+            closure: [...program.baseData || [], ...program.data || []],
             iterations: 0,
             layers: [],
             ruleApplications: 0,
@@ -48377,25 +48188,11 @@ ${stripDirectiveLines(chunk)}`;
             query: direct
           };
         }
-        const runOptions = queryRunOptions(program, querySpec, { ...compiled.options, ...options });
+        const runOptions = { ...compiled.options, ...options };
         const result = await evaluateAsync(program, { ...runOptions, analysis });
         result.diagnostics = diagnostics;
         result.query = queryResult(result, querySpec, runOptions);
         return result;
-      }
-      function queryRunOptions(program, querySpec, options = {}) {
-        const mode = options.queryMode || "auto";
-        if (mode === "forward") return { ...options, hybrid: false };
-        if (shouldUseHybridForQuery(program, querySpec, options)) return { ...options, hybrid: options.hybrid ?? "auto" };
-        return options;
-      }
-      function shouldUseHybridForQuery(program, querySpec, options = {}) {
-        const mode = options.queryMode || "auto";
-        if (options.hybrid === false) return false;
-        if (options.hybrid === true) return true;
-        if (mode !== "auto") return false;
-        if (!querySpec) return false;
-        return preferredBackwardPredicates(program, options).size > 0;
       }
       function normalizeSelect(select, bindings) {
         if (select && select.length > 0) return select.slice();
@@ -48417,7 +48214,7 @@ ${stripDirectiveLines(chunk)}`;
         }
         return out;
       }
-      module.exports = { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery, parseQuery, normalizeSelect, projectBindings };
+      module.exports = { runQuery, runQueryAsync, queryResult, queryProgram, parseQuery, normalizeSelect, projectBindings };
     }
   });
 
@@ -48442,7 +48239,7 @@ ${stripDirectiveLines(chunk)}`;
       var { evaluate, evaluateAsync } = require_engine();
       var { analyze } = require_analyze();
       var { formatTriples, sortTriples, toJSON, formatTrace, formatProof, formatBindings } = require_format();
-      var { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require_query();
+      var { runQuery, runQueryAsync, queryResult, queryProgram } = require_query();
       var { resultTriples } = require_output();
       function parseInput(source, options = {}) {
         if (typeof source !== "string") return source;
@@ -48598,8 +48395,6 @@ ${stripDirectiveLines(chunk)}`;
         runQueryAsync,
         queryResult,
         queryProgram,
-        queryRunOptions,
-        shouldUseHybridForQuery,
         formatTriples,
         formatBindings,
         sortTriples,

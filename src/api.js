@@ -6,7 +6,7 @@ const { parseRdfMessageLog, looksLikeRdfMessageLog } = require('./rdfMessages.js
 const { evaluate, evaluateAsync } = require('./engine.js');
 const { analyze } = require('./analyze.js');
 const { formatTriples, sortTriples, toJSON, formatTrace, formatProof, formatBindings } = require('./format.js');
-const { runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions, shouldUseHybridForQuery } = require('./query.js');
+const { runQuery, runQueryAsync, queryResult, queryProgram } = require('./query.js');
 const { resultTriples } = require('./output.js');
 
 function parseInput(source, options = {}) {
@@ -151,6 +151,6 @@ async function runToStringAsync(source, options = {}) {
 module.exports = {
   parse, parseQuery, parseInput, parseInputAsync, parseRdfDocument, parseRdfMessageLog, looksLikeRdfMessageLog,
   compile, compileAsync, resolveImports, resolveImportsAsync, mergePrograms, analyze, evaluate, evaluateAsync,
-  run, runAsync, runToString, runToStringAsync, runQuery, runQueryAsync, queryResult, queryProgram, queryRunOptions,
-  shouldUseHybridForQuery, formatTriples, formatBindings, sortTriples, toJSON, formatTrace, formatProof, resultTriples,
+  run, runAsync, runToString, runToStringAsync, runQuery, runQueryAsync, queryResult, queryProgram,
+  formatTriples, formatBindings, sortTriples, toJSON, formatTrace, formatProof, resultTriples,
 };

@@ -318,7 +318,6 @@ async function runSyntaxOrWellformedTest(test, options = {}) {
     baseIRI: test.actionUrl,
     strictGrammar: true,
     strict: true,
-    hybrid: false,
   };
 
   if (test.type.includes('Syntax')) {
@@ -426,10 +425,9 @@ async function runEvalTest(test, options = {}) {
     baseIRI: test.rulesetUrl,
     strictGrammar: true,
     strict: true,
-    hybrid: false,
   };
   const compiled = await eyeleng.compileAsync(rulesSource, { ...compileOptions, baseGraph: dataTriples });
-  const result = await eyeleng.evaluateAsync(compiled.program, { analysis: compiled.analysis, hybrid: false });
+  const result = await eyeleng.evaluateAsync(compiled.program, { analysis: compiled.analysis });
 
   const actual = sortedTripleKeys(result.inferred);
   const expected = sortedTripleKeys(expectedTriples);
