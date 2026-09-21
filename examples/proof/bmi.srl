@@ -3,7 +3,7 @@ PREFIX pe: <https://eyereasoner.github.io/pe#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 DATA {
-  :Case :weightKg 72 .
+  :Case :weightKg 72.0 .
   :Case :heightM 1.78 .
   :Case :heightSquared 3.1684 .
   :Case :bmi 22.724403484408533 .
@@ -19,28 +19,28 @@ DATA {
   :Answer :healthyMaxKg 78.9 .
 
   _:step1
-    rdf:reifies <<(:Case :weightKg 72)>>;
+    rdf:reifies <<(:Case :weightKg 72.0)>>;
     pe:rule "rule#1";
     pe:binding
-      [ pe:var "heightCm"; pe:value 178 ],
+      [ pe:var "heightCm"; pe:value 178.0 ],
       [ pe:var "heightM"; pe:value 1.78 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       <<(:Input :unitSystem "metric")>>,
-      <<(:Input :weight 72)>>,
-      <<(:Input :height 178)>>.
+      <<(:Input :weight 72.0)>>,
+      <<(:Input :height 178.0)>>.
 
   _:step2
     rdf:reifies <<(:Case :heightM 1.78)>>;
     pe:rule "rule#1";
     pe:binding
-      [ pe:var "heightCm"; pe:value 178 ],
+      [ pe:var "heightCm"; pe:value 178.0 ],
       [ pe:var "heightM"; pe:value 1.78 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       <<(:Input :unitSystem "metric")>>,
-      <<(:Input :weight 72)>>,
-      <<(:Input :height 178)>>.
+      <<(:Input :weight 72.0)>>,
+      <<(:Input :height 178.0)>>.
 
   _:step3
     rdf:reifies <<(:Case :heightSquared 3.1684)>>;
@@ -54,7 +54,7 @@ DATA {
       [ pe:var "healthyMinRounded"; pe:value 58.6 ],
       [ pe:var "heightM"; pe:value 1.78 ],
       [ pe:var "heightSquared"; pe:value 3.1684 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       _:step1,
       _:step2.
@@ -71,7 +71,7 @@ DATA {
       [ pe:var "healthyMinRounded"; pe:value 58.6 ],
       [ pe:var "heightM"; pe:value 1.78 ],
       [ pe:var "heightSquared"; pe:value 3.1684 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       _:step1,
       _:step2.
@@ -88,7 +88,7 @@ DATA {
       [ pe:var "healthyMinRounded"; pe:value 58.6 ],
       [ pe:var "heightM"; pe:value 1.78 ],
       [ pe:var "heightSquared"; pe:value 3.1684 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       _:step1,
       _:step2.
@@ -105,7 +105,7 @@ DATA {
       [ pe:var "healthyMinRounded"; pe:value 58.6 ],
       [ pe:var "heightM"; pe:value 1.78 ],
       [ pe:var "heightSquared"; pe:value 3.1684 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       _:step1,
       _:step2.
@@ -122,7 +122,7 @@ DATA {
       [ pe:var "healthyMinRounded"; pe:value 58.6 ],
       [ pe:var "heightM"; pe:value 1.78 ],
       [ pe:var "heightSquared"; pe:value 3.1684 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       _:step1,
       _:step2.
@@ -139,7 +139,7 @@ DATA {
       [ pe:var "healthyMinRounded"; pe:value 58.6 ],
       [ pe:var "heightM"; pe:value 1.78 ],
       [ pe:var "heightSquared"; pe:value 3.1684 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       _:step1,
       _:step2.
@@ -156,7 +156,7 @@ DATA {
       [ pe:var "healthyMinRounded"; pe:value 58.6 ],
       [ pe:var "heightM"; pe:value 1.78 ],
       [ pe:var "heightSquared"; pe:value 3.1684 ],
-      [ pe:var "weight"; pe:value 72 ];
+      [ pe:var "weight"; pe:value 72.0 ];
     pe:uses
       _:step1,
       _:step2.

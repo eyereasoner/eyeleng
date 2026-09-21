@@ -401,7 +401,7 @@ class Parser {
     const token = this.advance();
     if (token.type === 'operator' && (token.value === '+' || token.value === '-') && this.peek().type === 'number') {
       const numberToken = this.advance();
-      return numericLiteral(token.value === '-' ? -numberToken.value : numberToken.value);
+      return numericLiteral(token.value === '-' ? -numberToken.value : numberToken.value, numberToken.lexical);
     }
     if (token.type === 'variable') {
       if (options.context === 'data') throw this.error('DATA blocks may not contain variables', token);
@@ -409,7 +409,7 @@ class Parser {
     }
     if (token.type === 'iri') return iri(this.resolveIRI(token.value, token));
     if (token.type === 'string') return this.parseLiteralAfterToken(token);
-    if (token.type === 'number') return numericLiteral(token.value);
+    if (token.type === 'number') return numericLiteral(token.value, token.lexical);
     if (token.value === '<<(') return this.parseTripleTermAfterOpen(options);
     if (token.value === '<<') throw this.error('Use << s p o >> as a graph node reifier; use <<( s p o )>> for a triple term', token);
     if (token.type === 'word') {
@@ -713,9 +713,15 @@ function decodePNLocalEscapes(local) {
   return String(local).replace(/\\([_~.!$&'()*+,;=/?#@%-])/g, '$1');
 }
 
-function numericLiteral(value) {
-  if (Number.isInteger(value)) return literal(value, XSD_INTEGER);
-  return literal(value, XSD_DECIMAL);
+// [95]-[97]: an INTEGER has neither `.` nor exponent, a DECIMAL has a `.`,
+// a DOUBLE has an exponent. The datatype follows the way the number was
+// written, not its value — `72.0` is an xsd:decimal and `7.2e1` an
+// xsd:double even though both are numerically the integer 72.
+function numericLiteral(value, lexical) {
+  const text = lexical === undefined ? String(value) : String(lexical);
+  if (/[eE]/.test(text)) return literal(value, XSD_DOUBLE);
+  if (text.includes('.')) return literal(value, XSD_DECIMAL);
+  return literal(value, XSD_INTEGER);
 }
 
 function parseIntegerLiteral(value) {

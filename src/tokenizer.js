@@ -212,7 +212,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
 
     if (startsNumericLiteral(source, i)) {
       const value = readNumericLiteral();
-      token('number', Number(value), startLine, startColumn);
+      token('number', Number(value), startLine, startColumn, { lexical: value });
       continue;
     }
 
@@ -264,7 +264,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
     if (i === wordStart) syntax(`Unexpected character ${JSON.stringify(ch)}`, startLine, startColumn);
 
     const value = source.slice(wordStart, i);
-    if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token('number', Number(value), startLine, startColumn);
+    if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token('number', Number(value), startLine, startColumn, { lexical: value });
     else token('word', value, startLine, startColumn);
   }
 

@@ -283,7 +283,7 @@ var eyeleng = (() => {
           }
           if (startsNumericLiteral(source, i)) {
             const value2 = readNumericLiteral();
-            token("number", Number(value2), startLine, startColumn);
+            token("number", Number(value2), startLine, startColumn, { lexical: value2 });
             continue;
           }
           const two = ch + peek();
@@ -325,7 +325,7 @@ var eyeleng = (() => {
           }
           if (i === wordStart) syntax(`Unexpected character ${JSON.stringify(ch)}`, startLine, startColumn);
           const value = source.slice(wordStart, i);
-          if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token("number", Number(value), startLine, startColumn);
+          if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token("number", Number(value), startLine, startColumn, { lexical: value });
           else token("word", value, startLine, startColumn);
         }
         tokens.push({ type: "eof", value: "<eof>", line, column, filename });
@@ -529,6 +529,15 @@ var eyeleng = (() => {
         }
         return `<${value}>`;
       }
+      function numericShorthand(value, datatype) {
+        const text = String(value);
+        const hasExponent = /[eE]/.test(text);
+        const hasDot = text.includes(".");
+        if (!datatype || datatype === XSD_INTEGER) return !hasDot && !hasExponent ? text : null;
+        if (datatype === XSD_DECIMAL) return hasExponent ? null : hasDot ? text : `${text}.0`;
+        if (datatype === XSD_DOUBLE) return hasExponent ? text : null;
+        return null;
+      }
       function formatTerm(term, prefixes = {}) {
         if (term.type === "iri") return compactIRI(term.value, prefixes);
         if (term.type === "blank") return `_:${term.value}`;
@@ -537,7 +546,10 @@ var eyeleng = (() => {
         if (term.type === "literal") {
           const v = term.value;
           if (typeof v === "bigint" && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER)) return String(v);
-          if (typeof v === "number" && Number.isFinite(v) && !term.lang && (!term.datatype || term.datatype === XSD_INTEGER || term.datatype === XSD_DECIMAL || term.datatype === XSD_DOUBLE)) return String(v);
+          if (typeof v === "number" && Number.isFinite(v) && !term.lang) {
+            const shorthand = numericShorthand(v, term.datatype);
+            if (shorthand !== null) return shorthand;
+          }
           if (typeof v === "boolean" && !term.lang && (!term.datatype || term.datatype === XSD_BOOLEAN)) return v ? "true" : "false";
           const lexical = `"${escapeString(v)}"`;
           if (term.lang) return `${lexical}@${term.lang}${term.langDir ? `--${term.langDir}` : ""}`;
@@ -1527,7 +1539,7 @@ var eyeleng = (() => {
           const token = this.advance();
           if (token.type === "operator" && (token.value === "+" || token.value === "-") && this.peek().type === "number") {
             const numberToken = this.advance();
-            return numericLiteral(token.value === "-" ? -numberToken.value : numberToken.value);
+            return numericLiteral(token.value === "-" ? -numberToken.value : numberToken.value, numberToken.lexical);
           }
           if (token.type === "variable") {
             if (options.context === "data") throw this.error("DATA blocks may not contain variables", token);
@@ -1535,7 +1547,7 @@ var eyeleng = (() => {
           }
           if (token.type === "iri") return iri(this.resolveIRI(token.value, token));
           if (token.type === "string") return this.parseLiteralAfterToken(token);
-          if (token.type === "number") return numericLiteral(token.value);
+          if (token.type === "number") return numericLiteral(token.value, token.lexical);
           if (token.value === "<<(") return this.parseTripleTermAfterOpen(options);
           if (token.value === "<<") throw this.error("Use << s p o >> as a graph node reifier; use <<( s p o )>> for a triple term", token);
           if (token.type === "word") {
@@ -1837,9 +1849,11 @@ var eyeleng = (() => {
       function decodePNLocalEscapes(local) {
         return String(local).replace(/\\([_~.!$&'()*+,;=/?#@%-])/g, "$1");
       }
-      function numericLiteral(value) {
-        if (Number.isInteger(value)) return literal(value, XSD_INTEGER);
-        return literal(value, XSD_DECIMAL);
+      function numericLiteral(value, lexical) {
+        const text = lexical === void 0 ? String(value) : String(lexical);
+        if (/[eE]/.test(text)) return literal(value, XSD_DOUBLE);
+        if (text.includes(".")) return literal(value, XSD_DECIMAL);
+        return literal(value, XSD_INTEGER);
       }
       function parseIntegerLiteral(value) {
         const text = String(value);
