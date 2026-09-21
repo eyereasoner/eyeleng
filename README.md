@@ -4,6 +4,9 @@
 
 > Status: SPARQL 1.2 RL is currently a W3C Working Draft. Eyeleng tracks the current specification and may change as the specification advances.
 
+> [!TIP]
+> [Try Eyeleng in the browser](https://eyereasoner.github.io/eyeleng/playground).
+
 ## Features
 
 - SPARQL 1.2 RL rule sets using `.srl` and media type `application/sparql-rl`.
