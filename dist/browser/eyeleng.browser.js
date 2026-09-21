@@ -541,6 +541,17 @@ var eyeleng = (() => {
       function formatTriple(triple, prefixes = {}) {
         return `${formatTerm(triple.s, prefixes)} ${formatTerm(triple.p, prefixes)} ${formatTerm(triple.o, prefixes)} .`;
       }
+      function emptyBinding() {
+        return /* @__PURE__ */ Object.create(null);
+      }
+      function cloneBinding(binding) {
+        return Object.assign(/* @__PURE__ */ Object.create(null), binding);
+      }
+      function extendBinding(binding, name, term) {
+        const out = cloneBinding(binding);
+        out[name] = term;
+        return out;
+      }
       module.exports = {
         RDF_NS,
         RDF_TYPE,
@@ -575,7 +586,10 @@ var eyeleng = (() => {
         comparePrimitives,
         compactIRI,
         formatTerm,
-        formatTriple
+        formatTriple,
+        emptyBinding,
+        cloneBinding,
+        extendBinding
       };
     }
   });
@@ -605,7 +619,8 @@ var eyeleng = (() => {
         RDF_NS,
         XSD_INTEGER,
         XSD_DECIMAL,
-        XSD_DOUBLE
+        XSD_DOUBLE,
+        emptyBinding
       } = require_term();
       var XSD_NS = "http://www.w3.org/2001/XMLSchema#";
       var XSD_DATETIME = "http://www.w3.org/2001/XMLSchema#dateTime";
@@ -847,7 +862,7 @@ var eyeleng = (() => {
         const rp = right && right.type ? termToPrimitive(right) : right;
         return lp === rp;
       }
-      function callBuiltin(name, args, binding = {}, options = {}) {
+      function callBuiltin(name, args, binding = emptyBinding(), options = {}) {
         const injected = options.builtins && (options.builtins[name] || options.builtins[String(name).toLowerCase()]);
         if (injected) return injected(args, { binding, iri, blankNode, literal, tripleTerm, termToString, booleanValue, termToPrimitive });
         if (localName(name).toLowerCase() === "sudoku") {
@@ -46185,7 +46200,7 @@ ${stripDirectiveLines(chunk)}`;
   var require_store = __commonJS({
     "src/store.js"(exports, module) {
       "use strict";
-      var { RDF_FIRST, RDF_REST, RDF_NIL, tripleKey, termKey, termEquals } = require_term();
+      var { RDF_FIRST, RDF_REST, RDF_NIL, tripleKey, termKey, termEquals, extendBinding, emptyBinding } = require_term();
       var TripleStore = class {
         constructor(triples = []) {
           this.map = /* @__PURE__ */ new Map();
@@ -46220,7 +46235,7 @@ ${stripDirectiveLines(chunk)}`;
         size() {
           return this.map.size;
         }
-        candidates(pattern, binding = {}) {
+        candidates(pattern, binding = emptyBinding()) {
           const p = instantiateTerm(pattern.p, binding);
           if (p && p.type !== "var") {
             const predicate = termKey(p);
@@ -46236,7 +46251,7 @@ ${stripDirectiveLines(chunk)}`;
           }
           return this.values();
         }
-        match(pattern, binding = {}) {
+        match(pattern, binding = emptyBinding()) {
           const out = [];
           for (const triple of this.candidates(pattern, binding)) {
             const matched = matchTriple(pattern, triple, binding);
@@ -46244,7 +46259,7 @@ ${stripDirectiveLines(chunk)}`;
           }
           return out;
         }
-        matchListTuple(pattern, binding = {}) {
+        matchListTuple(pattern, binding = emptyBinding()) {
           const predicate = instantiateTerm(pattern.p, binding);
           if (!predicate || predicate.type === "var") return [];
           const boundPositions = [];
@@ -46299,7 +46314,7 @@ ${stripDirectiveLines(chunk)}`;
           }
           return node.type === "iri" && node.value === RDF_NIL ? items : null;
         }
-        matchPath(pattern, binding = {}) {
+        matchPath(pattern, binding = emptyBinding()) {
           const prefix = `__path_${pathCallCounter++}_`;
           const tempVars = [];
           const bindings = matchPathExpression(this, pattern.p, pattern.s, pattern.o, binding, prefix, tempVars);
@@ -46353,7 +46368,7 @@ ${stripDirectiveLines(chunk)}`;
         if (!patternTerm || !dataTerm) return null;
         if (patternTerm.type === "var") {
           const name = patternTerm.value;
-          if (!binding[name]) return { ...binding, [name]: dataTerm };
+          if (binding[name] === void 0) return extendBinding(binding, name, dataTerm);
           return termEquals(binding[name], dataTerm) ? binding : null;
         }
         if (patternTerm.type === "triple") {
@@ -46366,7 +46381,7 @@ ${stripDirectiveLines(chunk)}`;
         }
         return termEquals(patternTerm, dataTerm) ? binding : null;
       }
-      function matchTriple(pattern, triple, binding = {}) {
+      function matchTriple(pattern, triple, binding = emptyBinding()) {
         let next = mergeBindingTerm(binding, pattern.s, triple.s);
         if (!next) return null;
         next = mergeBindingTerm(next, pattern.p, triple.p);
@@ -47065,7 +47080,7 @@ ${stripDirectiveLines(chunk)}`;
     "src/engine.js"(exports, module) {
       "use strict";
       var { TripleStore, bindingKey, instantiateTerm } = require_store();
-      var { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm } = require_term();
+      var { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm, emptyBinding, cloneBinding } = require_term();
       var { evalExpression, booleanValue, asTerm } = require_builtins();
       var { analyze } = require_analyze();
       function evaluate(program, options = {}) {
@@ -47293,7 +47308,7 @@ ${stripDirectiveLines(chunk)}`;
         if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === "triple")) {
           bodyContext.retainedBodyVariables = collectVariables(rule.head);
         }
-        const initialBindings = [{}];
+        const initialBindings = [emptyBinding()];
         const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
         for (const binding of bodyBindings) {
           if (seenBindings) {
@@ -47417,7 +47432,7 @@ ${stripDirectiveLines(chunk)}`;
         }
         return [h1, h2, h3, h4].map((h) => h.toString(16).padStart(8, "0")).join("");
       }
-      function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
+      function evaluateBody(clauses, store, initialBinding = emptyBinding(), options = {}) {
         const bindings = [];
         const seen = /* @__PURE__ */ new Set();
         for (const binding of evaluateBodyStream(clauses, store, initialBinding, options)) {
@@ -47428,7 +47443,7 @@ ${stripDirectiveLines(chunk)}`;
         }
         return bindings;
       }
-      function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, index = 0) {
+      function* evaluateBodyStream(clauses, store, initialBinding = emptyBinding(), options = {}, index = 0) {
         const plannedClauses = options.trace ? clauses : planBodyClauses(clauses);
         if (index >= plannedClauses.length) {
           yield initialBinding;
@@ -47515,7 +47530,7 @@ ${stripDirectiveLines(chunk)}`;
       }
       function dropBindingVariables(binding, names) {
         if (names.length === 0 || !names.some((name) => Object.hasOwn(binding, name))) return binding;
-        const projected = { ...binding };
+        const projected = cloneBinding(binding);
         for (const name of names) delete projected[name];
         return projected;
       }
@@ -47687,13 +47702,13 @@ ${stripDirectiveLines(chunk)}`;
     "src/backward.js"(exports, module) {
       "use strict";
       var { TripleStore, bindingKey } = require_store();
-      var { tripleKey, termKey, termEquals } = require_term();
+      var { tripleKey, termKey, termEquals, emptyBinding, cloneBinding, extendBinding } = require_term();
       var { evalExpression, booleanValue, asTerm } = require_builtins();
       function backwardQuery(program, querySpec, options = {}) {
         const planner = planBackwardQuery(program, querySpec, options);
         if (!planner.ok) return { ok: false, reason: planner.reason };
         const prover = new BackwardProver(program, { ...options, allowedRuleIndexes: planner.ruleIndexes });
-        const bindings = uniqueBindings(Array.from(prover.solveBody(querySpec.body, {})));
+        const bindings = uniqueBindings(Array.from(prover.solveBody(querySpec.body, emptyBinding())));
         return { ok: true, bindings, stats: prover.stats, plan: planner };
       }
       function planBackwardQuery(program, querySpec, options = {}) {
@@ -47753,7 +47768,7 @@ ${stripDirectiveLines(chunk)}`;
             maxDepth: 0
           };
         }
-        *solveBody(clauses, binding = {}, depth = 0, index = 0) {
+        *solveBody(clauses, binding = emptyBinding(), depth = 0, index = 0) {
           if (depth > this.maxDepth) throw new Error(`Reached backwardMaxDepth=${this.maxDepth}; backward query may not terminate`);
           this.stats.maxDepth = Math.max(this.stats.maxDepth, depth);
           if (this.solutionCount >= this.solutionLimit) return;
@@ -47790,7 +47805,7 @@ ${stripDirectiveLines(chunk)}`;
           }
           if (clause.type === "not") {
             let found = false;
-            for (const _ of this.solveBody(clause.body, { ...binding }, depth + 1, 0)) {
+            for (const _ of this.solveBody(clause.body, cloneBinding(binding), depth + 1, 0)) {
               found = true;
               break;
             }
@@ -47799,7 +47814,7 @@ ${stripDirectiveLines(chunk)}`;
           }
           throw new Error(`Unsupported backward body clause ${clause.type}`);
         }
-        *solveTriple(pattern, binding = {}, depth = 0) {
+        *solveTriple(pattern, binding = emptyBinding(), depth = 0) {
           if (depth > this.maxDepth) throw new Error(`Reached backwardMaxDepth=${this.maxDepth}; backward query may not terminate`);
           this.stats.goals += 1;
           const resolvedPattern = resolvePattern(pattern, binding);
@@ -47908,7 +47923,7 @@ ${stripDirectiveLines(chunk)}`;
         return { s: resolveTerm(pattern.s, binding, false), p: resolveTerm(pattern.p, binding, false), o: resolveTerm(pattern.o, binding, false) };
       }
       function resolveBinding(binding) {
-        const out = {};
+        const out = emptyBinding();
         for (const name of Object.keys(binding)) out[name] = resolveTerm(binding[name], binding, false);
         return out;
       }
@@ -47958,7 +47973,7 @@ ${stripDirectiveLines(chunk)}`;
         const existing = binding[name];
         if (existing) return unifyTerms(existing, term, binding);
         if (term.type === "var" && term.value === name) return binding;
-        return { ...binding, [name]: term };
+        return extendBinding(binding, name, term);
       }
       function rememberAnswer(answers, answerKeys, pattern, binding) {
         const triple = {
@@ -48088,12 +48103,13 @@ ${stripDirectiveLines(chunk)}`;
     "src/query.js"(exports, module) {
       "use strict";
       var { parseQuery } = require_parser();
+      var { emptyBinding } = require_term();
       var { TripleStore, bindingKey } = require_store();
       var { evaluateBody } = require_engine();
       var { backwardQuery, planBackwardQuery } = require_backward();
       function queryResult(result, querySpec, options = {}) {
         const store = new TripleStore(result.closure || []);
-        const bindings = evaluateBody(querySpec.body, store, {}, { ...options, groundStore: result.groundStore });
+        const bindings = evaluateBody(querySpec.body, store, emptyBinding(), { ...options, groundStore: result.groundStore });
         const select = normalizeSelect(querySpec.select, bindings);
         return {
           baseIRI: result.baseIRI,
@@ -48204,8 +48220,8 @@ ${stripDirectiveLines(chunk)}`;
         const seen = /* @__PURE__ */ new Set();
         const out = [];
         for (const binding of bindings) {
-          const projected = {};
-          for (const name of select) if (binding[name]) projected[name] = binding[name];
+          const projected = emptyBinding();
+          for (const name of select) if (binding[name] !== void 0) projected[name] = binding[name];
           const key = bindingKey(projected);
           if (!seen.has(key)) {
             seen.add(key);

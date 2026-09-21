@@ -21,8 +21,7 @@ const {
   RDF_NS,
   XSD_INTEGER,
   XSD_DECIMAL,
-  XSD_DOUBLE,
-} = require('./term.js');
+  XSD_DOUBLE, emptyBinding } = require('./term.js');
 
 const XSD_NS = 'http://www.w3.org/2001/XMLSchema#';
 const XSD_DATETIME = 'http://www.w3.org/2001/XMLSchema#dateTime';
@@ -287,7 +286,7 @@ function termishEquals(left, right) {
   return lp === rp;
 }
 
-function callBuiltin(name, args, binding = {}, options = {}) {
+function callBuiltin(name, args, binding = emptyBinding(), options = {}) {
   const injected = options.builtins && (options.builtins[name] || options.builtins[String(name).toLowerCase()]);
   if (injected) return injected(args, { binding, iri, blankNode, literal, tripleTerm, termToString, booleanValue, termToPrimitive });
 

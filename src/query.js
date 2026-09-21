@@ -1,13 +1,14 @@
 'use strict';
 
 const { parseQuery } = require('./parser.js');
+const { emptyBinding } = require('./term.js');
 const { TripleStore, bindingKey } = require('./store.js');
 const { evaluateBody } = require('./engine.js');
 const { backwardQuery, planBackwardQuery } = require('./backward.js');
 
 function queryResult(result, querySpec, options = {}) {
   const store = new TripleStore(result.closure || []);
-  const bindings = evaluateBody(querySpec.body, store, {}, { ...options, groundStore: result.groundStore });
+  const bindings = evaluateBody(querySpec.body, store, emptyBinding(), { ...options, groundStore: result.groundStore });
   const select = normalizeSelect(querySpec.select, bindings);
   return {
     baseIRI: result.baseIRI,
@@ -129,8 +130,8 @@ function projectBindings(bindings, select) {
   const seen = new Set();
   const out = [];
   for (const binding of bindings) {
-    const projected = {};
-    for (const name of select) if (binding[name]) projected[name] = binding[name];
+    const projected = emptyBinding();
+    for (const name of select) if (binding[name] !== undefined) projected[name] = binding[name];
     const key = bindingKey(projected);
     if (!seen.has(key)) {
       seen.add(key);

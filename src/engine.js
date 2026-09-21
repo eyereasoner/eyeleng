@@ -1,7 +1,7 @@
 'use strict';
 
 const { TripleStore, bindingKey, instantiateTerm } = require('./store.js');
-const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm } = require('./term.js');
+const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm, emptyBinding, cloneBinding } = require('./term.js');
 const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
 const { analyze } = require('./analyze.js');
 
@@ -259,7 +259,7 @@ function applyRuleOnce(program, store, ruleIndex, context) {
   if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
     bodyContext.retainedBodyVariables = collectVariables(rule.head);
   }
-  const initialBindings = [{}];
+  const initialBindings = [emptyBinding()];
   const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
 
   for (const binding of bodyBindings) {
@@ -395,7 +395,7 @@ function deterministicSkolemIdFromKey(key) {
 }
 
 
-function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
+function evaluateBody(clauses, store, initialBinding = emptyBinding(), options = {}) {
   const bindings = [];
   const seen = new Set();
   for (const binding of evaluateBodyStream(clauses, store, initialBinding, options)) {
@@ -407,7 +407,7 @@ function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
   return bindings;
 }
 
-function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, index = 0) {
+function* evaluateBodyStream(clauses, store, initialBinding = emptyBinding(), options = {}, index = 0) {
   const plannedClauses = options.trace ? clauses : planBodyClauses(clauses);
   if (index >= plannedClauses.length) {
     yield initialBinding;
@@ -501,7 +501,7 @@ function collectVariables(value, variables = new Set(), seen = new Set()) {
 }
 function dropBindingVariables(binding, names) {
   if (names.length === 0 || !names.some((name) => Object.hasOwn(binding, name))) return binding;
-  const projected = { ...binding };
+  const projected = cloneBinding(binding);
   for (const name of names) delete projected[name];
   return projected;
 }

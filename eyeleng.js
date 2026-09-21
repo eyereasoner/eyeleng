@@ -1568,8 +1568,7 @@
         RDF_NS,
         XSD_INTEGER,
         XSD_DECIMAL,
-        XSD_DOUBLE,
-      } = require('./term.js');
+        XSD_DOUBLE, emptyBinding } = require('./term.js');
       
       const XSD_NS = 'http://www.w3.org/2001/XMLSchema#';
       const XSD_DATETIME = 'http://www.w3.org/2001/XMLSchema#dateTime';
@@ -1834,7 +1833,7 @@
         return lp === rp;
       }
       
-      function callBuiltin(name, args, binding = {}, options = {}) {
+      function callBuiltin(name, args, binding = emptyBinding(), options = {}) {
         const injected = options.builtins && (options.builtins[name] || options.builtins[String(name).toLowerCase()]);
         if (injected) return injected(args, { binding, iri, blankNode, literal, tripleTerm, termToString, booleanValue, termToPrimitive });
       
@@ -2343,6 +2342,27 @@
         return `${formatTerm(triple.s, prefixes)} ${formatTerm(triple.p, prefixes)} ${formatTerm(triple.o, prefixes)} .`;
       }
       
+      // A solution mapping is keyed by variable name, and `?constructor`,
+      // `?toString` and friends are perfectly legal VARNAMEs ([123]/[126] of
+      // SPARQL 1.2 RL §7.6). A plain `{}` inherits those names from
+      // `Object.prototype`, so `binding[name]` would answer with an inherited
+      // function rather than `undefined` and a rule whose body binds such a
+      // variable would silently never fire. Every solution mapping is therefore
+      // created without a prototype, through these three helpers.
+      function emptyBinding() {
+        return Object.create(null);
+      }
+      
+      function cloneBinding(binding) {
+        return Object.assign(Object.create(null), binding);
+      }
+      
+      function extendBinding(binding, name, term) {
+        const out = cloneBinding(binding);
+        out[name] = term;
+        return out;
+      }
+      
       module.exports = {
         RDF_NS,
         RDF_TYPE,
@@ -2378,6 +2398,9 @@
         compactIRI,
         formatTerm,
         formatTriple,
+        emptyBinding,
+        cloneBinding,
+        extendBinding,
       };
       
     },
@@ -2848,7 +2871,7 @@
       'use strict';
       
       const { TripleStore, bindingKey, instantiateTerm } = require('./store.js');
-      const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm } = require('./term.js');
+      const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm, emptyBinding, cloneBinding } = require('./term.js');
       const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
       const { analyze } = require('./analyze.js');
       
@@ -3106,7 +3129,7 @@
         if (!context.trace && headBlankLabels.size === 0 && rule.body.every((clause) => clause.type === 'triple')) {
           bodyContext.retainedBodyVariables = collectVariables(rule.head);
         }
-        const initialBindings = [{}];
+        const initialBindings = [emptyBinding()];
         const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
       
         for (const binding of bodyBindings) {
@@ -3242,7 +3265,7 @@
       }
       
       
-      function evaluateBody(clauses, store, initialBinding = {}, options = {}) {
+      function evaluateBody(clauses, store, initialBinding = emptyBinding(), options = {}) {
         const bindings = [];
         const seen = new Set();
         for (const binding of evaluateBodyStream(clauses, store, initialBinding, options)) {
@@ -3254,7 +3277,7 @@
         return bindings;
       }
       
-      function* evaluateBodyStream(clauses, store, initialBinding = {}, options = {}, index = 0) {
+      function* evaluateBodyStream(clauses, store, initialBinding = emptyBinding(), options = {}, index = 0) {
         const plannedClauses = options.trace ? clauses : planBodyClauses(clauses);
         if (index >= plannedClauses.length) {
           yield initialBinding;
@@ -3348,7 +3371,7 @@
       }
       function dropBindingVariables(binding, names) {
         if (names.length === 0 || !names.some((name) => Object.hasOwn(binding, name))) return binding;
-        const projected = { ...binding };
+        const projected = cloneBinding(binding);
         for (const name of names) delete projected[name];
         return projected;
       }
@@ -3429,7 +3452,7 @@
     "src/store.js": function (require, module, exports) {
       'use strict';
       
-      const { RDF_FIRST, RDF_REST, RDF_NIL, tripleKey, termKey, termEquals } = require('./term.js');
+      const { RDF_FIRST, RDF_REST, RDF_NIL, tripleKey, termKey, termEquals, extendBinding, emptyBinding } = require('./term.js');
       
       class TripleStore {
         constructor(triples = []) {
@@ -3470,7 +3493,7 @@
           return this.map.size;
         }
       
-        candidates(pattern, binding = {}) {
+        candidates(pattern, binding = emptyBinding()) {
           const p = instantiateTerm(pattern.p, binding);
           if (p && p.type !== 'var') {
             const predicate = termKey(p);
@@ -3487,7 +3510,7 @@
           return this.values();
         }
       
-        match(pattern, binding = {}) {
+        match(pattern, binding = emptyBinding()) {
           const out = [];
           for (const triple of this.candidates(pattern, binding)) {
             const matched = matchTriple(pattern, triple, binding);
@@ -3495,7 +3518,7 @@
           }
           return out;
         }
-        matchListTuple(pattern, binding = {}) {
+        matchListTuple(pattern, binding = emptyBinding()) {
           const predicate = instantiateTerm(pattern.p, binding);
           if (!predicate || predicate.type === 'var') return [];
           const boundPositions = [];
@@ -3551,7 +3574,7 @@
           return node.type === 'iri' && node.value === RDF_NIL ? items : null;
         }
       
-        matchPath(pattern, binding = {}) {
+        matchPath(pattern, binding = emptyBinding()) {
           const prefix = `__path_${pathCallCounter++}_`;
           const tempVars = [];
           const bindings = matchPathExpression(this, pattern.p, pattern.s, pattern.o, binding, prefix, tempVars);
@@ -3613,7 +3636,7 @@
         if (!patternTerm || !dataTerm) return null;
         if (patternTerm.type === 'var') {
           const name = patternTerm.value;
-          if (!binding[name]) return { ...binding, [name]: dataTerm };
+          if (binding[name] === undefined) return extendBinding(binding, name, dataTerm);
           return termEquals(binding[name], dataTerm) ? binding : null;
         }
         if (patternTerm.type === 'triple') {
@@ -3627,7 +3650,7 @@
         return termEquals(patternTerm, dataTerm) ? binding : null;
       }
       
-      function matchTriple(pattern, triple, binding = {}) {
+      function matchTriple(pattern, triple, binding = emptyBinding()) {
         let next = mergeBindingTerm(binding, pattern.s, triple.s);
         if (!next) return null;
         next = mergeBindingTerm(next, pattern.p, triple.p);
@@ -4526,13 +4549,14 @@
       'use strict';
       
       const { parseQuery } = require('./parser.js');
+      const { emptyBinding } = require('./term.js');
       const { TripleStore, bindingKey } = require('./store.js');
       const { evaluateBody } = require('./engine.js');
       const { backwardQuery, planBackwardQuery } = require('./backward.js');
       
       function queryResult(result, querySpec, options = {}) {
         const store = new TripleStore(result.closure || []);
-        const bindings = evaluateBody(querySpec.body, store, {}, { ...options, groundStore: result.groundStore });
+        const bindings = evaluateBody(querySpec.body, store, emptyBinding(), { ...options, groundStore: result.groundStore });
         const select = normalizeSelect(querySpec.select, bindings);
         return {
           baseIRI: result.baseIRI,
@@ -4654,8 +4678,8 @@
         const seen = new Set();
         const out = [];
         for (const binding of bindings) {
-          const projected = {};
-          for (const name of select) if (binding[name]) projected[name] = binding[name];
+          const projected = emptyBinding();
+          for (const name of select) if (binding[name] !== undefined) projected[name] = binding[name];
           const key = bindingKey(projected);
           if (!seen.has(key)) {
             seen.add(key);
@@ -4672,14 +4696,14 @@
       'use strict';
       
       const { TripleStore, bindingKey } = require('./store.js');
-      const { tripleKey, termKey, termEquals } = require('./term.js');
+      const { tripleKey, termKey, termEquals, emptyBinding, cloneBinding, extendBinding } = require('./term.js');
       const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
       
       function backwardQuery(program, querySpec, options = {}) {
         const planner = planBackwardQuery(program, querySpec, options);
         if (!planner.ok) return { ok: false, reason: planner.reason };
         const prover = new BackwardProver(program, { ...options, allowedRuleIndexes: planner.ruleIndexes });
-        const bindings = uniqueBindings(Array.from(prover.solveBody(querySpec.body, {})));
+        const bindings = uniqueBindings(Array.from(prover.solveBody(querySpec.body, emptyBinding())));
         return { ok: true, bindings, stats: prover.stats, plan: planner };
       }
       
@@ -4745,7 +4769,7 @@
           };
         }
       
-        *solveBody(clauses, binding = {}, depth = 0, index = 0) {
+        *solveBody(clauses, binding = emptyBinding(), depth = 0, index = 0) {
           if (depth > this.maxDepth) throw new Error(`Reached backwardMaxDepth=${this.maxDepth}; backward query may not terminate`);
           this.stats.maxDepth = Math.max(this.stats.maxDepth, depth);
           if (this.solutionCount >= this.solutionLimit) return;
@@ -4788,7 +4812,7 @@
       
           if (clause.type === 'not') {
             let found = false;
-            for (const _ of this.solveBody(clause.body, { ...binding }, depth + 1, 0)) { found = true; break; }
+            for (const _ of this.solveBody(clause.body, cloneBinding(binding), depth + 1, 0)) { found = true; break; }
             if (!found) yield* this.solveBody(clauses, binding, depth + 1, index + 1);
             return;
           }
@@ -4796,7 +4820,7 @@
           throw new Error(`Unsupported backward body clause ${clause.type}`);
         }
       
-        *solveTriple(pattern, binding = {}, depth = 0) {
+        *solveTriple(pattern, binding = emptyBinding(), depth = 0) {
           if (depth > this.maxDepth) throw new Error(`Reached backwardMaxDepth=${this.maxDepth}; backward query may not terminate`);
           this.stats.goals += 1;
           const resolvedPattern = resolvePattern(pattern, binding);
@@ -4919,7 +4943,7 @@
       }
       
       function resolveBinding(binding) {
-        const out = {};
+        const out = emptyBinding();
         for (const name of Object.keys(binding)) out[name] = resolveTerm(binding[name], binding, false);
         return out;
       }
@@ -4973,7 +4997,7 @@
         const existing = binding[name];
         if (existing) return unifyTerms(existing, term, binding);
         if (term.type === 'var' && term.value === name) return binding;
-        return { ...binding, [name]: term };
+        return extendBinding(binding, name, term);
       }
       
       function rememberAnswer(answers, answerKeys, pattern, binding) {
@@ -5127,7 +5151,7 @@
       
     },
   };
-  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdf.js":{"./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdf.js":"src/rdf.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js"},"src/format.js":{"./term.js":"src/term.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/query.js":{"./parser.js":"src/parser.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/api.js":{"./parser.js":"src/parser.js","./rdf.js":"src/rdf.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
+  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdf.js":{"./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdf.js":"src/rdf.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js"},"src/format.js":{"./term.js":"src/term.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/query.js":{"./parser.js":"src/parser.js","./term.js":"src/term.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/api.js":{"./parser.js":"src/parser.js","./rdf.js":"src/rdf.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js"}};
   const __cache = {};
   function __require(id) {
     if (!id.startsWith("src/")) return __nativeRequire(id);

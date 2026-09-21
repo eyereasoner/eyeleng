@@ -1,14 +1,14 @@
 'use strict';
 
 const { TripleStore, bindingKey } = require('./store.js');
-const { tripleKey, termKey, termEquals } = require('./term.js');
+const { tripleKey, termKey, termEquals, emptyBinding, cloneBinding, extendBinding } = require('./term.js');
 const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
 
 function backwardQuery(program, querySpec, options = {}) {
   const planner = planBackwardQuery(program, querySpec, options);
   if (!planner.ok) return { ok: false, reason: planner.reason };
   const prover = new BackwardProver(program, { ...options, allowedRuleIndexes: planner.ruleIndexes });
-  const bindings = uniqueBindings(Array.from(prover.solveBody(querySpec.body, {})));
+  const bindings = uniqueBindings(Array.from(prover.solveBody(querySpec.body, emptyBinding())));
   return { ok: true, bindings, stats: prover.stats, plan: planner };
 }
 
@@ -74,7 +74,7 @@ class BackwardProver {
     };
   }
 
-  *solveBody(clauses, binding = {}, depth = 0, index = 0) {
+  *solveBody(clauses, binding = emptyBinding(), depth = 0, index = 0) {
     if (depth > this.maxDepth) throw new Error(`Reached backwardMaxDepth=${this.maxDepth}; backward query may not terminate`);
     this.stats.maxDepth = Math.max(this.stats.maxDepth, depth);
     if (this.solutionCount >= this.solutionLimit) return;
@@ -117,7 +117,7 @@ class BackwardProver {
 
     if (clause.type === 'not') {
       let found = false;
-      for (const _ of this.solveBody(clause.body, { ...binding }, depth + 1, 0)) { found = true; break; }
+      for (const _ of this.solveBody(clause.body, cloneBinding(binding), depth + 1, 0)) { found = true; break; }
       if (!found) yield* this.solveBody(clauses, binding, depth + 1, index + 1);
       return;
     }
@@ -125,7 +125,7 @@ class BackwardProver {
     throw new Error(`Unsupported backward body clause ${clause.type}`);
   }
 
-  *solveTriple(pattern, binding = {}, depth = 0) {
+  *solveTriple(pattern, binding = emptyBinding(), depth = 0) {
     if (depth > this.maxDepth) throw new Error(`Reached backwardMaxDepth=${this.maxDepth}; backward query may not terminate`);
     this.stats.goals += 1;
     const resolvedPattern = resolvePattern(pattern, binding);
@@ -248,7 +248,7 @@ function resolvePattern(pattern, binding) {
 }
 
 function resolveBinding(binding) {
-  const out = {};
+  const out = emptyBinding();
   for (const name of Object.keys(binding)) out[name] = resolveTerm(binding[name], binding, false);
   return out;
 }
@@ -302,7 +302,7 @@ function bindVariable(name, term, binding) {
   const existing = binding[name];
   if (existing) return unifyTerms(existing, term, binding);
   if (term.type === 'var' && term.value === name) return binding;
-  return { ...binding, [name]: term };
+  return extendBinding(binding, name, term);
 }
 
 function rememberAnswer(answers, answerKeys, pattern, binding) {

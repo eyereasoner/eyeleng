@@ -101,4 +101,34 @@ RULE { ?x :in ?o ; :out ?z } WHERE { ?x :data ?o . SET(?z := 1/?o) }`;
   assert(setResult.inferred.every((triple) => triple.s.value === 'http://example/x2'));
 });
 
+// `?constructor`, `?toString` and friends are ordinary VARNAMEs ([123] and
+// [126] of SPARQL 1.2 RL §7.6), but they are also `Object.prototype`
+// property names, so a solution mapping held in a plain `{}` answered
+// `binding[name]` with an inherited function instead of `undefined`. Every
+// rule binding such a variable then silently failed to fire.
+test('variables named after Object.prototype properties bind normally', () => {
+  const names = ['constructor', 'toString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', '__proto__'];
+  for (const name of names) {
+    const source = `PREFIX : <http://example/>
+DATA { :writer :canPerform :writeTask }
+RULE { ?${name} :retains ?task } WHERE { ?${name} :canPerform ?task }`;
+    const compiled = eyeleng.compile(source, { strictGrammar: true });
+    const result = eyeleng.evaluate(compiled.program, { analysis: compiled.analysis });
+    const retains = result.inferred.filter((triple) => triple.p.value === 'http://example/retains');
+    assert.equal(retains.length, 1, `?${name} should bind and fire the rule`);
+    assert.equal(retains[0].s.value, 'http://example/writer', `?${name} bound the wrong term`);
+  }
+});
+
+// The same hazard reached queries, which seed their own solution mapping.
+test('a query variable named after an Object.prototype property binds', () => {
+  const source = `PREFIX : <http://example/>
+DATA { :writer :canPerform :writeTask }`;
+  for (const queryMode of ['forward', 'backward']) {
+    const result = eyeleng.runQuery(source, '?constructor :canPerform ?task', { queryMode });
+    assert.equal(result.query.bindings.length, 1, `${queryMode} query should bind ?constructor`);
+    assert.equal(result.query.bindings[0].constructor.value, 'http://example/writer');
+  }
+});
+
 main();

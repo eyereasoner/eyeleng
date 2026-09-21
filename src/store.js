@@ -1,6 +1,6 @@
 'use strict';
 
-const { RDF_FIRST, RDF_REST, RDF_NIL, tripleKey, termKey, termEquals } = require('./term.js');
+const { RDF_FIRST, RDF_REST, RDF_NIL, tripleKey, termKey, termEquals, extendBinding, emptyBinding } = require('./term.js');
 
 class TripleStore {
   constructor(triples = []) {
@@ -41,7 +41,7 @@ class TripleStore {
     return this.map.size;
   }
 
-  candidates(pattern, binding = {}) {
+  candidates(pattern, binding = emptyBinding()) {
     const p = instantiateTerm(pattern.p, binding);
     if (p && p.type !== 'var') {
       const predicate = termKey(p);
@@ -58,7 +58,7 @@ class TripleStore {
     return this.values();
   }
 
-  match(pattern, binding = {}) {
+  match(pattern, binding = emptyBinding()) {
     const out = [];
     for (const triple of this.candidates(pattern, binding)) {
       const matched = matchTriple(pattern, triple, binding);
@@ -66,7 +66,7 @@ class TripleStore {
     }
     return out;
   }
-  matchListTuple(pattern, binding = {}) {
+  matchListTuple(pattern, binding = emptyBinding()) {
     const predicate = instantiateTerm(pattern.p, binding);
     if (!predicate || predicate.type === 'var') return [];
     const boundPositions = [];
@@ -122,7 +122,7 @@ class TripleStore {
     return node.type === 'iri' && node.value === RDF_NIL ? items : null;
   }
 
-  matchPath(pattern, binding = {}) {
+  matchPath(pattern, binding = emptyBinding()) {
     const prefix = `__path_${pathCallCounter++}_`;
     const tempVars = [];
     const bindings = matchPathExpression(this, pattern.p, pattern.s, pattern.o, binding, prefix, tempVars);
@@ -184,7 +184,7 @@ function mergeBindingTerm(binding, patternTerm, dataTerm) {
   if (!patternTerm || !dataTerm) return null;
   if (patternTerm.type === 'var') {
     const name = patternTerm.value;
-    if (!binding[name]) return { ...binding, [name]: dataTerm };
+    if (binding[name] === undefined) return extendBinding(binding, name, dataTerm);
     return termEquals(binding[name], dataTerm) ? binding : null;
   }
   if (patternTerm.type === 'triple') {
@@ -198,7 +198,7 @@ function mergeBindingTerm(binding, patternTerm, dataTerm) {
   return termEquals(patternTerm, dataTerm) ? binding : null;
 }
 
-function matchTriple(pattern, triple, binding = {}) {
+function matchTriple(pattern, triple, binding = emptyBinding()) {
   let next = mergeBindingTerm(binding, pattern.s, triple.s);
   if (!next) return null;
   next = mergeBindingTerm(next, pattern.p, triple.p);

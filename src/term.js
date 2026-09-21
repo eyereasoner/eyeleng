@@ -209,6 +209,27 @@ function formatTriple(triple, prefixes = {}) {
   return `${formatTerm(triple.s, prefixes)} ${formatTerm(triple.p, prefixes)} ${formatTerm(triple.o, prefixes)} .`;
 }
 
+// A solution mapping is keyed by variable name, and `?constructor`,
+// `?toString` and friends are perfectly legal VARNAMEs ([123]/[126] of
+// SPARQL 1.2 RL §7.6). A plain `{}` inherits those names from
+// `Object.prototype`, so `binding[name]` would answer with an inherited
+// function rather than `undefined` and a rule whose body binds such a
+// variable would silently never fire. Every solution mapping is therefore
+// created without a prototype, through these three helpers.
+function emptyBinding() {
+  return Object.create(null);
+}
+
+function cloneBinding(binding) {
+  return Object.assign(Object.create(null), binding);
+}
+
+function extendBinding(binding, name, term) {
+  const out = cloneBinding(binding);
+  out[name] = term;
+  return out;
+}
+
 module.exports = {
   RDF_NS,
   RDF_TYPE,
@@ -244,4 +265,7 @@ module.exports = {
   compactIRI,
   formatTerm,
   formatTriple,
+  emptyBinding,
+  cloneBinding,
+  extendBinding,
 };
