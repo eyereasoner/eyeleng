@@ -1111,7 +1111,7 @@ var eyeleng = (() => {
       }
       function freshId(options) {
         options.__eyelengCounter = (options.__eyelengCounter || 0) + 1;
-        return `eyeleng-${options.__eyelengCounter}`;
+        return `eyeleng_${options.__eyelengCounter}`;
       }
       function asTerm(value) {
         return valueToTerm(value);
@@ -47603,7 +47603,9 @@ ${stripDirectiveLines(chunk)}`;
   var require_format = __commonJS({
     "src/format.js"(exports, module) {
       "use strict";
-      var { formatTriple, formatTerm } = require_term();
+      var { formatTriple, formatTerm, tripleKey } = require_term();
+      var PE_NS = "https://eyereasoner.github.io/pe#";
+      var RDF_PROOF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
       function sortTriples(triples, prefixes = {}) {
         return triples.map((triple) => ({ triple, text: formatTriple(triple, prefixes) })).sort((a, b) => a.text.localeCompare(b.text)).map((entry) => entry.triple);
       }
@@ -47615,28 +47617,63 @@ ${stripDirectiveLines(chunk)}`;
       }
       function formatProof(trace, prefixes = {}) {
         if (!trace.length) return "";
-        const lines = ["@prefix pe: <https://eyereasoner.github.io/pe#> .", ""];
+        const stepOf = /* @__PURE__ */ new Map();
+        const steps = [];
         for (const entry of trace) {
-          const conclusion = formatTriple(entry.triple, prefixes);
-          lines.push(`{ ${conclusion} } pe:why {`);
-          lines.push(`  { ${conclusion} }`);
-          lines.push(`    pe:by [ pe:rule ${quoteString(entry.rule)} ]${proofDetails(entry, prefixes)} .`);
-          lines.push("}.", "");
+          const key = tripleKey(entry.triple);
+          if (stepOf.has(key)) continue;
+          const id = `_:step${stepOf.size + 1}`;
+          stepOf.set(key, id);
+          steps.push({ id, entry });
         }
-        return lines.join("\n").trimEnd();
+        const body = [];
+        for (const { entry } of steps) body.push(`  ${formatTriple(entry.triple, prefixes)}`);
+        body.push("");
+        steps.forEach(({ id, entry }, index) => {
+          if (index > 0) body.push("");
+          const groups = [["rdf:reifies", [proofTripleTerm(entry.triple, prefixes)]], ["pe:rule", [quoteString(entry.rule)]]];
+          const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
+          if (bindings.length > 0) {
+            groups.push(["pe:binding", bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`)]);
+          }
+          const uses = (entry.uses || []).map((triple) => stepOf.get(tripleKey(triple)) || proofTripleTerm(triple, prefixes));
+          if (uses.length > 0) groups.push(["pe:uses", uses]);
+          body.push(renderProofStep(id, groups));
+        });
+        const block = `DATA {
+${body.join("\n")}
+}`;
+        const header = proofPrefixHeader(block, prefixes);
+        return `${header}${header ? "\n\n" : ""}${block}`;
       }
-      function proofDetails(entry, prefixes) {
-        const details = [];
-        const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
-        if (bindings.length > 0) {
-          details.push(`
-    pe:binding ${bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`).join(", ")}`);
+      function proofTripleTerm(triple, prefixes) {
+        return `<<(${formatTerm(triple.s, prefixes)} ${formatTerm(triple.p, prefixes)} ${formatTerm(triple.o, prefixes)})>>`;
+      }
+      function renderProofStep(id, groups) {
+        const lines = [`  ${id}`];
+        groups.forEach(([predicate, objects], index) => {
+          const end = index + 1 === groups.length ? "." : ";";
+          if (objects.length === 1) {
+            lines.push(`    ${predicate} ${objects[0]}${end}`);
+            return;
+          }
+          lines.push(`    ${predicate}`);
+          objects.forEach((object, objectIndex) => {
+            lines.push(`      ${object}${objectIndex + 1 === objects.length ? end : ","}`);
+          });
+        });
+        return lines.join("\n");
+      }
+      function proofPrefixHeader(block, prefixes) {
+        const all = { pe: PE_NS, rdf: RDF_PROOF_NS, ...prefixes };
+        const lines = [];
+        for (const name of Object.keys(all).sort()) {
+          const iri = all[name];
+          if (!iri) continue;
+          const used = name === "pe" || name === "rdf" || new RegExp(`(^|[\\s(,;\\[])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:`, "m").test(block);
+          if (used) lines.push(`PREFIX ${name}: <${iri}>`);
         }
-        if (entry.uses && entry.uses.length > 0) {
-          details.push(`
-    pe:uses ${entry.uses.map((triple) => `{ ${formatTriple(triple, prefixes)} }`).join(", ")}`);
-        }
-        return details.length ? `;${details.join(";")}` : "";
+        return lines.join("\n");
       }
       function quoteString(value) {
         return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`;

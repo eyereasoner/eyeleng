@@ -1,0 +1,29 @@
+PREFIX : <https://eyereasoner.github.io/ns#>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  _:sk_bb32b39908778273d11a8e49e72b9547 a :Cat .
+  _:sk_319b8a2f709c2e2189803dc77b3d3e85 a :BritishShortHair .
+  :test :is true .
+
+  _:step1
+    rdf:reifies <<(_:sk_bb32b39908778273d11a8e49e72b9547 a :Cat)>>;
+    pe:rule "rule#1";
+    pe:uses <<(:Koko a :Animal)>>.
+
+  _:step2
+    rdf:reifies <<(_:sk_319b8a2f709c2e2189803dc77b3d3e85 a :BritishShortHair)>>;
+    pe:rule "rule#2";
+    pe:uses <<(:Koko a :Animal)>>.
+
+  _:step3
+    rdf:reifies <<(:test :is true)>>;
+    pe:rule "rule#3";
+    pe:binding
+      [ pe:var "X"; pe:value _:sk_bb32b39908778273d11a8e49e72b9547 ],
+      [ pe:var "Y"; pe:value _:sk_319b8a2f709c2e2189803dc77b3d3e85 ];
+    pe:uses
+      _:step1,
+      _:step2.
+}

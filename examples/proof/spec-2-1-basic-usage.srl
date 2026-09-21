@@ -1,0 +1,33 @@
+PREFIX : <http://example.com/>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  :X :childOf :A .
+  :X :childOf :B .
+  :A :childOf :C .
+
+  _:step1
+    rdf:reifies <<(:X :childOf :A)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "x"; pe:value :X ],
+      [ pe:var "y"; pe:value :A ];
+    pe:uses <<(:A :fatherOf :X)>>.
+
+  _:step2
+    rdf:reifies <<(:X :childOf :B)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "x"; pe:value :X ],
+      [ pe:var "y"; pe:value :B ];
+    pe:uses <<(:B :motherOf :X)>>.
+
+  _:step3
+    rdf:reifies <<(:A :childOf :C)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "x"; pe:value :A ],
+      [ pe:var "y"; pe:value :C ];
+    pe:uses <<(:C :motherOf :A)>>.
+}

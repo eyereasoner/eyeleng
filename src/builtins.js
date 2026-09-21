@@ -560,9 +560,13 @@ function freshUuid(options) {
   return `00000000-0000-4000-8000-${String(options.__eyelengUuidCounter).padStart(12, '0')}`;
 }
 
+// `_` rather than `-` between the two parts: a `-` inside a blank node
+// label is legal per [122] BLANK_NODE_LABEL, but neither this
+// implementation's tokenizer nor eyeron's reads one back yet, so a label
+// carrying one would not survive a round trip through the output.
 function freshId(options) {
   options.__eyelengCounter = (options.__eyelengCounter || 0) + 1;
-  return `eyeleng-${options.__eyelengCounter}`;
+  return `eyeleng_${options.__eyelengCounter}`;
 }
 
 function asTerm(value) {

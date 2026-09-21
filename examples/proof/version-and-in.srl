@@ -1,0 +1,33 @@
+PREFIX : <http://example/>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  :alice :priority true .
+  :carol :priority true .
+  :bob :ordinary true .
+
+  _:step1
+    rdf:reifies <<(:alice :priority true)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "level"; pe:value "gold" ],
+      [ pe:var "x"; pe:value :alice ];
+    pe:uses <<(:alice :level "gold")>>.
+
+  _:step2
+    rdf:reifies <<(:carol :priority true)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "level"; pe:value "platinum" ],
+      [ pe:var "x"; pe:value :carol ];
+    pe:uses <<(:carol :level "platinum")>>.
+
+  _:step3
+    rdf:reifies <<(:bob :ordinary true)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "level"; pe:value "bronze" ],
+      [ pe:var "x"; pe:value :bob ];
+    pe:uses <<(:bob :level "bronze")>>.
+}

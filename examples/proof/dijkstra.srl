@@ -1,0 +1,202 @@
+PREFIX : <http://example/eyeling/dijkstra/>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  :abc a :Path .
+  :abc :cost 3 .
+  :abd a :Path .
+  :abd :cost 9 .
+  :acd a :Path .
+  :acd :cost 7 .
+  :abcd a :Path .
+  :abcd :cost 5 .
+  :ac :dominated true .
+  :abd :dominated true .
+  :acd :dominated true .
+  :ab :best true .
+  :abc :best true .
+  :abcd :best true .
+
+  _:step1
+    rdf:reifies <<(:abc a :Path)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "left"; pe:value 2 ],
+      [ pe:var "path"; pe:value :abc ],
+      [ pe:var "right"; pe:value 1 ],
+      [ pe:var "total"; pe:value 3 ];
+    pe:uses
+      <<(:abc a :CandidatePath)>>,
+      <<(:abc :leftCost 2)>>,
+      <<(:abc :rightCost 1)>>.
+
+  _:step2
+    rdf:reifies <<(:abc :cost 3)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "left"; pe:value 2 ],
+      [ pe:var "path"; pe:value :abc ],
+      [ pe:var "right"; pe:value 1 ],
+      [ pe:var "total"; pe:value 3 ];
+    pe:uses
+      <<(:abc a :CandidatePath)>>,
+      <<(:abc :leftCost 2)>>,
+      <<(:abc :rightCost 1)>>.
+
+  _:step3
+    rdf:reifies <<(:abd a :Path)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "left"; pe:value 2 ],
+      [ pe:var "path"; pe:value :abd ],
+      [ pe:var "right"; pe:value 7 ],
+      [ pe:var "total"; pe:value 9 ];
+    pe:uses
+      <<(:abd a :CandidatePath)>>,
+      <<(:abd :leftCost 2)>>,
+      <<(:abd :rightCost 7)>>.
+
+  _:step4
+    rdf:reifies <<(:abd :cost 9)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "left"; pe:value 2 ],
+      [ pe:var "path"; pe:value :abd ],
+      [ pe:var "right"; pe:value 7 ],
+      [ pe:var "total"; pe:value 9 ];
+    pe:uses
+      <<(:abd a :CandidatePath)>>,
+      <<(:abd :leftCost 2)>>,
+      <<(:abd :rightCost 7)>>.
+
+  _:step5
+    rdf:reifies <<(:acd a :Path)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "left"; pe:value 5 ],
+      [ pe:var "path"; pe:value :acd ],
+      [ pe:var "right"; pe:value 2 ],
+      [ pe:var "total"; pe:value 7 ];
+    pe:uses
+      <<(:acd a :CandidatePath)>>,
+      <<(:acd :leftCost 5)>>,
+      <<(:acd :rightCost 2)>>.
+
+  _:step6
+    rdf:reifies <<(:acd :cost 7)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "left"; pe:value 5 ],
+      [ pe:var "path"; pe:value :acd ],
+      [ pe:var "right"; pe:value 2 ],
+      [ pe:var "total"; pe:value 7 ];
+    pe:uses
+      <<(:acd a :CandidatePath)>>,
+      <<(:acd :leftCost 5)>>,
+      <<(:acd :rightCost 2)>>.
+
+  _:step7
+    rdf:reifies <<(:abcd a :Path)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "left"; pe:value 2 ],
+      [ pe:var "path"; pe:value :abcd ],
+      [ pe:var "right"; pe:value 3 ],
+      [ pe:var "total"; pe:value 5 ];
+    pe:uses
+      <<(:abcd a :CandidatePath)>>,
+      <<(:abcd :leftCost 2)>>,
+      <<(:abcd :rightCost 3)>>.
+
+  _:step8
+    rdf:reifies <<(:abcd :cost 5)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "left"; pe:value 2 ],
+      [ pe:var "path"; pe:value :abcd ],
+      [ pe:var "right"; pe:value 3 ],
+      [ pe:var "total"; pe:value 5 ];
+    pe:uses
+      <<(:abcd a :CandidatePath)>>,
+      <<(:abcd :leftCost 2)>>,
+      <<(:abcd :rightCost 3)>>.
+
+  _:step9
+    rdf:reifies <<(:ac :dominated true)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "better"; pe:value :abc ],
+      [ pe:var "betterCost"; pe:value 3 ],
+      [ pe:var "cost"; pe:value 5 ],
+      [ pe:var "from"; pe:value :A ],
+      [ pe:var "path"; pe:value :ac ],
+      [ pe:var "to"; pe:value :C ];
+    pe:uses
+      <<(:ac a :Path)>>,
+      <<(:ac :from :A)>>,
+      <<(:ac :to :C)>>,
+      <<(:ac :cost 5)>>,
+      _:step1,
+      <<(:abc :from :A)>>,
+      <<(:abc :to :C)>>,
+      _:step2.
+
+  _:step10
+    rdf:reifies <<(:abd :dominated true)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "better"; pe:value :acd ],
+      [ pe:var "betterCost"; pe:value 7 ],
+      [ pe:var "cost"; pe:value 9 ],
+      [ pe:var "from"; pe:value :A ],
+      [ pe:var "path"; pe:value :abd ],
+      [ pe:var "to"; pe:value :D ];
+    pe:uses
+      _:step3,
+      <<(:abd :from :A)>>,
+      <<(:abd :to :D)>>,
+      _:step4,
+      _:step5,
+      <<(:acd :from :A)>>,
+      <<(:acd :to :D)>>,
+      _:step6.
+
+  _:step11
+    rdf:reifies <<(:acd :dominated true)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "better"; pe:value :abcd ],
+      [ pe:var "betterCost"; pe:value 5 ],
+      [ pe:var "cost"; pe:value 7 ],
+      [ pe:var "from"; pe:value :A ],
+      [ pe:var "path"; pe:value :acd ],
+      [ pe:var "to"; pe:value :D ];
+    pe:uses
+      _:step5,
+      <<(:acd :from :A)>>,
+      <<(:acd :to :D)>>,
+      _:step6,
+      _:step7,
+      <<(:abcd :from :A)>>,
+      <<(:abcd :to :D)>>,
+      _:step8.
+
+  _:step12
+    rdf:reifies <<(:ab :best true)>>;
+    pe:rule "rule#3";
+    pe:binding [ pe:var "path"; pe:value :ab ];
+    pe:uses <<(:ab a :Path)>>.
+
+  _:step13
+    rdf:reifies <<(:abc :best true)>>;
+    pe:rule "rule#3";
+    pe:binding [ pe:var "path"; pe:value :abc ];
+    pe:uses _:step1.
+
+  _:step14
+    rdf:reifies <<(:abcd :best true)>>;
+    pe:rule "rule#3";
+    pe:binding [ pe:var "path"; pe:value :abcd ];
+    pe:uses _:step7.
+}

@@ -1,0 +1,139 @@
+PREFIX : <http://example/eyeling/diagnosis/>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  :COVID19 :unnormalizedScore 0.0015470000000000002 .
+  :Influenza :unnormalizedScore 0.00004800000000000001 .
+  :AllergicRhinitis :unnormalizedScore 7.500000000000003e-7 .
+  :BacterialPneumonia :unnormalizedScore 0.00004787999999999999 .
+  :COVID19 :screenedIn true .
+  :COVID19 :rank "high" .
+  :Influenza :rank "low" .
+  :AllergicRhinitis :rank "low" .
+  :BacterialPneumonia :rank "low" .
+
+  _:step1
+    rdf:reifies <<(:COVID19 :unnormalizedScore 0.0015470000000000002)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "breath"; pe:value 0.2 ],
+      [ pe:var "cough"; pe:value 0.65 ],
+      [ pe:var "d"; pe:value :COVID19 ],
+      [ pe:var "fever"; pe:value 0.7 ],
+      [ pe:var "noSneezing"; pe:value 0.85 ],
+      [ pe:var "prior"; pe:value 0.05 ],
+      [ pe:var "score"; pe:value 0.0015470000000000002 ],
+      [ pe:var "smell"; pe:value 0.4 ];
+    pe:uses
+      <<(:COVID19 a :Disease)>>,
+      <<(:COVID19 :prior 0.05)>>,
+      <<(:COVID19 :pFever 0.7)>>,
+      <<(:COVID19 :pDryCough 0.65)>>,
+      <<(:COVID19 :pLossOfSmell 0.4)>>,
+      <<(:COVID19 :pNoSneezing 0.85)>>,
+      <<(:COVID19 :pShortBreath 0.2)>>.
+
+  _:step2
+    rdf:reifies <<(:Influenza :unnormalizedScore 0.00004800000000000001)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "breath"; pe:value 0.1 ],
+      [ pe:var "cough"; pe:value 0.5 ],
+      [ pe:var "d"; pe:value :Influenza ],
+      [ pe:var "fever"; pe:value 0.8 ],
+      [ pe:var "noSneezing"; pe:value 0.8 ],
+      [ pe:var "prior"; pe:value 0.03 ],
+      [ pe:var "score"; pe:value 0.00004800000000000001 ],
+      [ pe:var "smell"; pe:value 0.05 ];
+    pe:uses
+      <<(:Influenza a :Disease)>>,
+      <<(:Influenza :prior 0.03)>>,
+      <<(:Influenza :pFever 0.8)>>,
+      <<(:Influenza :pDryCough 0.5)>>,
+      <<(:Influenza :pLossOfSmell 0.05)>>,
+      <<(:Influenza :pNoSneezing 0.8)>>,
+      <<(:Influenza :pShortBreath 0.1)>>.
+
+  _:step3
+    rdf:reifies <<(:AllergicRhinitis :unnormalizedScore 7.500000000000003e-7)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "breath"; pe:value 0.05 ],
+      [ pe:var "cough"; pe:value 0.15 ],
+      [ pe:var "d"; pe:value :AllergicRhinitis ],
+      [ pe:var "fever"; pe:value 0.05 ],
+      [ pe:var "noSneezing"; pe:value 0.2 ],
+      [ pe:var "prior"; pe:value 0.1 ],
+      [ pe:var "score"; pe:value 7.500000000000003e-7 ],
+      [ pe:var "smell"; pe:value 0.1 ];
+    pe:uses
+      <<(:AllergicRhinitis a :Disease)>>,
+      <<(:AllergicRhinitis :prior 0.1)>>,
+      <<(:AllergicRhinitis :pFever 0.05)>>,
+      <<(:AllergicRhinitis :pDryCough 0.15)>>,
+      <<(:AllergicRhinitis :pLossOfSmell 0.1)>>,
+      <<(:AllergicRhinitis :pNoSneezing 0.2)>>,
+      <<(:AllergicRhinitis :pShortBreath 0.05)>>.
+
+  _:step4
+    rdf:reifies <<(:BacterialPneumonia :unnormalizedScore 0.00004787999999999999)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "breath"; pe:value 0.6 ],
+      [ pe:var "cough"; pe:value 0.6 ],
+      [ pe:var "d"; pe:value :BacterialPneumonia ],
+      [ pe:var "fever"; pe:value 0.7 ],
+      [ pe:var "noSneezing"; pe:value 0.95 ],
+      [ pe:var "prior"; pe:value 0.01 ],
+      [ pe:var "score"; pe:value 0.00004787999999999999 ],
+      [ pe:var "smell"; pe:value 0.02 ];
+    pe:uses
+      <<(:BacterialPneumonia a :Disease)>>,
+      <<(:BacterialPneumonia :prior 0.01)>>,
+      <<(:BacterialPneumonia :pFever 0.7)>>,
+      <<(:BacterialPneumonia :pDryCough 0.6)>>,
+      <<(:BacterialPneumonia :pLossOfSmell 0.02)>>,
+      <<(:BacterialPneumonia :pNoSneezing 0.95)>>,
+      <<(:BacterialPneumonia :pShortBreath 0.6)>>.
+
+  _:step5
+    rdf:reifies <<(:COVID19 :screenedIn true)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "d"; pe:value :COVID19 ],
+      [ pe:var "score"; pe:value 0.0015470000000000002 ];
+    pe:uses _:step1.
+
+  _:step6
+    rdf:reifies <<(:COVID19 :rank "high")>>;
+    pe:rule "rule#3";
+    pe:binding
+      [ pe:var "d"; pe:value :COVID19 ],
+      [ pe:var "score"; pe:value 0.0015470000000000002 ];
+    pe:uses _:step1.
+
+  _:step7
+    rdf:reifies <<(:Influenza :rank "low")>>;
+    pe:rule "rule#5";
+    pe:binding
+      [ pe:var "d"; pe:value :Influenza ],
+      [ pe:var "score"; pe:value 0.00004800000000000001 ];
+    pe:uses _:step2.
+
+  _:step8
+    rdf:reifies <<(:AllergicRhinitis :rank "low")>>;
+    pe:rule "rule#5";
+    pe:binding
+      [ pe:var "d"; pe:value :AllergicRhinitis ],
+      [ pe:var "score"; pe:value 7.500000000000003e-7 ];
+    pe:uses _:step3.
+
+  _:step9
+    rdf:reifies <<(:BacterialPneumonia :rank "low")>>;
+    pe:rule "rule#5";
+    pe:binding
+      [ pe:var "d"; pe:value :BacterialPneumonia ],
+      [ pe:var "score"; pe:value 0.00004787999999999999 ];
+    pe:uses _:step4.
+}

@@ -1,0 +1,40 @@
+PREFIX : <http://example/messages#>
+PREFIX eymsg: <https://eyereasoner.github.io/eyeling/vocab/message#>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  <urn:eyeleng:message-log:03ead54e#m001> :mentionsSensor :s1 .
+  <urn:eyeleng:message-log:03ead54e#m003> :mentionsSensor :s2 .
+  <urn:eyeleng:message-log:03ead54e#m002> :isHeartbeat true .
+
+  _:step1
+    rdf:reifies <<(<urn:eyeleng:message-log:03ead54e#m001> :mentionsSensor :s1)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "envelope"; pe:value <urn:eyeleng:message-log:03ead54e#m001> ],
+      [ pe:var "payload"; pe:value <urn:eyeleng:message-log:03ead54e#m001/payload> ],
+      [ pe:var "reading"; pe:value _:b2_msg001_reading ],
+      [ pe:var "sensor"; pe:value :s1 ];
+    pe:uses
+      <<(<urn:eyeleng:message-log:03ead54e#m001> eymsg:payloadGraph <urn:eyeleng:message-log:03ead54e#m001/payload>)>>,
+      <<(<urn:eyeleng:message-log:03ead54e#m001/payload> eymsg:payloadTriple <<(_:b2_msg001_reading :sensor :s1)>>)>>.
+
+  _:step2
+    rdf:reifies <<(<urn:eyeleng:message-log:03ead54e#m003> :mentionsSensor :s2)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "envelope"; pe:value <urn:eyeleng:message-log:03ead54e#m003> ],
+      [ pe:var "payload"; pe:value <urn:eyeleng:message-log:03ead54e#m003/payload> ],
+      [ pe:var "reading"; pe:value _:b3_msg003_reading ],
+      [ pe:var "sensor"; pe:value :s2 ];
+    pe:uses
+      <<(<urn:eyeleng:message-log:03ead54e#m003> eymsg:payloadGraph <urn:eyeleng:message-log:03ead54e#m003/payload>)>>,
+      <<(<urn:eyeleng:message-log:03ead54e#m003/payload> eymsg:payloadTriple <<(_:b3_msg003_reading :sensor :s2)>>)>>.
+
+  _:step3
+    rdf:reifies <<(<urn:eyeleng:message-log:03ead54e#m002> :isHeartbeat true)>>;
+    pe:rule "rule#2";
+    pe:binding [ pe:var "envelope"; pe:value <urn:eyeleng:message-log:03ead54e#m002> ];
+    pe:uses <<(<urn:eyeleng:message-log:03ead54e#m002> eymsg:payloadKind eymsg:empty)>>.
+}

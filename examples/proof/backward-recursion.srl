@@ -1,0 +1,90 @@
+PREFIX : <urn:example#>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  :a :ancestor :b .
+  :b :ancestor :c .
+  :c :ancestor :d .
+  :a :ancestor :c .
+  :b :ancestor :d .
+  :a :reaches :b .
+  :a :reaches :c .
+  :a :ancestor :d .
+  :a :reaches :d .
+
+  _:step1
+    rdf:reifies <<(:a :ancestor :b)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "x"; pe:value :a ],
+      [ pe:var "y"; pe:value :b ];
+    pe:uses <<(:a :parent :b)>>.
+
+  _:step2
+    rdf:reifies <<(:b :ancestor :c)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "x"; pe:value :b ],
+      [ pe:var "y"; pe:value :c ];
+    pe:uses <<(:b :parent :c)>>.
+
+  _:step3
+    rdf:reifies <<(:c :ancestor :d)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "x"; pe:value :c ],
+      [ pe:var "y"; pe:value :d ];
+    pe:uses <<(:c :parent :d)>>.
+
+  _:step4
+    rdf:reifies <<(:a :ancestor :c)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "x"; pe:value :a ],
+      [ pe:var "y"; pe:value :b ],
+      [ pe:var "z"; pe:value :c ];
+    pe:uses
+      <<(:a :parent :b)>>,
+      _:step2.
+
+  _:step5
+    rdf:reifies <<(:b :ancestor :d)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "x"; pe:value :b ],
+      [ pe:var "y"; pe:value :c ],
+      [ pe:var "z"; pe:value :d ];
+    pe:uses
+      <<(:b :parent :c)>>,
+      _:step3.
+
+  _:step6
+    rdf:reifies <<(:a :reaches :b)>>;
+    pe:rule "rule#3";
+    pe:binding [ pe:var "who"; pe:value :b ];
+    pe:uses _:step1.
+
+  _:step7
+    rdf:reifies <<(:a :reaches :c)>>;
+    pe:rule "rule#3";
+    pe:binding [ pe:var "who"; pe:value :c ];
+    pe:uses _:step4.
+
+  _:step8
+    rdf:reifies <<(:a :ancestor :d)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "x"; pe:value :a ],
+      [ pe:var "y"; pe:value :b ],
+      [ pe:var "z"; pe:value :d ];
+    pe:uses
+      <<(:a :parent :b)>>,
+      _:step5.
+
+  _:step9
+    rdf:reifies <<(:a :reaches :d)>>;
+    pe:rule "rule#3";
+    pe:binding [ pe:var "who"; pe:value :d ];
+    pe:uses _:step8.
+}

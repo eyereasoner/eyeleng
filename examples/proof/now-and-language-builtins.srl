@@ -1,0 +1,21 @@
+PREFIX : <http://example/>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  :msg :sameLanguageLiteral true .
+  :clock :snapshot "2026-05-15T12:34:56.000Z"^^xsd:dateTime .
+
+  _:step1
+    rdf:reifies <<(:msg :sameLanguageLiteral true)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "copy"; pe:value "bonjour"@fr ],
+      [ pe:var "text"; pe:value "bonjour"@fr ];
+    pe:uses <<(:msg :text "bonjour"@fr)>>.
+
+  _:step2
+    rdf:reifies <<(:clock :snapshot "2026-05-15T12:34:56.000Z"^^xsd:dateTime)>>;
+    pe:rule "rule#2";
+    pe:binding [ pe:var "t"; pe:value "2026-05-15T12:34:56.000Z"^^xsd:dateTime ].
+}

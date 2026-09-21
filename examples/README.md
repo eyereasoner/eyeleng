@@ -11,3 +11,13 @@ node eyeleng.js --data examples/rdf-messages.trig examples/rdf-messages.srl
 ```
 
 The message log is base data. `IMPORTS` is reserved for SPARQL-RL rule sets.
+
+`output/` holds each example's expected result graph as an `.srl` file, and
+`proof/` its expected `--prove` document — itself an `.srl` rule set, whose
+`DATA` block reifies one step per derived fact. The four rejection examples
+have their expected `--check` message in `output/*.txt` instead. Regenerate
+every golden with:
+
+```sh
+UPDATE_EXAMPLE_GOLDENS=1 npm test
+```

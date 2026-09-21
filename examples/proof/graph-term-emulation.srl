@@ -1,0 +1,149 @@
+PREFIX : <http://example/graph-term-list/>
+PREFIX pe: <https://eyereasoner.github.io/pe#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DATA {
+  :g1 :listCell _:b1 .
+  :g2 :listCell _:b3 .
+  :g1 :listCell _:b2 .
+  :g2 :listCell rdf:nil .
+  :g1 a :SocialGraphTerm .
+  :g1 :mentions :alice .
+  :g1 :mentions :bob .
+  :g2 :mentions :alice .
+  :g1 :mentions :carol .
+  :g2 :mentions :tea .
+  :g1 :listCell rdf:nil .
+
+  _:step1
+    rdf:reifies <<(:g1 :listCell _:b1)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b1 ],
+      [ pe:var "g"; pe:value :g1 ];
+    pe:uses <<(:g1 :quotedTriples _:b1)>>.
+
+  _:step2
+    rdf:reifies <<(:g2 :listCell _:b3)>>;
+    pe:rule "rule#1";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b3 ],
+      [ pe:var "g"; pe:value :g2 ];
+    pe:uses <<(:g2 :quotedTriples _:b3)>>.
+
+  _:step3
+    rdf:reifies <<(:g1 :listCell _:b2)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b1 ],
+      [ pe:var "g"; pe:value :g1 ],
+      [ pe:var "rest"; pe:value _:b2 ];
+    pe:uses
+      _:step1,
+      <<(_:b1 rdf:rest _:b2)>>.
+
+  _:step4
+    rdf:reifies <<(:g2 :listCell rdf:nil)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b3 ],
+      [ pe:var "g"; pe:value :g2 ],
+      [ pe:var "rest"; pe:value rdf:nil ];
+    pe:uses
+      _:step2,
+      <<(_:b3 rdf:rest rdf:nil)>>.
+
+  _:step5
+    rdf:reifies <<(:g1 a :SocialGraphTerm)>>;
+    pe:rule "rule#3";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b1 ],
+      [ pe:var "g"; pe:value :g1 ],
+      [ pe:var "o"; pe:value :bob ],
+      [ pe:var "s"; pe:value :alice ];
+    pe:uses
+      <<(:g1 a :GraphTerm)>>,
+      _:step1,
+      <<(_:b1 rdf:first <<(:alice :knows :bob)>>)>>.
+
+  _:step6
+    rdf:reifies <<(:g1 :mentions :alice)>>;
+    pe:rule "rule#4";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b1 ],
+      [ pe:var "g"; pe:value :g1 ],
+      [ pe:var "o"; pe:value :bob ],
+      [ pe:var "p"; pe:value :knows ],
+      [ pe:var "s"; pe:value :alice ];
+    pe:uses
+      <<(:g1 a :GraphTerm)>>,
+      _:step1,
+      <<(_:b1 rdf:first <<(:alice :knows :bob)>>)>>.
+
+  _:step7
+    rdf:reifies <<(:g1 :mentions :bob)>>;
+    pe:rule "rule#4";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b2 ],
+      [ pe:var "g"; pe:value :g1 ],
+      [ pe:var "o"; pe:value :carol ],
+      [ pe:var "p"; pe:value :knows ],
+      [ pe:var "s"; pe:value :bob ];
+    pe:uses
+      <<(:g1 a :GraphTerm)>>,
+      _:step3,
+      <<(_:b2 rdf:first <<(:bob :knows :carol)>>)>>.
+
+  _:step8
+    rdf:reifies <<(:g2 :mentions :alice)>>;
+    pe:rule "rule#4";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b3 ],
+      [ pe:var "g"; pe:value :g2 ],
+      [ pe:var "o"; pe:value :tea ],
+      [ pe:var "p"; pe:value :likes ],
+      [ pe:var "s"; pe:value :alice ];
+    pe:uses
+      <<(:g2 a :GraphTerm)>>,
+      _:step2,
+      <<(_:b3 rdf:first <<(:alice :likes :tea)>>)>>.
+
+  _:step9
+    rdf:reifies <<(:g1 :mentions :carol)>>;
+    pe:rule "rule#5";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b2 ],
+      [ pe:var "g"; pe:value :g1 ],
+      [ pe:var "o"; pe:value :carol ],
+      [ pe:var "p"; pe:value :knows ],
+      [ pe:var "s"; pe:value :bob ];
+    pe:uses
+      <<(:g1 a :GraphTerm)>>,
+      _:step3,
+      <<(_:b2 rdf:first <<(:bob :knows :carol)>>)>>.
+
+  _:step10
+    rdf:reifies <<(:g2 :mentions :tea)>>;
+    pe:rule "rule#5";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b3 ],
+      [ pe:var "g"; pe:value :g2 ],
+      [ pe:var "o"; pe:value :tea ],
+      [ pe:var "p"; pe:value :likes ],
+      [ pe:var "s"; pe:value :alice ];
+    pe:uses
+      <<(:g2 a :GraphTerm)>>,
+      _:step2,
+      <<(_:b3 rdf:first <<(:alice :likes :tea)>>)>>.
+
+  _:step11
+    rdf:reifies <<(:g1 :listCell rdf:nil)>>;
+    pe:rule "rule#2";
+    pe:binding
+      [ pe:var "cell"; pe:value _:b2 ],
+      [ pe:var "g"; pe:value :g1 ],
+      [ pe:var "rest"; pe:value rdf:nil ];
+    pe:uses
+      _:step3,
+      <<(_:b2 rdf:rest rdf:nil)>>.
+}
