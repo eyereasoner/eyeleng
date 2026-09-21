@@ -52,6 +52,10 @@ var eyeleng = (() => {
           this.token = token;
         }
       };
+      function continuesName(c) {
+        if (c === void 0) return false;
+        return /[0-9A-Za-z_]/.test(c) || c.charCodeAt(0) > 127;
+      }
       function tokenize(source, filenameOrOptions = "<input>") {
         const options = typeof filenameOrOptions === "object" && filenameOrOptions !== null ? filenameOrOptions : { filename: filenameOrOptions };
         const filename = options.filename || "<input>";
@@ -306,11 +310,15 @@ var eyeleng = (() => {
               continue;
             }
             const code = source.charCodeAt(i);
-            if (isWhitespaceCode(code) || "{}()[],;|".includes(c) || "=<>+-*/!^~".includes(c)) break;
-            if (c === ".") {
-              const n = source[i + 1];
-              if (n === void 0 || isWhitespaceCode(n.charCodeAt(0)) || "{}()[],;|".includes(n) || "=<>+-*/!^~".includes(n)) break;
+            if (c === "-" || c === ".") {
+              if (continuesName(source[i + 1])) {
+                i += 1;
+                column += 1;
+                continue;
+              }
+              break;
             }
+            if (isWhitespaceCode(code) || "{}()[],;|".includes(c) || "=<>+-*/!^~".includes(c)) break;
             if (c === "#") break;
             i += 1;
             column += 1;
@@ -336,7 +344,7 @@ var eyeleng = (() => {
         return code >= 65 && code <= 90 || code >= 97 && code <= 122 || code >= 48 && code <= 57 || code === 45;
       }
       function isVarNameCode(code) {
-        return code >= 65 && code <= 90 || code >= 97 && code <= 122 || code >= 48 && code <= 57 || code === 95 || code === 45;
+        return code >= 65 && code <= 90 || code >= 97 && code <= 122 || code >= 48 && code <= 57 || code === 95;
       }
       function startsNumericLiteral(source, i) {
         const ch = source[i];

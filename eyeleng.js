@@ -1247,6 +1247,11 @@
         }
       }
       
+      function continuesName(c) {
+        if (c === undefined) return false;
+        return /[0-9A-Za-z_]/.test(c) || c.charCodeAt(0) > 127;
+      }
+      
       function tokenize(source, filenameOrOptions = '<input>') {
         const options = typeof filenameOrOptions === 'object' && filenameOrOptions !== null ? filenameOrOptions : { filename: filenameOrOptions };
         const filename = options.filename || '<input>';
@@ -1475,11 +1480,21 @@
               continue;
             }
             const code = source.charCodeAt(i);
-            if (isWhitespaceCode(code) || '{}()[],;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
-            if (c === '.') {
-              const n = source[i + 1];
-              if (n === undefined || isWhitespaceCode(n.charCodeAt(0)) || '{}()[],;|'.includes(n) || '=<>+-*/!^~'.includes(n)) break;
+            // `-` and `.` belong to a name: PN_CHARS includes `-`, and
+            // PN_LOCAL/PN_PREFIX/BLANK_NODE_LABEL admit `.` between name
+            // characters ([122], [147]-[149] of SPARQL 1.2 RL 7.6). Either one
+            // continues the word while a name character follows, which keeps
+            // `:a-b`, `_:a-1` and `res:CITY_St.-denis` whole and still leaves
+            // the terminator in `:a .` and the operator in `?x - 1` alone.
+            if (c === '-' || c === '.') {
+              if (continuesName(source[i + 1])) {
+                i += 1;
+                column += 1;
+                continue;
+              }
+              break;
             }
+            if (isWhitespaceCode(code) || '{}()[],;|'.includes(c) || '=<>+-*/!^~'.includes(c)) break;
             if (c === '#') break;
             i += 1;
             column += 1;
@@ -1512,8 +1527,11 @@
         return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 45;
       }
       
+      // [146] VARNAME admits PN_CHARS_U and digits but, unlike PN_CHARS, not
+      // `-`: `?n-1` is `?n` minus `1`, which [109] AdditiveExpression then reads
+      // through its NumericLiteralNegative alternative.
       function isVarNameCode(code) {
-        return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 95 || code === 45;
+        return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 95;
       }
       
       function startsNumericLiteral(source, i) {
