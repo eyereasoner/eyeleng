@@ -47354,6 +47354,9 @@ ${stripDirectiveLines(chunk)}`;
                   layer: context.layer,
                   iteration: context.iteration,
                   rule: rule.name || `rule#${ruleIndex + 1}`,
+                  // A proof step cites a rule by its number in the rule set, the
+                  // same citation eyeron, eyeling and eyeprolog make.
+                  ruleNumber: ruleIndex + 1,
                   triple,
                   binding,
                   uses: proofUses(rule.body, binding)
@@ -47653,7 +47656,7 @@ ${stripDirectiveLines(chunk)}`;
         body.push("");
         steps.forEach(({ id, entry }, index) => {
           if (index > 0) body.push("");
-          const groups = [["rdf:reifies", [proofTripleTerm(entry.triple, prefixes)]], ["pe:rule", [quoteString(entry.rule)]]];
+          const groups = [["rdf:reifies", [proofTripleTerm(entry.triple, prefixes)]], ["pe:rule", [String(entry.ruleNumber)]]];
           const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
           if (bindings.length > 0) {
             groups.push(["pe:binding", bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`)]);

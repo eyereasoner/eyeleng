@@ -49,7 +49,7 @@ function formatProof(trace, prefixes = {}) {
 
   steps.forEach(({ id, entry }, index) => {
     if (index > 0) body.push('');
-    const groups = [['rdf:reifies', [proofTripleTerm(entry.triple, prefixes)]], ['pe:rule', [quoteString(entry.rule)]]];
+    const groups = [['rdf:reifies', [proofTripleTerm(entry.triple, prefixes)]], ['pe:rule', [String(entry.ruleNumber)]]];
     const bindings = Object.entries(entry.binding || {}).sort(([a], [b]) => a.localeCompare(b));
     if (bindings.length > 0) {
       groups.push(['pe:binding', bindings.map(([name, value]) => `[ pe:var ${quoteString(name)}; pe:value ${formatTerm(value, prefixes)} ]`)]);

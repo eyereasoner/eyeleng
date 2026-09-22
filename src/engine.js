@@ -285,6 +285,9 @@ function applyRuleOnce(program, store, ruleIndex, context) {
             layer: context.layer,
             iteration: context.iteration,
             rule: rule.name || `rule#${ruleIndex + 1}`,
+            // A proof step cites a rule by its number in the rule set, the
+            // same citation eyeron, eyeling and eyeprolog make.
+            ruleNumber: ruleIndex + 1,
             triple,
             binding,
             uses: proofUses(rule.body, binding),

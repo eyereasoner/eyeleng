@@ -10,7 +10,7 @@ DATA {
 
   _:step1
     rdf:reifies <<(<urn:eyeleng:message-log:03ead54e#m001> :mentionsSensor :s1)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "envelope"; pe:value <urn:eyeleng:message-log:03ead54e#m001> ],
       [ pe:var "payload"; pe:value <urn:eyeleng:message-log:03ead54e#m001/payload> ],
@@ -22,7 +22,7 @@ DATA {
 
   _:step2
     rdf:reifies <<(<urn:eyeleng:message-log:03ead54e#m003> :mentionsSensor :s2)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "envelope"; pe:value <urn:eyeleng:message-log:03ead54e#m003> ],
       [ pe:var "payload"; pe:value <urn:eyeleng:message-log:03ead54e#m003/payload> ],
@@ -34,7 +34,7 @@ DATA {
 
   _:step3
     rdf:reifies <<(<urn:eyeleng:message-log:03ead54e#m002> :isHeartbeat true)>>;
-    pe:rule "rule#2";
+    pe:rule 2;
     pe:binding [ pe:var "envelope"; pe:value <urn:eyeleng:message-log:03ead54e#m002> ];
     pe:uses <<(<urn:eyeleng:message-log:03ead54e#m002> eymsg:payloadKind eymsg:empty)>>.
 }

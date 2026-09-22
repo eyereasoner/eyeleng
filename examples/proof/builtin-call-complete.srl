@@ -46,7 +46,7 @@ DATA {
 
   _:step1
     rdf:reifies <<(:thing :str "Hello World")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -102,7 +102,7 @@ DATA {
 
   _:step2
     rdf:reifies <<(:thing :lang "en")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -158,7 +158,7 @@ DATA {
 
   _:step3
     rdf:reifies <<(:thing :langdir "ltr")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -214,7 +214,7 @@ DATA {
 
   _:step4
     rdf:reifies <<(:thing :datatype rdf:langString)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -270,7 +270,7 @@ DATA {
 
   _:step5
     rdf:reifies <<(:thing :iri <file:///__EXAMPLES__/local>)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -326,7 +326,7 @@ DATA {
 
   _:step6
     rdf:reifies <<(:thing :uri <file:///__EXAMPLES__/local>)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -382,7 +382,7 @@ DATA {
 
   _:step7
     rdf:reifies <<(:thing :blank _:eyeleng_1)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -438,7 +438,7 @@ DATA {
 
   _:step8
     rdf:reifies <<(:thing :abs 3.7)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -494,7 +494,7 @@ DATA {
 
   _:step9
     rdf:reifies <<(:thing :ceil -3)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -550,7 +550,7 @@ DATA {
 
   _:step10
     rdf:reifies <<(:thing :floor -4)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -606,7 +606,7 @@ DATA {
 
   _:step11
     rdf:reifies <<(:thing :round -4)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -662,7 +662,7 @@ DATA {
 
   _:step12
     rdf:reifies <<(:thing :concat "ABC")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -718,7 +718,7 @@ DATA {
 
   _:step13
     rdf:reifies <<(:thing :emptyConcat "")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -774,7 +774,7 @@ DATA {
 
   _:step14
     rdf:reifies <<(:thing :substr "ell")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -830,7 +830,7 @@ DATA {
 
   _:step15
     rdf:reifies <<(:thing :strlen 11)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -886,7 +886,7 @@ DATA {
 
   _:step16
     rdf:reifies <<(:thing :replace "Hello SRL")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -942,7 +942,7 @@ DATA {
 
   _:step17
     rdf:reifies <<(:thing :ucase "HELLO WORLD")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -998,7 +998,7 @@ DATA {
 
   _:step18
     rdf:reifies <<(:thing :lcase "hello world")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1054,7 +1054,7 @@ DATA {
 
   _:step19
     rdf:reifies <<(:thing :encoded "a%20b")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1110,7 +1110,7 @@ DATA {
 
   _:step20
     rdf:reifies <<(:thing :before "Hello")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1166,7 +1166,7 @@ DATA {
 
   _:step21
     rdf:reifies <<(:thing :after "World")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1222,7 +1222,7 @@ DATA {
 
   _:step22
     rdf:reifies <<(:thing :year 2026)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1278,7 +1278,7 @@ DATA {
 
   _:step23
     rdf:reifies <<(:thing :month 5)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1334,7 +1334,7 @@ DATA {
 
   _:step24
     rdf:reifies <<(:thing :day 15)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1390,7 +1390,7 @@ DATA {
 
   _:step25
     rdf:reifies <<(:thing :hours 10)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1446,7 +1446,7 @@ DATA {
 
   _:step26
     rdf:reifies <<(:thing :minutes 20)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1502,7 +1502,7 @@ DATA {
 
   _:step27
     rdf:reifies <<(:thing :seconds 30)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1558,7 +1558,7 @@ DATA {
 
   _:step28
     rdf:reifies <<(:thing :timezone "PT2H30M"^^xsd:dayTimeDuration)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1614,7 +1614,7 @@ DATA {
 
   _:step29
     rdf:reifies <<(:thing :tz "+02:30")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1670,7 +1670,7 @@ DATA {
 
   _:step30
     rdf:reifies <<(:thing :now "2026-05-15T12:34:56.000Z"^^xsd:dateTime)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1726,7 +1726,7 @@ DATA {
 
   _:step31
     rdf:reifies <<(:thing :uuid <urn:uuid:00000000-0000-4000-8000-000000000001>)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1782,7 +1782,7 @@ DATA {
 
   _:step32
     rdf:reifies <<(:thing :struuid "00000000-0000-4000-8000-000000000002")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1838,7 +1838,7 @@ DATA {
 
   _:step33
     rdf:reifies <<(:thing :ifResult "negative")>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1894,7 +1894,7 @@ DATA {
 
   _:step34
     rdf:reifies <<(:thing :strlang "hello"@en)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -1950,7 +1950,7 @@ DATA {
 
   _:step35
     rdf:reifies <<(:thing :strlangdir "bonjour"@fr--ltr)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -2006,7 +2006,7 @@ DATA {
 
   _:step36
     rdf:reifies <<(:thing :strdt "42"^^xsd:integer)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -2062,7 +2062,7 @@ DATA {
 
   _:step37
     rdf:reifies <<(:thing :triple <<(:s :p :o)>>)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -2118,7 +2118,7 @@ DATA {
 
   _:step38
     rdf:reifies <<(:thing :subject :s)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -2174,7 +2174,7 @@ DATA {
 
   _:step39
     rdf:reifies <<(:thing :predicate :p)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
@@ -2230,7 +2230,7 @@ DATA {
 
   _:step40
     rdf:reifies <<(:thing :object :o)>>;
-    pe:rule "rule#1";
+    pe:rule 1;
     pe:binding
       [ pe:var "abs"; pe:value 3.7 ],
       [ pe:var "after"; pe:value "World" ],
