@@ -4503,10 +4503,11 @@
       
       // A proof is emitted as an ordinary SRL document: `PREFIX` headers and one
       // `DATA { ... }` block whose steps reify their own conclusion, the shape
-      // eyeron's own `--proof` for `.srl` produces. SRL has no bare `{ ... }`
-      // graph term (its only quoted-graph-shaped term is the single-triple
-      // `<<( s p o )>>` of [80] TripleTerm), so the N3 `{ claim } pe:why { ... }`
-      // shape this used to print was readable but not parseable as `.srl`.
+      // eyeron's own `--proof` for `.srl` produces. N3 writes the same steps as
+      // top-level triples whose subject is the quoted conclusion, which SRL has
+      // no term for: its only quoted-graph-shaped term is the single-triple
+      // `<<( s p o )>>` of [80] TripleTerm, so a step names itself by reifying
+      // that instead.
       function formatProof(trace, prefixes = {}) {
         if (!trace.length) return '';
       
