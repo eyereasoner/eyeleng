@@ -149,6 +149,9 @@ async function runToStringAsync(source, options = {}) {
 }
 
 module.exports = {
+  checkProofDocument: require('./check-proof.js').checkProofDocument,
+  readProofDocument: require('./check-proof.js').readProofDocument,
+  proofVerdict: require('./check-proof.js').verdict,
   parse, parseQuery, parseInput, parseInputAsync, parseRdfDocument, parseRdfMessageLog, looksLikeRdfMessageLog,
   compile, compileAsync, resolveImports, resolveImportsAsync, mergePrograms, analyze, evaluate, evaluateAsync,
   run, runAsync, runToString, runToStringAsync, runQuery, runQueryAsync, queryResult, queryProgram,

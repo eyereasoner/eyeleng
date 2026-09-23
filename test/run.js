@@ -17,6 +17,7 @@ const preferred = [
   'builtins.test.js',
   'browser-bundle.test.js',
   'examples.test.js',
+  'check-proof.test.js',
   'sparql-rl-manifest-parser.test.js',
   'sparql-rl-regressions.test.js',
   'sparql-rl.test.js',

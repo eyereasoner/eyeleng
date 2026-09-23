@@ -64,6 +64,7 @@ Important options:
 --all                   Print base graph plus inference graph
 --json                  Print JSON instead of compact triples/bindings
 --prove                 Print proof explanations
+--check-proof FILE      Check a saved proof against this rule set
 --stats                 Print iteration and triple counts to stderr
 --check                 Parse, check well-formedness, and stratify only
 --strict                Treat warnings as errors

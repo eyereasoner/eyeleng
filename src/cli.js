@@ -19,6 +19,7 @@ const {
   looksLikeRdfMessageLog,
 } = require('./api.js');
 const { compactIRI } = require('./term.js');
+const { checkProofDocument, verdict: proofVerdict } = require('./check-proof.js');
 
 function readPackageVersion() {
   const candidates = [
@@ -38,7 +39,7 @@ function readPackageVersion() {
 const VERSION = readPackageVersion();
 
 function help() {
-  return `eyeleng ${VERSION}\n\nSPARQL 1.2 RL (SRL) rule engine with RDF 1.2 base-graph input via rdf-parse.\n\nUsage: eyeleng [options] rules.srl\n\nOptions:\n  --data FILE            Add an RDF 1.2 document to the immutable base graph (repeatable)\n  --all                  Print base graph plus inference graph\n  --json                 Print JSON instead of compact triples/bindings\n  --prove                Print proof explanations\n  --stats                Print iteration and triple counts to stderr\n  --check                Parse, check well-formedness, and stratify only\n  --strict               Treat warnings as errors\n  --deps                 Print open/closed rule dependencies during --check\n  --query TEXT           Run a raw SRL body pattern\n  --query-file FILE      Read a raw SRL body pattern from a file\n  --query-mode MODE      Use auto, forward, or backward query planning (default auto)\n  --max-iterations N     Stop after N fixpoint iterations within a stratum\n  --no-imports           Reject rule sets containing IMPORTS\n  --rdf-messages         Treat --data input as an RDF Message Log (ancillary feature)\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --version              Print version\n  -h, --help             Print this help\n\nThe rule-set media type is application/sparql-rl and the conventional extension is .srl.\n`;
+  return `eyeleng ${VERSION}\n\nSPARQL 1.2 RL (SRL) rule engine with RDF 1.2 base-graph input via rdf-parse.\n\nUsage: eyeleng [options] rules.srl\n\nOptions:\n  --data FILE            Add an RDF 1.2 document to the immutable base graph (repeatable)\n  --all                  Print base graph plus inference graph\n  --json                 Print JSON instead of compact triples/bindings\n  --prove                Print proof explanations\n  --check-proof FILE     Check a saved proof against this rule set\n  --stats                Print iteration and triple counts to stderr\n  --check                Parse, check well-formedness, and stratify only\n  --strict               Treat warnings as errors\n  --deps                 Print open/closed rule dependencies during --check\n  --query TEXT           Run a raw SRL body pattern\n  --query-file FILE      Read a raw SRL body pattern from a file\n  --query-mode MODE      Use auto, forward, or backward query planning (default auto)\n  --max-iterations N     Stop after N fixpoint iterations within a stratum\n  --no-imports           Reject rule sets containing IMPORTS\n  --rdf-messages         Treat --data input as an RDF Message Log (ancillary feature)\n  --include-message-facts Include payload facts while parsing RDF Message Logs\n  --version              Print version\n  -h, --help             Print this help\n\nThe rule-set media type is application/sparql-rl and the conventional extension is .srl.\n`;
 }
 
 function parseArgs(argv) {
@@ -70,6 +71,11 @@ function parseArgs(argv) {
     else if (arg === '--strict') options.strict = true;
     else if (arg === '--deps') options.deps = true;
     else if (arg === '--no-imports') options.imports = false;
+    else if (arg === '--check-proof') {
+      i += 1;
+      if (i >= argv.length) throw new Error('--check-proof requires a proof document');
+      options.checkProof = argv[i];
+    }
     else if (arg === '--rdf-messages') options.rdfMessages = true;
     else if (arg === '--include-message-facts') options.includeMessageFacts = true;
     else if (arg === '--data') {
@@ -224,6 +230,19 @@ async function main(argv = process.argv.slice(2), io = process) {
     if (options.check) {
       if (compiled.diagnostics.length === 0) io.stderr.write('eyeleng: ok\n');
       return fatal ? 1 : 0;
+    }
+
+    // --check-proof: re-perform every rule application a saved proof
+    // records against this rule set. This reasons about nothing; it only
+    // verifies what the document says.
+    if (options.checkProof) {
+      if (fatal) return 1;
+      const report = checkProofDocument(compiled.program, fs.readFileSync(options.checkProof, 'utf8'), { baseGraph });
+      for (const failure of report.failures.slice(0, 10)) {
+        io.stderr.write(`  [${failure.condition}] ${failure.conclusion} -- ${failure.detail}\n`);
+      }
+      io.stdout.write(`${proofVerdict(report)}\n`);
+      return report.valid ? 0 : 1;
     }
     if (fatal) return 1;
 
