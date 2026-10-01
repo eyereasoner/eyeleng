@@ -1,7 +1,7 @@
 'use strict';
 
 const { compactIRI, iri, variable, termEquals } = require('./term.js');
-const { tripleHasBlankNode } = require('./assignments.js');
+const { tripleHasBlankNode, tripleHasVariableTripleTerm } = require('./assignments.js');
 
 function analyze(program, options = {}) {
   const diagnostics = [];
@@ -65,6 +65,7 @@ function dependencyGraph(program, options = {}) {
       hasAssignment: ruleHasAssignment(rule, options),
       hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
       headHasBlankNode: ruleHeadHasBlankNode(rule),
+      headHasVariableTripleTerm: (rule.head || []).some(tripleHasVariableTripleTerm),
       createsTerms: ruleCreatesTerms(rule, options),
     };
   });
@@ -73,9 +74,8 @@ function dependencyGraph(program, options = {}) {
   function addEdge(from, to, kind, predicate) {
     const key = `${from.index}->${to.index}`;
     const negated = kind === 'negated';
-    // Per §4.3, every dependency *from* an assignment rule or a rule with a
-    // blank node in its head is closed, even when the matching pattern itself
-    // is positive.
+    // Per §4.3, every dependency from a run-once rule is closed, even when
+    // the matching pattern itself is positive.
     const runOnceConstraint = from.runOnce;
     const closed = negated || runOnceConstraint;
     const existing = edgeMap.get(key);
@@ -133,7 +133,7 @@ function dependencyGraph(program, options = {}) {
       index: rule.index, name: rule.name,
       headPredicates: Array.from(rule.headPredicates), positivePredicates: Array.from(rule.positivePredicates), negativePredicates: Array.from(rule.negativePredicates),
       runOnce: rule.runOnce, hasAssignment: rule.hasAssignment, hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
-      headHasBlankNode: rule.headHasBlankNode, createsTerms: rule.createsTerms,
+      headHasBlankNode: rule.headHasBlankNode, headHasVariableTripleTerm: rule.headHasVariableTripleTerm, createsTerms: rule.createsTerms,
     })),
     edges,
     components: components.map((component) => component.map((i) => rules[i].name)),
@@ -551,7 +551,9 @@ function ruleHasTermGeneratingAssignment(rule, options = {}) {
 }
 
 function ruleCreatesTerms(rule, options = {}) {
-  return ruleHeadHasBlankNode(rule) || ruleHasTermGeneratingAssignment(rule, options);
+  return ruleHeadHasBlankNode(rule)
+    || (rule.head || []).some(tripleHasVariableTripleTerm)
+    || ruleHasTermGeneratingAssignment(rule, options);
 }
 
 function assignmentMayCreateNewTerm(expr) {

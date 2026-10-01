@@ -2475,14 +2475,28 @@
     "src/assignments.js": function (require, module, exports) {
       'use strict';
       
-      // SPARQL 1.2 RL run-once rules are exactly rules with an assignment element
-      // or a blank node in the rule head. See SPARQL-RL §4.4.
+      // SPARQL 1.2 RL §4.1 (01 October 2026): assignments, head blank nodes,
+      // and head triple-term templates containing variables make a rule run once.
       function assignmentsNeedRunOnce(clauses = []) {
         return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
       }
       
       function ruleNeedsRunOnce(head = [], body = []) {
-        return assignmentsNeedRunOnce(body) || head.some(tripleHasBlankNode);
+        return assignmentsNeedRunOnce(body)
+          || head.some(tripleHasBlankNode)
+          || head.some(tripleHasVariableTripleTerm);
+      }
+      
+      function tripleHasVariableTripleTerm(triple) {
+        return [triple && triple.s, triple && triple.p, triple && triple.o]
+          .some((term) => term && term.type === 'triple' && termHasVariable(term));
+      }
+      
+      function termHasVariable(term) {
+        if (!term) return false;
+        if (term.type === 'var') return true;
+        if (term.type === 'triple') return termHasVariable(term.s) || termHasVariable(term.p) || termHasVariable(term.o);
+        return false;
       }
       
       function tripleHasBlankNode(triple) {
@@ -2498,7 +2512,7 @@
         return false;
       }
       
-      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, tripleHasBlankNode, termHasBlankNode };
+      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, tripleHasBlankNode, termHasBlankNode, tripleHasVariableTripleTerm };
       
     },
     "src/rdf.js": function (require, module, exports) {
@@ -3846,7 +3860,7 @@
       'use strict';
       
       const { compactIRI, iri, variable, termEquals } = require('./term.js');
-      const { tripleHasBlankNode } = require('./assignments.js');
+      const { tripleHasBlankNode, tripleHasVariableTripleTerm } = require('./assignments.js');
       
       function analyze(program, options = {}) {
         const diagnostics = [];
@@ -3910,6 +3924,7 @@
             hasAssignment: ruleHasAssignment(rule, options),
             hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
             headHasBlankNode: ruleHeadHasBlankNode(rule),
+            headHasVariableTripleTerm: (rule.head || []).some(tripleHasVariableTripleTerm),
             createsTerms: ruleCreatesTerms(rule, options),
           };
         });
@@ -3918,9 +3933,8 @@
         function addEdge(from, to, kind, predicate) {
           const key = `${from.index}->${to.index}`;
           const negated = kind === 'negated';
-          // Per §4.3, every dependency *from* an assignment rule or a rule with a
-          // blank node in its head is closed, even when the matching pattern itself
-          // is positive.
+          // Per §4.3, every dependency from a run-once rule is closed, even when
+          // the matching pattern itself is positive.
           const runOnceConstraint = from.runOnce;
           const closed = negated || runOnceConstraint;
           const existing = edgeMap.get(key);
@@ -3978,7 +3992,7 @@
             index: rule.index, name: rule.name,
             headPredicates: Array.from(rule.headPredicates), positivePredicates: Array.from(rule.positivePredicates), negativePredicates: Array.from(rule.negativePredicates),
             runOnce: rule.runOnce, hasAssignment: rule.hasAssignment, hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
-            headHasBlankNode: rule.headHasBlankNode, createsTerms: rule.createsTerms,
+            headHasBlankNode: rule.headHasBlankNode, headHasVariableTripleTerm: rule.headHasVariableTripleTerm, createsTerms: rule.createsTerms,
           })),
           edges,
           components: components.map((component) => component.map((i) => rules[i].name)),
@@ -4396,7 +4410,9 @@
       }
       
       function ruleCreatesTerms(rule, options = {}) {
-        return ruleHeadHasBlankNode(rule) || ruleHasTermGeneratingAssignment(rule, options);
+        return ruleHeadHasBlankNode(rule)
+          || (rule.head || []).some(tripleHasVariableTripleTerm)
+          || ruleHasTermGeneratingAssignment(rule, options);
       }
       
       function assignmentMayCreateNewTerm(expr) {

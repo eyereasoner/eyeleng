@@ -131,4 +131,84 @@ DATA { :writer :canPerform :writeTask }`;
   }
 });
 
+// SPARQL 1.2 RL, Working Draft 01 October 2026, §4.1 and §4.3.
+test('head triple-term templates containing variables are run-once rules', () => {
+  for (const template of [
+    '?s :quoted <<( ?s :p :o )>>',
+    '?s :quoted <<( :s ?p :o )>>',
+    '?s :quoted <<( :s :p ?o )>>',
+    '?s :quoted <<( :s :p <<( :s :p ?o )>> )>>',
+    '<<( ?s :p :o )>> :quoted :o',
+  ]) {
+    const compiled = eyeleng.compile(`PREFIX : <http://example/>
+RULE { ${template} } WHERE { ?s ?p ?o }`, { throwOnDiagnostics: false });
+    assert.equal(compiled.program.rules[0].runOnce, true, template);
+    const rule = compiled.analysis.dependency.rules[0];
+    assert.equal(rule.headHasVariableTripleTerm, true, template);
+    assert.equal(rule.createsTerms, true, template);
+    assert.equal(compiled.analysis.dependency.edges[0].label, 'closed', template);
+    assert.equal(compiled.analysis.errors[0].code, 'unstratified-closed-dependency', template);
+  }
+});
+
+test('constant triple terms and variables carrying existing terms remain general rules', () => {
+  const compiled = eyeleng.compile(`PREFIX : <http://example/>
+RULE { ?s :quoted <<( :s :p <<( :s :p :o )>> )>> } WHERE { ?s :input ?o }
+RULE { ?s :copy ?term } WHERE { ?s :quoted ?term }`);
+  assert(compiled.program.rules.every((rule) => !rule.runOnce));
+  assert(compiled.analysis.dependency.rules.every((rule) => !rule.createsTerms));
+  assert.equal(compiled.analysis.dependency.edges[0].label, 'open');
+});
+
+test('recursive triple-term construction is rejected before evaluation', () => {
+  assert.throws(() => eyeleng.compile(`PREFIX : <http://example/>
+DATA { :s :p :o }
+RULE { :s :p <<( :s :p ?o )>> } WHERE { :s :p ?o }`), /Stratification condition/);
+});
+
+const tripleTermRules = `PREFIX : <http://example/>
+DATA { :a :edge :b . :b :edge :c }
+RULE { ?s :quoted <<( ?s :edge ?o )>> } WHERE { ?s :reach ?o }
+RULE { ?s :seen ?o } WHERE { ?s :quoted <<( ?s :edge ?o )>> }
+RULE { ?s :reach ?o } WHERE { ?s :edge ?o }
+RULE { ?s :reach ?o } WHERE { ?s :reach ?m . ?m :edge ?o }`;
+
+test('triple-term construction waits for recursive producers and feeds general consumers', async () => {
+  const compiled = eyeleng.compile(tripleTermRules);
+  const dependencies = compiled.analysis.dependency;
+  assert(dependencies.edges.filter((edge) => edge.from === 0).every((edge) => edge.closed));
+  assert(dependencies.layerIndexes[0].includes(2));
+  assert(dependencies.layerIndexes[0].includes(3));
+  assert(dependencies.layerIndexes[1].includes(0));
+  for (const result of [eyeleng.run(tripleTermRules), await eyeleng.runAsync(tripleTermRules)]) {
+    const quoted = result.inferred.filter((triple) => triple.p.value === 'http://example/quoted');
+    assert.equal(quoted.length, 3);
+    assert(quoted.every((triple) => triple.o.type === 'triple'));
+    assert.equal(result.perRule[0].applications, 3);
+    const seen = result.inferred.filter((triple) => triple.p.value === 'http://example/seen');
+    assert.equal(seen.length, 3);
+    assert(seen.some((triple) => triple.s.value === 'http://example/a' && triple.o.value === 'http://example/c'));
+  }
+});
+
+test('queries demanding constructed triple terms use forward evaluation', () => {
+  const result = eyeleng.runQuery(tripleTermRules, '?s :quoted ?term', { queryMode: 'auto' });
+  assert.equal(result.query.mode, 'forward');
+  assert.equal(result.query.bindings.length, 3);
+});
+
+test('WHERE DATA triple-term construction ignores inferred producers', () => {
+  const source = `PREFIX : <http://example/>
+RULE { ?s :quoted <<( ?s :p ?o )>> } WHERE DATA { ?s :p ?o }
+RULE { :inferred :p :o } WHERE {}`;
+  const baseGraph = [t('http://example/base', 'http://example/p', iri('http://example/o'))];
+  const compiled = eyeleng.compile(source, { baseGraph });
+  assert.equal(compiled.program.rules[0].runOnce, true);
+  assert.equal(compiled.analysis.dependency.edges.length, 0);
+  const result = eyeleng.run(source, { baseGraph });
+  const quoted = result.inferred.filter((triple) => triple.p.value === 'http://example/quoted');
+  assert.equal(quoted.length, 1);
+  assert.equal(quoted[0].s.value, 'http://example/base');
+});
+
 main();

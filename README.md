@@ -2,7 +2,7 @@
 
 **Eyeleng** is a JavaScript implementation of **SPARQL 1.2 RL (SRL)**, following the W3C Recommendation-track specification at <https://www.w3.org/TR/sparql12-rl/>.
 
-> Status: SPARQL 1.2 RL is currently a W3C Working Draft. Eyeleng tracks the current specification and may change as the specification advances.
+> Status: Eyeleng tracks the [W3C Working Draft of 01 October 2026](https://www.w3.org/TR/2026/WD-sparql12-rl-20261001/) and may change as the specification advances.
 
 > [!TIP]
 > [Try Eyeleng in the browser](https://eyereasoner.github.io/eyeleng/playground).
@@ -13,7 +13,7 @@
 - `srl:` namespace `http://www.w3.org/ns/sparql-rl#`.
 - RDF 1.2 data input through [`rdf-parse`](https://github.com/rubensworks/rdf-parse.js/) 5.x.
 - Open/closed dependency analysis and stratification.
-- Run-once handling for rules containing `SET` or blank nodes in the head.
+- Run-once handling for rules containing `SET`, blank nodes in the head, or head triple-term templates containing variables.
 - Local rule-set imports through `IMPORTS`.
 - Forward inference plus direct backward query evaluation.
 - CLI, JavaScript API, browser bundle, examples, and W3C conformance harness.
@@ -25,7 +25,7 @@ Eyeleng distinguishes the two graphs used by SPARQL 1.2 RL:
 - **base graph** — external RDF supplied by the caller, for example with `--data`; `WHERE DATA` and `NOT DATA` match this graph only;
 - **inference graph** — starts with triples from SRL `DATA { ... }` blocks and grows with rule conclusions.
 
-Normal rule bodies participate in rule evaluation over the available data, while ground-data clauses remain pinned to the base graph.
+Normal rule bodies match the union of the base and inference graphs, while `WHERE DATA` and `NOT DATA` clauses match only the base graph and create no rule dependencies.
 
 ## Rule syntax
 

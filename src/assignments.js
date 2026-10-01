@@ -1,13 +1,27 @@
 'use strict';
 
-// SPARQL 1.2 RL run-once rules are exactly rules with an assignment element
-// or a blank node in the rule head. See SPARQL-RL §4.4.
+// SPARQL 1.2 RL §4.1 (01 October 2026): assignments, head blank nodes,
+// and head triple-term templates containing variables make a rule run once.
 function assignmentsNeedRunOnce(clauses = []) {
   return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
 }
 
 function ruleNeedsRunOnce(head = [], body = []) {
-  return assignmentsNeedRunOnce(body) || head.some(tripleHasBlankNode);
+  return assignmentsNeedRunOnce(body)
+    || head.some(tripleHasBlankNode)
+    || head.some(tripleHasVariableTripleTerm);
+}
+
+function tripleHasVariableTripleTerm(triple) {
+  return [triple && triple.s, triple && triple.p, triple && triple.o]
+    .some((term) => term && term.type === 'triple' && termHasVariable(term));
+}
+
+function termHasVariable(term) {
+  if (!term) return false;
+  if (term.type === 'var') return true;
+  if (term.type === 'triple') return termHasVariable(term.s) || termHasVariable(term.p) || termHasVariable(term.o);
+  return false;
 }
 
 function tripleHasBlankNode(triple) {
@@ -23,4 +37,4 @@ function termHasBlankNode(term) {
   return false;
 }
 
-module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, tripleHasBlankNode, termHasBlankNode };
+module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, tripleHasBlankNode, termHasBlankNode, tripleHasVariableTripleTerm };

@@ -1159,7 +1159,16 @@ var eyeleng = (() => {
         return clauses.some((clause) => clause.type === "set" || clause.type === "bind");
       }
       function ruleNeedsRunOnce(head2 = [], body = []) {
-        return assignmentsNeedRunOnce(body) || head2.some(tripleHasBlankNode);
+        return assignmentsNeedRunOnce(body) || head2.some(tripleHasBlankNode) || head2.some(tripleHasVariableTripleTerm);
+      }
+      function tripleHasVariableTripleTerm(triple) {
+        return [triple && triple.s, triple && triple.p, triple && triple.o].some((term) => term && term.type === "triple" && termHasVariable(term));
+      }
+      function termHasVariable(term) {
+        if (!term) return false;
+        if (term.type === "var") return true;
+        if (term.type === "triple") return termHasVariable(term.s) || termHasVariable(term.p) || termHasVariable(term.o);
+        return false;
       }
       function tripleHasBlankNode(triple) {
         return termHasBlankNode(triple && triple.s) || termHasBlankNode(triple && triple.p) || termHasBlankNode(triple && triple.o);
@@ -1170,7 +1179,7 @@ var eyeleng = (() => {
         if (term.type === "triple") return termHasBlankNode(term.s) || termHasBlankNode(term.p) || termHasBlankNode(term.o);
         return false;
       }
-      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, tripleHasBlankNode, termHasBlankNode };
+      module.exports = { assignmentsNeedRunOnce, ruleNeedsRunOnce, tripleHasBlankNode, termHasBlankNode, tripleHasVariableTripleTerm };
     }
   });
 
@@ -46515,7 +46524,7 @@ ${stripDirectiveLines(chunk)}`;
     "src/analyze.js"(exports, module) {
       "use strict";
       var { compactIRI, iri, variable, termEquals } = require_term();
-      var { tripleHasBlankNode } = require_assignments();
+      var { tripleHasBlankNode, tripleHasVariableTripleTerm } = require_assignments();
       function analyze(program, options = {}) {
         const diagnostics = [];
         const dependency = dependencyGraph(program, options);
@@ -46582,6 +46591,7 @@ ${stripDirectiveLines(chunk)}`;
             hasAssignment: ruleHasAssignment(rule, options),
             hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
             headHasBlankNode: ruleHeadHasBlankNode(rule),
+            headHasVariableTripleTerm: (rule.head || []).some(tripleHasVariableTripleTerm),
             createsTerms: ruleCreatesTerms(rule, options)
           };
         });
@@ -46655,6 +46665,7 @@ ${stripDirectiveLines(chunk)}`;
             hasAssignment: rule.hasAssignment,
             hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
             headHasBlankNode: rule.headHasBlankNode,
+            headHasVariableTripleTerm: rule.headHasVariableTripleTerm,
             createsTerms: rule.createsTerms
           })),
           edges,
@@ -47009,7 +47020,7 @@ ${stripDirectiveLines(chunk)}`;
         return (rule.body || []).some((clause) => (clause.type === "set" || clause.type === "bind") && assignmentMayCreateNewTerm(clause.expr));
       }
       function ruleCreatesTerms(rule, options = {}) {
-        return ruleHeadHasBlankNode(rule) || ruleHasTermGeneratingAssignment(rule, options);
+        return ruleHeadHasBlankNode(rule) || (rule.head || []).some(tripleHasVariableTripleTerm) || ruleHasTermGeneratingAssignment(rule, options);
       }
       function assignmentMayCreateNewTerm(expr) {
         if (!expr) return false;
