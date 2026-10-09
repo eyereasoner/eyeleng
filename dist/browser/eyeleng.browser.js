@@ -733,9 +733,8 @@ var eyeleng = (() => {
             throw new Error(`Unsupported unary operator ${expr.op}`);
           }
           case "binary": {
+            if (expr.op === "&&" || expr.op === "||") return evalLogicalExpression(expr, binding, options);
             const left = evalExpression(expr.left, binding, options);
-            if (expr.op === "&&") return booleanValue(left) && booleanValue(evalExpression(expr.right, binding, options));
-            if (expr.op === "||") return booleanValue(left) || booleanValue(evalExpression(expr.right, binding, options));
             const right = evalExpression(expr.right, binding, options);
             return evalBinary(expr.op, left, right);
           }
@@ -744,6 +743,21 @@ var eyeleng = (() => {
           default:
             throw new Error(`Unsupported expression type ${expr.type}`);
         }
+      }
+      function evalLogicalExpression(expr, binding, options) {
+        const decisive = expr.op === "||";
+        let left;
+        let leftError;
+        try {
+          left = booleanValue(evalExpression(expr.left, binding, options));
+        } catch (error) {
+          leftError = error;
+        }
+        if (!leftError && left === decisive) return decisive;
+        const right = booleanValue(evalExpression(expr.right, binding, options));
+        if (right === decisive) return decisive;
+        if (leftError) throw leftError;
+        return right;
       }
       function evalCallExpression(expr, binding, options) {
         const canonical = canonicalBuiltinName(expr.name);
@@ -1217,6 +1231,7 @@ var eyeleng = (() => {
           this.imports = [];
           this.bnodeCounter = 0;
           this.bodyBnodeLabels = null;
+          this.usedVariableNames = new Set(this.tokens.filter((token) => token.type === "variable").map((token) => token.value));
           this.prefixes = {
             rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
             srl: "http://www.w3.org/ns/sparql-rl#",
@@ -1306,8 +1321,7 @@ var eyeleng = (() => {
         bodyBlankNodeVariable(label) {
           if (!this.bodyBnodeLabels) this.bodyBnodeLabels = /* @__PURE__ */ new Map();
           if (!this.bodyBnodeLabels.has(label)) {
-            this.bnodeCounter += 1;
-            this.bodyBnodeLabels.set(label, variable(`__b${this.bnodeCounter}`));
+            this.bodyBnodeLabels.set(label, this.freshGraphNode({ context: "body" }));
           }
           return this.bodyBnodeLabels.get(label);
         }
@@ -1391,9 +1405,13 @@ var eyeleng = (() => {
           return { term: head2, triples };
         }
         freshGraphNode(options = {}) {
-          this.bnodeCounter += 1;
+          do {
+            this.bnodeCounter += 1;
+          } while (options.context === "body" && this.usedVariableNames.has(`__b${this.bnodeCounter}`));
           const id = `b${this.bnodeCounter}`;
-          return options.context === "body" ? variable(`__${id}`) : blankNode(id);
+          if (options.context !== "body") return blankNode(id);
+          this.usedVariableNames.add(`__${id}`);
+          return variable(`__${id}`);
         }
         parseAnnotationsForTriple(baseTriple, options = {}) {
           const triples = [];

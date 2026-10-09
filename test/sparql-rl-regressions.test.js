@@ -211,4 +211,85 @@ RULE { :inferred :p :o } WHERE {}`;
   assert.equal(quoted[0].s.value, 'http://example/base');
 });
 
+// Editor's Draft checked 09 October 2026: blank nodes are fresh variables,
+// including inside triple terms, for matching and dependency analysis.
+test('body blank-node variables never capture explicit variables', () => {
+  for (const pattern of ['_:b :p ?__b1', '[] :p ?__b1', '_:b :p $__b1']) {
+    const source = `PREFIX : <http://example/>
+DATA { :s :p :o }
+RULE { ?__b1 :out true } WHERE { ${pattern} }`;
+    const result = eyeleng.run(source, { strictGrammar: true });
+    assert(result.inferred.some((triple) => triple.s.value === 'http://example/o' && triple.p.value === 'http://example/out'), pattern);
+  }
+  assert.throws(() => eyeleng.compile(`PREFIX : <http://example/>
+RULE { ?__b1 :out true } WHERE { _:b :p :o }`), /unbound head variable/);
+});
+
+test('nested triple-term blank nodes join and create producer dependencies', async () => {
+  const source = `PREFIX : <http://example/>
+DATA { :a :input :b . :c :input :d . :a :enabled true }
+RULE { :result :seen true } WHERE {
+  :statement :quotes <<( _:b :p <<( _:b :q ?o )>> )>> .
+  _:b :enabled true
+}
+RULE { :statement :quotes <<( ?s :p <<( ?s :q ?o )>> )>> }
+WHERE { ?s :input ?o }`;
+  const compiled = eyeleng.compile(source);
+  assert(compiled.analysis.dependency.edges.some((edge) => edge.from === 0 && edge.to === 1));
+  for (const result of [eyeleng.run(source), await eyeleng.runAsync(source)]) {
+    assert(result.inferred.some((triple) => triple.p.value === 'http://example/seen'));
+  }
+  const mismatch = source.replace('<<( ?s :q ?o )>>', '<<( :different :q ?o )>>');
+  assert(!eyeleng.run(mismatch).inferred.some((triple) => triple.p.value === 'http://example/seen'));
+});
+
+test('negation inherits outer scope without exporting its local variables', () => {
+  assert.doesNotThrow(() => eyeleng.compile(`PREFIX : <http://example/>
+RULE { ?s :out ?n } WHERE {
+  ?s :input ?v . SET(?n := ?v + 1)
+  NOT { ?s :blocked ?local . FILTER(?local > ?n) }
+  FILTER(?n > ?v)
+}`));
+  for (const tail of ['FILTER(?local > 0)', 'SET(?n := ?local + 1)']) {
+    assert.throws(() => eyeleng.compile(`PREFIX : <http://example/>
+RULE { ?s :out true } WHERE { ?s :input ?v . NOT { ?s :blocked ?local } ${tail} }`), /before it is bound/);
+  }
+  assert.throws(() => eyeleng.compile(`PREFIX : <http://example/>
+RULE { ?local :out true } WHERE { NOT { :s :blocked ?local } }`), /unbound head variable/);
+});
+
+test('expression errors propagate through ordinary calls and selected IF branches', () => {
+  for (const expression of ['STR(1/0)', 'IF(true, 1/0, 1)', 'IF(false, 1, 1/0)']) {
+    for (const clause of [`FILTER(${expression})`, `SET(?value := ${expression})`]) {
+      const result = eyeleng.run(`PREFIX : <http://example/>
+RULE { :s :out true } WHERE { ${clause} }`);
+      assert.equal(result.inferred.length, 0, clause);
+    }
+  }
+});
+
+test('logical functional forms obey the SPARQL true/false/error truth table', () => {
+  const values = ['true', 'false', '(1/0)'];
+  const expected = {
+    '||': [[true, true, true], [true, false, null], [true, null, null]],
+    '&&': [[true, false, null], [false, false, false], [null, false, null]],
+  };
+  for (const op of ['||', '&&']) {
+    for (let left = 0; left < values.length; left += 1) {
+      for (let right = 0; right < values.length; right += 1) {
+        const expression = `${values[left]} ${op} ${values[right]}`;
+        const value = expected[op][left][right];
+        const result = eyeleng.run(`PREFIX : <http://example/>
+RULE { :s :out ?value } WHERE { SET(?value := ${expression}) }`);
+        assert.equal(result.inferred.length, value === null ? 0 : 1, expression);
+        if (value !== null) assert.equal(result.inferred[0].o.value, value, expression);
+        for (const queryMode of ['forward', 'backward']) {
+          const query = eyeleng.runQuery('', `FILTER(${expression})`, { queryMode }).query;
+          assert.equal(query.bindings.length, value === true ? 1 : 0, `${queryMode}: ${expression}`);
+        }
+      }
+    }
+  }
+});
+
 main();

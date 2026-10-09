@@ -31,6 +31,9 @@ class Parser {
     this.imports = [];
     this.bnodeCounter = 0;
     this.bodyBnodeLabels = null;
+    // Body blank nodes must become variables not used anywhere in the rule,
+    // including in the head or in expressions that occur later in the body.
+    this.usedVariableNames = new Set(this.tokens.filter((token) => token.type === 'variable').map((token) => token.value));
     this.prefixes = {
       rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
       srl: 'http://www.w3.org/ns/sparql-rl#',
@@ -128,8 +131,7 @@ class Parser {
   bodyBlankNodeVariable(label) {
     if (!this.bodyBnodeLabels) this.bodyBnodeLabels = new Map();
     if (!this.bodyBnodeLabels.has(label)) {
-      this.bnodeCounter += 1;
-      this.bodyBnodeLabels.set(label, variable(`__b${this.bnodeCounter}`));
+      this.bodyBnodeLabels.set(label, this.freshGraphNode({ context: 'body' }));
     }
     return this.bodyBnodeLabels.get(label);
   }
@@ -225,9 +227,13 @@ class Parser {
   }
 
   freshGraphNode(options = {}) {
-    this.bnodeCounter += 1;
+    do {
+      this.bnodeCounter += 1;
+    } while (options.context === 'body' && this.usedVariableNames.has(`__b${this.bnodeCounter}`));
     const id = `b${this.bnodeCounter}`;
-    return options.context === 'body' ? variable(`__${id}`) : blankNode(id);
+    if (options.context !== 'body') return blankNode(id);
+    this.usedVariableNames.add(`__${id}`);
+    return variable(`__${id}`);
   }
 
   parseAnnotationsForTriple(baseTriple, options = {}) {

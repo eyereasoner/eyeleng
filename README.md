@@ -2,7 +2,7 @@
 
 **Eyeleng** is a JavaScript implementation of **SPARQL 1.2 RL (SRL)**, following the W3C Recommendation-track specification at <https://www.w3.org/TR/sparql12-rl/>.
 
-> Status: Eyeleng tracks the [W3C Working Draft of 01 October 2026](https://www.w3.org/TR/2026/WD-sparql12-rl-20261001/) and may change as the specification advances.
+> Status: Eyeleng tracks the [SPARQL 1.2 RL editor’s draft](https://w3c.github.io/data-shapes/sparql12-rl/), checked on 09 October 2026, including updates since the [published Working Draft of 01 October 2026](https://www.w3.org/TR/2026/WD-sparql12-rl-20261001/). It may change as the specification advances.
 
 > [!TIP]
 > [Try Eyeleng in the browser](https://eyereasoner.github.io/eyeleng/playground).
@@ -14,6 +14,8 @@
 - RDF 1.2 data input through [`rdf-parse`](https://github.com/rubensworks/rdf-parse.js/) 5.x.
 - Open/closed dependency analysis and stratification.
 - Run-once handling for rules containing `SET`, blank nodes in the head, or head triple-term templates containing variables.
+- Body blank nodes act as fresh pattern variables, including inside nested triple terms, during matching and dependency analysis.
+- Sequential variable-scope checks and expression-error handling for `FILTER`, `SET`, and lazy functional forms such as `IF`, `&&`, and `||`.
 - Local rule-set imports through `IMPORTS`.
 - Forward inference plus direct backward query evaluation.
 - CLI, JavaScript API, browser bundle, examples, and W3C conformance harness.

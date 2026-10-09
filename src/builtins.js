@@ -124,9 +124,8 @@ function evalExpression(expr, binding, options = {}) {
       throw new Error(`Unsupported unary operator ${expr.op}`);
     }
     case 'binary': {
+      if (expr.op === '&&' || expr.op === '||') return evalLogicalExpression(expr, binding, options);
       const left = evalExpression(expr.left, binding, options);
-      if (expr.op === '&&') return booleanValue(left) && booleanValue(evalExpression(expr.right, binding, options));
-      if (expr.op === '||') return booleanValue(left) || booleanValue(evalExpression(expr.right, binding, options));
       const right = evalExpression(expr.right, binding, options);
       return evalBinary(expr.op, left, right);
     }
@@ -137,6 +136,23 @@ function evalExpression(expr, binding, options = {}) {
   }
 }
 
+function evalLogicalExpression(expr, binding, options) {
+  // SPARQL functional forms can recover from an error in one operand:
+  // error || true is true, and error && false is false.
+  const decisive = expr.op === '||';
+  let left;
+  let leftError;
+  try {
+    left = booleanValue(evalExpression(expr.left, binding, options));
+  } catch (error) {
+    leftError = error;
+  }
+  if (!leftError && left === decisive) return decisive;
+  const right = booleanValue(evalExpression(expr.right, binding, options));
+  if (right === decisive) return decisive;
+  if (leftError) throw leftError;
+  return right;
+}
 function evalCallExpression(expr, binding, options) {
   const canonical = canonicalBuiltinName(expr.name);
   if (canonical === 'IF') {
