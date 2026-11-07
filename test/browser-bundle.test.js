@@ -44,6 +44,16 @@ test('playground inline scripts are syntactically valid', () => {
   assert.ok(checked > 0, 'expected at least one inline playground script');
 });
 
+test('browser bundle evaluates the November draft group aggregates', () => {
+  const bundle = fs.readFileSync(path.join(root, 'dist', 'browser', 'eyeleng.browser.js'), 'utf8');
+  const context = vm.createContext({});
+  vm.runInContext(bundle, context, { filename: 'eyeleng.browser.js' });
+  const source = `PREFIX : <http://example/>
+    DATA { :a :p 1, 2 . }
+    RULE { :result :out ?n } WHERE { GROUP { ?s :p ?v } [ ?n := SUM(?v) ] }`;
+  assert.equal(context.eyeleng.run(source).inferred.find((triple) => triple.p.value === 'http://example/out').o.value, 3);
+});
+
 test('playground uses the generated browser API bundle', () => {
   const html = fs.readFileSync(path.join(root, 'playground.html'), 'utf8');
   assert.match(html, /<script\s+src=["']dist\/browser\/eyeleng\.browser\.js["']><\/script>/);

@@ -3,8 +3,19 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const { test, main } = require('./harness.js').createHarness('CLI');
 const { help, parseArgs, readInput, main: cliMain } = require('../src/cli.js');
+
+test('standalone CLI evaluates the November draft group aggregates', () => {
+  const source = `PREFIX : <http://example/>
+    DATA { :a :p 1, 2 . }
+    RULE { :result :out ?n } WHERE { GROUP { ?s :p ?v } [ ?n := COUNT(*) ] }`;
+  const result = spawnSync(process.execPath, [path.join(__dirname, '..', 'eyeleng.js'), '-'], { input: source, encoding: 'utf8' });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /:result :out 2 \./);
+});
 
 function longOptions(text) {
   return Array.from(text.matchAll(/(^|\s)(--[a-z][a-z0-9-]*)\b/gm), (match) => match[2])

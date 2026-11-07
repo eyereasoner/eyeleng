@@ -850,6 +850,8 @@
               clauses.push(this.parseFilterClause());
             } else if (this.matchWord('SET')) {
               clauses.push(this.parseSetClause());
+            } else if (this.matchWord('GROUP')) {
+              clauses.push(this.parseGroupClause());
             } else if (this.matchWord('BIND')) {
               throw this.error('BIND is not part of the SPARQL 1.2 RL grammar; use SET');
             } else if (this.matchWord('NOT')) {
@@ -868,17 +870,47 @@
           return clauses;
         }
       
-        parseBodyBasicAlreadyOpen() {
+        parseGroupClause() {
+          const keys = [];
+          if (this.matchWord('BY')) {
+            keys.push(this.expectType('variable').value);
+            while (this.is('variable')) keys.push(this.advance().value);
+          }
+          this.expectValue('{');
+          const pattern = this.parseBodyBasicAlreadyOpen('GROUP');
+          this.expectValue('[');
+          const aggregations = [];
+          if (!this.matchValue(']')) {
+            do {
+              const variable = this.expectType('variable').value;
+              this.expectValue(':=');
+              const name = this.expectType('word').value.toUpperCase();
+              if (!['COUNT', 'MIN', 'MAX', 'SUM'].includes(name)) throw this.error(`Unsupported aggregation function ${name}`);
+              this.expectValue('(');
+              const distinct = name === 'COUNT' && this.matchWord('DISTINCT');
+              const argument = name === 'COUNT' && this.matchValue('*') ? '*' : this.expectType('variable').value;
+              this.expectValue(')');
+              aggregations.push({ variable, function: { name, argument, distinct } });
+            } while (this.matchValue(','));
+            this.expectValue(']');
+          }
+          return { type: 'group', keys: [...new Set(keys)], pattern, aggregations };
+        }
+      
+        parseBodyBasicAlreadyOpen(context = 'NOT') {
           const clauses = [];
           while (!this.matchValue('}')) {
             if (this.matchWord('FILTER')) {
               clauses.push(this.parseFilterClause());
             } else if (this.matchWord('SET')) {
-              throw this.error('SET is not allowed inside NOT blocks by the SRL grammar');
+              if (context !== 'GROUP') throw this.error('SET is not allowed inside NOT blocks by the SRL grammar');
+              clauses.push(this.parseSetClause());
             } else if (this.matchWord('BIND')) {
-              throw this.error('BIND is not allowed inside NOT blocks by the SRL grammar');
+              throw this.error(`BIND is not allowed inside ${context} blocks by the SRL grammar`);
             } else if (this.matchWord('NOT')) {
-              throw this.error('Nested NOT is not allowed inside NOT blocks by the SRL grammar');
+              throw this.error(`NOT is not allowed inside ${context} blocks by the SRL grammar`);
+            } else if (this.matchWord('GROUP')) {
+              throw this.error(`GROUP is not allowed inside ${context} blocks by the SRL grammar`);
             } else {
               for (const triple of this.parseTripleStatement({ allowPath: true, context: 'body' })) {
                 if (triple.p && triple.p.type === 'path') clauses.push({ type: 'path', triple });
@@ -1311,6 +1343,17 @@
           throw new SyntaxErrorWithLocation(message, { line: startLine, column: startColumn, filename });
         }
       
+        // Documents and numeric escapes contain Unicode scalar values only (§7).
+        // Scan code points so valid UTF-16 surrogate pairs remain accepted.
+        let scalarLine = 1;
+        let scalarColumn = 1;
+        for (const character of source) {
+          const code = character.codePointAt(0);
+          if (code >= 0xD800 && code <= 0xDFFF) syntax('Surrogate code point is not a Unicode scalar value', scalarLine, scalarColumn);
+          if (character === '\n') { scalarLine += 1; scalarColumn = 1; }
+          else scalarColumn += character.length;
+        }
+      
         function readNumericLiteral() {
           let value = '';
           const start = i;
@@ -1349,6 +1392,7 @@
               hex += advance();
             }
             const codePoint = Number.parseInt(hex, 16);
+            if (codePoint >= 0xD800 && codePoint <= 0xDFFF) syntax(`Invalid \\${esc} escape: surrogate code point`, startLine, startColumn);
             try { return String.fromCodePoint(codePoint); }
             catch { syntax(`Invalid \\${esc} escape`, startLine, startColumn); }
           }
@@ -1368,6 +1412,7 @@
               hex += advance();
             }
             const codePoint = Number.parseInt(hex, 16);
+            if (codePoint >= 0xD800 && codePoint <= 0xDFFF) syntax(`Invalid \\${esc} escape: surrogate code point`, startLine, startColumn);
             try { return String.fromCodePoint(codePoint); }
             catch { syntax(`Invalid \\${esc} escape`, startLine, startColumn); }
           }
@@ -1380,7 +1425,7 @@
           const ch = current();
           if (isWhitespaceCode(source.charCodeAt(i))) { advance(); continue; }
           if (ch === '#') {
-            while (i < source.length && current() !== '\n') advance();
+            while (i < source.length && current() !== '\n' && current() !== '\r') advance();
             continue;
           }
       
@@ -1484,7 +1529,7 @@
       
           if (startsNumericLiteral(source, i)) {
             const value = readNumericLiteral();
-            token('number', Number(value), startLine, startColumn, { lexical: value });
+            token('number', numericValue(value), startLine, startColumn, { lexical: value });
             continue;
           }
       
@@ -1536,7 +1581,7 @@
           if (i === wordStart) syntax(`Unexpected character ${JSON.stringify(ch)}`, startLine, startColumn);
       
           const value = source.slice(wordStart, i);
-          if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token('number', Number(value), startLine, startColumn, { lexical: value });
+          if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token('number', numericValue(value), startLine, startColumn, { lexical: value });
           else token('word', value, startLine, startColumn);
         }
       
@@ -1544,6 +1589,11 @@
         return tokens;
       }
       
+      
+      function numericValue(lexical) {
+        const value = Number(lexical);
+        return /^[+-]?\d+$/.test(lexical) && !Number.isSafeInteger(value) ? BigInt(lexical) : value;
+      }
       
       function isDigitCode(code) {
         return code >= 48 && code <= 57;
@@ -2497,14 +2547,15 @@
     "src/assignments.js": function (require, module, exports) {
       'use strict';
       
-      // SPARQL 1.2 RL §4.1 (01 October 2026): assignments, head blank nodes,
-      // and head triple-term templates containing variables make a rule run once.
+      // SPARQL 1.2 RL §4.1 (05 November 2026): assignments, groups, head blank
+      // nodes, and head triple-term templates containing variables run once.
       function assignmentsNeedRunOnce(clauses = []) {
         return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
       }
       
       function ruleNeedsRunOnce(head = [], body = []) {
         return assignmentsNeedRunOnce(body)
+          || body.some((clause) => clause.type === 'group')
           || head.some(tripleHasBlankNode)
           || head.some(tripleHasVariableTripleTerm);
       }
@@ -2978,6 +3029,7 @@
       const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm, emptyBinding, cloneBinding } = require('./term.js');
       const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
       const { analyze } = require('./analyze.js');
+      const { evalAggregate } = require('./aggregates.js');
       
       function evaluate(program, options = {}) {
         const maxIterations = options.maxIterations ?? 10000;
@@ -3224,9 +3276,8 @@
         const rule = program.rules[ruleIndex];
         let applications = 0;
         let added = 0;
-        const dedupeBindings = rule.body.some((clause) => clause.type === 'path');
-        const seenBindings = dedupeBindings ? new Set() : null;
         const headBlankLabels = collectHeadBlankLabels(rule.head);
+        const blankBindingOccurrences = headBlankLabels.size > 0 ? new Map() : null;
       
         const bodyStore = rule.groundData ? context.groundStore : store;
         const bodyContext = { ...context };
@@ -3237,16 +3288,18 @@
         const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
       
         for (const binding of bodyBindings) {
-          if (seenBindings) {
-            const key = bindingKey(binding);
-            if (seenBindings.has(key)) continue;
-            seenBindings.add(key);
-          }
           applications += 1;
           context.perRule[ruleIndex].applications += 1;
       
           const headBlankMap = headBlankLabels.size > 0 ? new Map() : null;
-          const skolemKey = headBlankMap ? skolemizationKey(ruleIndex, binding) : null;
+          let skolemKey = headBlankMap ? skolemizationKey(ruleIndex, binding) : null;
+          if (headBlankMap) {
+            // Property paths can produce repeated mappings. Each needs fresh
+            // head blank nodes, even when all visible bindings are identical.
+            const occurrence = blankBindingOccurrences.get(skolemKey) || 0;
+            blankBindingOccurrences.set(skolemKey, occurrence + 1);
+            if (occurrence > 0) skolemKey += `|occurrence:${occurrence}`;
+          }
           for (const head of rule.head) {
             const triple = instantiateHeadTriple(head, binding, headBlankLabels, headBlankMap, skolemKey);
             if (!triple) continue;
@@ -3528,6 +3581,35 @@
           const negationStore = clause.groundData ? (options.groundStore || store) : store;
           if (!bodyHasAny(clause.body, negationStore, initialBinding, options)) {
             yield initialBinding;
+          }
+          return;
+        }
+      
+        if (clause.type === 'group') {
+          const projectKeys = (binding) => {
+            const projected = emptyBinding();
+            for (const key of clause.keys) if (Object.hasOwn(binding, key)) projected[key] = binding[key];
+            return projected;
+          };
+          const groups = new Map();
+          if (clause.keys.length === 0) groups.set(bindingKey(emptyBinding()), { keys: emptyBinding(), solutions: [] });
+          // Use the stream: deduplicating here would change aggregate cardinalities.
+          for (const binding of evaluateBodyStream(clause.pattern, store, projectKeys(initialBinding), options)) {
+            const keys = projectKeys(binding);
+            const key = bindingKey(keys);
+            if (!groups.has(key)) groups.set(key, { keys, solutions: [] });
+            groups.get(key).solutions.push(binding);
+          }
+          for (const group of groups.values()) {
+            let result;
+            try {
+              result = Object.assign(emptyBinding(), initialBinding, group.keys);
+              for (const aggregation of clause.aggregations) result[aggregation.variable] = evalAggregate(aggregation.function, group.solutions);
+            } catch (_) {
+              // An error in any aggregate rejects this group, not other groups.
+              continue;
+            }
+            yield result;
           }
           return;
         }
@@ -3944,6 +4026,7 @@
             negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
             runOnce: !!rule.runOnce,
             hasAssignment: ruleHasAssignment(rule, options),
+            hasGroup: (rule.body || []).some((clause) => clause.type === 'group'),
             hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
             headHasBlankNode: ruleHeadHasBlankNode(rule),
             headHasVariableTripleTerm: (rule.head || []).some(tripleHasVariableTripleTerm),
@@ -4013,7 +4096,7 @@
           rules: rules.map((rule) => ({
             index: rule.index, name: rule.name,
             headPredicates: Array.from(rule.headPredicates), positivePredicates: Array.from(rule.positivePredicates), negativePredicates: Array.from(rule.negativePredicates),
-            runOnce: rule.runOnce, hasAssignment: rule.hasAssignment, hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
+            runOnce: rule.runOnce, hasAssignment: rule.hasAssignment, hasGroup: rule.hasGroup, hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
             headHasBlankNode: rule.headHasBlankNode, headHasVariableTripleTerm: rule.headHasVariableTripleTerm, createsTerms: rule.createsTerms,
           })),
           edges,
@@ -4252,6 +4335,27 @@
               bound.add(clause.variable);
             } else if (clause.type === 'not') {
               visit(clause.body, bound, ' inside NOT');
+            } else if (clause.type === 'group') {
+              // Only keys correlate the group pattern with the incoming mapping.
+              const initial = new Set(clause.keys.filter((key) => bound.has(key)));
+              const inner = visit(clause.pattern, initial, ' inside GROUP');
+              const error = (code, message) => diagnostics.push({
+                code, severity: 'error', rule: ruleNameValue,
+                message: `${displayRuleName(ruleNameValue, prefixes)} ${message}`,
+              });
+              for (const key of clause.keys) {
+                if (!inner.has(key)) error('unbound-group-key', `GROUP key ?${key} is not bound in the group pattern`);
+              }
+              const assigned = new Set();
+              for (const aggregation of clause.aggregations) {
+                const { variable, function: fn } = aggregation;
+                if (inner.has(variable) || bound.has(variable)) error('aggregation-variable-already-bound', `GROUP assigns ?${variable}, but that variable is already bound`);
+                if (assigned.has(variable)) error('duplicate-aggregation-variable', `GROUP assigns ?${variable} more than once`);
+                if (fn.argument !== '*' && !inner.has(fn.argument)) error('unbound-aggregation-argument', `GROUP aggregate uses unbound variable ?${fn.argument}`);
+                assigned.add(variable);
+              }
+              for (const key of clause.keys) bound.add(key);
+              for (const variable of assigned) bound.add(variable);
             }
           }
           return bound;
@@ -4269,6 +4373,8 @@
             else out.push(clause.triple);
           } else if (clause.type === 'not') {
             if (!clause.groundData) out.push(...bodyTriplePatterns(clause.body, wantNegative, true));
+          } else if (clause.type === 'group') {
+            out.push(...bodyTriplePatterns(clause.pattern, wantNegative, inNegativeContext));
           }
         }
         return out;
@@ -4348,6 +4454,8 @@
             out.push(...predicateIRIs(clause.triple));
           } else if (clause.type === 'not') {
             out.push(...bodyPredicates(clause.body, wantNegative, true));
+          } else if (clause.type === 'group') {
+            out.push(...bodyPredicates(clause.pattern, wantNegative, inNegativeContext));
           }
         }
         return out;
@@ -4394,6 +4502,11 @@
           }
           if (clause.type === 'filter') continue;
           if (clause.type === 'not') continue;
+          if (clause.type === 'group') {
+            for (const key of clause.keys) bound.add(key);
+            for (const aggregation of clause.aggregations) bound.add(aggregation.variable);
+            continue;
+          }
           if (clause.type === 'set' || clause.type === 'bind') {
             const value = constantExpressionTerm(clause.expr);
             if (value && !bound.has(clause.variable)) constants.set(clause.variable, value);
@@ -4424,16 +4537,19 @@
       }
       
       function ruleHasAssignment(rule, options = {}) {
-        return (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
+        return (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind'
+          || (clause.type === 'group' && ruleHasAssignment({ body: clause.pattern }, options)));
       }
       
       function ruleHasTermGeneratingAssignment(rule, options = {}) {
-        return (rule.body || []).some((clause) => (clause.type === 'set' || clause.type === 'bind') && assignmentMayCreateNewTerm(clause.expr));
+        return (rule.body || []).some((clause) => ((clause.type === 'set' || clause.type === 'bind') && assignmentMayCreateNewTerm(clause.expr))
+          || (clause.type === 'group' && ruleHasTermGeneratingAssignment({ body: clause.pattern }, options)));
       }
       
       function ruleCreatesTerms(rule, options = {}) {
         return ruleHeadHasBlankNode(rule)
           || (rule.head || []).some(tripleHasVariableTripleTerm)
+          || (rule.body || []).some((clause) => clause.type === 'group')
           || ruleHasTermGeneratingAssignment(rule, options);
       }
       
@@ -4457,6 +4573,10 @@
         for (const clause of clauses) {
           if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
           if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
+          if (clause.type === 'group') {
+            for (const key of clause.keys) vars.add(key);
+            for (const aggregation of clause.aggregations) vars.add(aggregation.variable);
+          }
         }
         return vars;
       }
@@ -4466,6 +4586,10 @@
         for (const clause of clauses) {
           if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
           if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
+          if (clause.type === 'group') {
+            for (const key of clause.keys) vars.add(key);
+            for (const aggregation of clause.aggregations) vars.add(aggregation.variable);
+          }
           if (clause.type === 'filter') for (const v of expressionVariables(clause.expr)) vars.add(v);
         }
         return vars;
@@ -4481,6 +4605,14 @@
           }
           if (clause.type === 'filter') for (const v of expressionVariables(clause.expr)) vars.add(v);
           if (clause.type === 'not') for (const v of bodyVariables(clause.body)) vars.add(v);
+          if (clause.type === 'group') {
+            for (const key of clause.keys) vars.add(key);
+            for (const aggregation of clause.aggregations) {
+              vars.add(aggregation.variable);
+              if (aggregation.function.argument !== '*') vars.add(aggregation.function.argument);
+            }
+            for (const v of bodyVariables(clause.pattern)) vars.add(v);
+          }
         }
         return vars;
       }
@@ -4533,6 +4665,92 @@
         bodyTriplePatterns,
         canPossiblyGenerate,
       };
+      
+    },
+    "src/aggregates.js": function (require, module, exports) {
+      'use strict';
+      
+      const { literal, termKey, comparePrimitives, XSD_INTEGER, XSD_DECIMAL, XSD_DOUBLE } = require('./term.js');
+      const { bindingKey } = require('./store.js');
+      const { evalBinary } = require('./builtins.js');
+      
+      const XSD_FLOAT = 'http://www.w3.org/2001/XMLSchema#float';
+      const numericTypes = [XSD_INTEGER, XSD_DECIMAL, XSD_FLOAT, XSD_DOUBLE];
+      const integerType = /^http:\/\/www\.w3\.org\/2001\/XMLSchema#(?:integer|long|int|short|byte|nonNegativeInteger|positiveInteger|nonPositiveInteger|negativeInteger|unsignedLong|unsignedInt|unsignedShort|unsignedByte)$/;
+      
+      function numericLiteral(value) {
+        if (!value || value.type !== 'literal') return null;
+        const rank = integerType.test(value.datatype) ? 0 : numericTypes.indexOf(value.datatype);
+        if (rank < 0) return null;
+        if (rank > 0 && typeof value.value === 'number') return { rank, value: value.value };
+        const lexical = String(value.value).trim();
+        if (rank === 0) {
+          if (!/^[+-]?\d+$/.test(lexical)) throw new Error('Invalid integer literal');
+          const number = Number(lexical);
+          return { rank, value: Number.isSafeInteger(number) ? number : BigInt(lexical) };
+        }
+        const pattern = rank === 1 ? /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/ : /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$|^[+-]?INF$|^NaN$/;
+        if (!pattern.test(lexical)) throw new Error('Invalid numeric literal');
+        return { rank, value: lexical === 'INF' || lexical === '+INF' ? Infinity : lexical === '-INF' ? -Infinity : Number(lexical) };
+      }
+      
+      // SPARQL-RL §6.4: the input is a multiset, including for COUNT(*).
+      function evalAggregate(fn, sequence) {
+        if (fn.name === 'COUNT' && fn.argument === '*') {
+          return literal(fn.distinct ? new Set(sequence.map(bindingKey)).size : sequence.length, XSD_INTEGER);
+        }
+        let values = sequence.map((binding) => binding[fn.argument]);
+        if (fn.distinct) values = [...new Map(values.map((value) => [termKey(value), value])).values()];
+        if (fn.name === 'COUNT') return literal(values.filter((value) => value !== undefined).length, XSD_INTEGER);
+        if (fn.name === 'SUM') {
+          let sum = 0;
+          let rank = 0;
+          for (const value of values) {
+            const numeric = numericLiteral(value);
+            if (!numeric) throw new Error('SUM requires numeric literals');
+            rank = Math.max(rank, numeric.rank);
+            sum = rank === 0 ? evalBinary('+', sum, numeric.value) : Number(sum) + Number(numeric.value);
+          }
+          return literal(sum, numericTypes[rank]);
+        }
+        if (values.length === 0 || values.some((value) => value === undefined)) throw new Error(`${fn.name} has no value`);
+        return values.reduce((best, value) => {
+          const order = compareAggregateTerms(value, best);
+          return (fn.name === 'MIN' ? order < 0 : order > 0) ? value : best;
+        });
+      }
+      
+      // MIN/MAX use the SPARQL ORDER BY ordering, retaining the selected RDF term.
+      function compareAggregateTerms(a, b) {
+        const rank = { blank: 0, iri: 1, literal: 2, triple: 3 };
+        if (a.type !== b.type) return rank[a.type] - rank[b.type];
+        if (a.type === 'triple') {
+          return compareAggregateTerms(a.s, b.s) || compareAggregateTerms(a.p, b.p) || compareAggregateTerms(a.o, b.o);
+        }
+        if (a.type === 'literal') {
+          const an = numericLiteral(a);
+          const bn = numericLiteral(b);
+          if (an && bn) return an.value < bn.value ? -1 : an.value > bn.value ? 1 : 0;
+          // dateTime values with explicit timezones are ordered by their instants.
+          if (a.datatype === 'http://www.w3.org/2001/XMLSchema#dateTime' && a.datatype === b.datatype) {
+            const av = Date.parse(a.value);
+            const bv = Date.parse(b.value);
+            if (Number.isFinite(av) && Number.isFinite(bv)) return comparePrimitives(av, bv);
+          }
+        }
+        if (typeof a.value === 'string' && typeof b.value === 'string') {
+          // SPARQL string/IRI ordering uses Unicode code points, not UTF-16 units.
+          const left = Array.from(a.value, (character) => character.codePointAt(0));
+          const right = Array.from(b.value, (character) => character.codePointAt(0));
+          for (let index = 0; index < Math.min(left.length, right.length); index += 1) {
+            if (left[index] !== right[index]) return left[index] - right[index];
+          }
+          return left.length - right.length;
+        }
+        return comparePrimitives(a, b);
+      }
+      
+      module.exports = { evalAggregate };
       
     },
     "src/format.js": function (require, module, exports) {
@@ -5273,6 +5491,7 @@
           if (clause.type === 'not') {
             out.push(...bodyPredicateDemands(clause.body || []));
           }
+          if (clause.type === 'group') out.push(...bodyPredicateDemands(clause.pattern || []));
         }
         return out;
       }
@@ -5658,7 +5877,7 @@
       
     },
   };
-  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdf.js":{"./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdf.js":"src/rdf.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js"},"src/format.js":{"./term.js":"src/term.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/query.js":{"./parser.js":"src/parser.js","./term.js":"src/term.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/check-proof.js":{"./parser":"src/parser.js"},"src/api.js":{"./parser.js":"src/parser.js","./rdf.js":"src/rdf.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js","./check-proof.js":"src/check-proof.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js","./check-proof.js":"src/check-proof.js"}};
+  const __mappings = {"src/tokenizer.js":{},"src/term.js":{},"src/builtins.js":{"./term.js":"src/term.js"},"src/assignments.js":{},"src/parser.js":{"./tokenizer.js":"src/tokenizer.js","./builtins.js":"src/builtins.js","./assignments.js":"src/assignments.js","./term.js":"src/term.js"},"src/rdf.js":{"./term.js":"src/term.js"},"src/rdfMessages.js":{"./rdf.js":"src/rdf.js","./term.js":"src/term.js"},"src/store.js":{"./term.js":"src/term.js"},"src/analyze.js":{"./term.js":"src/term.js","./assignments.js":"src/assignments.js"},"src/aggregates.js":{"./term.js":"src/term.js","./store.js":"src/store.js","./builtins.js":"src/builtins.js"},"src/engine.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js","./analyze.js":"src/analyze.js","./aggregates.js":"src/aggregates.js"},"src/format.js":{"./term.js":"src/term.js"},"src/backward.js":{"./store.js":"src/store.js","./term.js":"src/term.js","./builtins.js":"src/builtins.js"},"src/query.js":{"./parser.js":"src/parser.js","./term.js":"src/term.js","./store.js":"src/store.js","./engine.js":"src/engine.js","./backward.js":"src/backward.js","./api.js":"src/api.js"},"src/output.js":{},"src/check-proof.js":{"./parser":"src/parser.js"},"src/api.js":{"./parser.js":"src/parser.js","./rdf.js":"src/rdf.js","./rdfMessages.js":"src/rdfMessages.js","./engine.js":"src/engine.js","./analyze.js":"src/analyze.js","./format.js":"src/format.js","./query.js":"src/query.js","./output.js":"src/output.js","./check-proof.js":"src/check-proof.js"},"src/cli.js":{"./api.js":"src/api.js","./term.js":"src/term.js","./check-proof.js":"src/check-proof.js"}};
   const __cache = {};
   function __require(id) {
     if (!id.startsWith("src/")) return __nativeRequire(id);

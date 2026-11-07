@@ -1,13 +1,14 @@
 'use strict';
 
-// SPARQL 1.2 RL §4.1 (01 October 2026): assignments, head blank nodes,
-// and head triple-term templates containing variables make a rule run once.
+// SPARQL 1.2 RL §4.1 (05 November 2026): assignments, groups, head blank
+// nodes, and head triple-term templates containing variables run once.
 function assignmentsNeedRunOnce(clauses = []) {
   return clauses.some((clause) => clause.type === 'set' || clause.type === 'bind');
 }
 
 function ruleNeedsRunOnce(head = [], body = []) {
   return assignmentsNeedRunOnce(body)
+    || body.some((clause) => clause.type === 'group')
     || head.some(tripleHasBlankNode)
     || head.some(tripleHasVariableTripleTerm);
 }

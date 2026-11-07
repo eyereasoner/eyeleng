@@ -2,7 +2,7 @@
 
 **Eyeleng** is a JavaScript implementation of **SPARQL 1.2 RL (SRL)**, following the W3C Recommendation-track specification at <https://www.w3.org/TR/sparql12-rl/>.
 
-> Status: Eyeleng tracks the [SPARQL 1.2 RL editor’s draft](https://w3c.github.io/data-shapes/sparql12-rl/), checked on 09 October 2026, including updates since the [published Working Draft of 01 October 2026](https://www.w3.org/TR/2026/WD-sparql12-rl-20261001/). It may change as the specification advances.
+> Status: Eyeleng tracks the [SPARQL 1.2 RL Working Draft of 05 November 2026](https://www.w3.org/TR/2026/WD-sparql12-rl-20261105/), checked on 07 November 2026. It may change as the specification advances.
 
 > [!TIP]
 > [Try Eyeleng in the browser](https://eyereasoner.github.io/eyeleng/playground).
@@ -13,7 +13,8 @@
 - `srl:` namespace `http://www.w3.org/ns/sparql-rl#`.
 - RDF 1.2 data input through [`rdf-parse`](https://github.com/rubensworks/rdf-parse.js/) 5.x.
 - Open/closed dependency analysis and stratification.
-- Run-once handling for rules containing `SET`, blank nodes in the head, or head triple-term templates containing variables.
+- Run-once handling for rules containing `SET` or `GROUP`, blank nodes in the head, or head triple-term templates containing variables.
+- Grouping with optional `BY` keys and `COUNT`, `MIN`, `MAX`, and `SUM` aggregates; `COUNT` supports `DISTINCT` and `*`.
 - Body blank nodes act as fresh pattern variables, including inside nested triple terms, during matching and dependency analysis.
 - Sequential variable-scope checks and expression-error handling for `FILTER`, `SET`, and lazy functional forms such as `IF`, `&&`, and `||`.
 - Local rule-set imports through `IMPORTS`.
@@ -32,6 +33,23 @@ Normal rule bodies match the union of the base and inference graphs, while `WHER
 ## Rule syntax
 
 Eyeleng follows the current SPARQL 1.2 RL grammar: rules use `RULE ... WHERE ...`. Legacy `IF ... THEN` and `FOR ?var IN ...` forms are rejected.
+
+Groups evaluate their pattern for each incoming solution, using only group keys
+as input bindings. Only the keys and aggregate results leave the group pattern;
+other incoming bindings are preserved:
+
+```sparql
+RULE { ?component :vulnerabilityCount ?count }
+WHERE {
+  ?component a :Component .
+  GROUP BY ?component { ?component :exposedTo ?vulnerability }
+    [ ?count := COUNT(DISTINCT ?vulnerability) ]
+}
+```
+
+A group without `BY` produces one group even when its pattern has no matches
+(`COUNT` and `SUM` then return zero). With `BY`, an empty pattern result produces
+no groups. An aggregate error drops that group.
 
 ## Install and build
 

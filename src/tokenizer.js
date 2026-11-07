@@ -39,6 +39,17 @@ function tokenize(source, filenameOrOptions = '<input>') {
     throw new SyntaxErrorWithLocation(message, { line: startLine, column: startColumn, filename });
   }
 
+  // Documents and numeric escapes contain Unicode scalar values only (§7).
+  // Scan code points so valid UTF-16 surrogate pairs remain accepted.
+  let scalarLine = 1;
+  let scalarColumn = 1;
+  for (const character of source) {
+    const code = character.codePointAt(0);
+    if (code >= 0xD800 && code <= 0xDFFF) syntax('Surrogate code point is not a Unicode scalar value', scalarLine, scalarColumn);
+    if (character === '\n') { scalarLine += 1; scalarColumn = 1; }
+    else scalarColumn += character.length;
+  }
+
   function readNumericLiteral() {
     let value = '';
     const start = i;
@@ -77,6 +88,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
         hex += advance();
       }
       const codePoint = Number.parseInt(hex, 16);
+      if (codePoint >= 0xD800 && codePoint <= 0xDFFF) syntax(`Invalid \\${esc} escape: surrogate code point`, startLine, startColumn);
       try { return String.fromCodePoint(codePoint); }
       catch { syntax(`Invalid \\${esc} escape`, startLine, startColumn); }
     }
@@ -96,6 +108,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
         hex += advance();
       }
       const codePoint = Number.parseInt(hex, 16);
+      if (codePoint >= 0xD800 && codePoint <= 0xDFFF) syntax(`Invalid \\${esc} escape: surrogate code point`, startLine, startColumn);
       try { return String.fromCodePoint(codePoint); }
       catch { syntax(`Invalid \\${esc} escape`, startLine, startColumn); }
     }
@@ -108,7 +121,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
     const ch = current();
     if (isWhitespaceCode(source.charCodeAt(i))) { advance(); continue; }
     if (ch === '#') {
-      while (i < source.length && current() !== '\n') advance();
+      while (i < source.length && current() !== '\n' && current() !== '\r') advance();
       continue;
     }
 
@@ -212,7 +225,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
 
     if (startsNumericLiteral(source, i)) {
       const value = readNumericLiteral();
-      token('number', Number(value), startLine, startColumn, { lexical: value });
+      token('number', numericValue(value), startLine, startColumn, { lexical: value });
       continue;
     }
 
@@ -264,7 +277,7 @@ function tokenize(source, filenameOrOptions = '<input>') {
     if (i === wordStart) syntax(`Unexpected character ${JSON.stringify(ch)}`, startLine, startColumn);
 
     const value = source.slice(wordStart, i);
-    if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token('number', Number(value), startLine, startColumn, { lexical: value });
+    if (/^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)$/.test(value)) token('number', numericValue(value), startLine, startColumn, { lexical: value });
     else token('word', value, startLine, startColumn);
   }
 
@@ -272,6 +285,11 @@ function tokenize(source, filenameOrOptions = '<input>') {
   return tokens;
 }
 
+
+function numericValue(lexical) {
+  const value = Number(lexical);
+  return /^[+-]?\d+$/.test(lexical) && !Number.isSafeInteger(value) ? BigInt(lexical) : value;
+}
 
 function isDigitCode(code) {
   return code >= 48 && code <= 57;

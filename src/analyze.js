@@ -63,6 +63,7 @@ function dependencyGraph(program, options = {}) {
       negativePredicates: new Set(negativePatterns.flatMap((triple) => predicateIRIs(triple))),
       runOnce: !!rule.runOnce,
       hasAssignment: ruleHasAssignment(rule, options),
+      hasGroup: (rule.body || []).some((clause) => clause.type === 'group'),
       hasTermGeneratingAssignment: ruleHasTermGeneratingAssignment(rule, options),
       headHasBlankNode: ruleHeadHasBlankNode(rule),
       headHasVariableTripleTerm: (rule.head || []).some(tripleHasVariableTripleTerm),
@@ -132,7 +133,7 @@ function dependencyGraph(program, options = {}) {
     rules: rules.map((rule) => ({
       index: rule.index, name: rule.name,
       headPredicates: Array.from(rule.headPredicates), positivePredicates: Array.from(rule.positivePredicates), negativePredicates: Array.from(rule.negativePredicates),
-      runOnce: rule.runOnce, hasAssignment: rule.hasAssignment, hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
+      runOnce: rule.runOnce, hasAssignment: rule.hasAssignment, hasGroup: rule.hasGroup, hasTermGeneratingAssignment: rule.hasTermGeneratingAssignment,
       headHasBlankNode: rule.headHasBlankNode, headHasVariableTripleTerm: rule.headHasVariableTripleTerm, createsTerms: rule.createsTerms,
     })),
     edges,
@@ -371,6 +372,27 @@ function sequentialWellFormednessDiagnostics(clauses, ruleNameValue, prefixes = 
         bound.add(clause.variable);
       } else if (clause.type === 'not') {
         visit(clause.body, bound, ' inside NOT');
+      } else if (clause.type === 'group') {
+        // Only keys correlate the group pattern with the incoming mapping.
+        const initial = new Set(clause.keys.filter((key) => bound.has(key)));
+        const inner = visit(clause.pattern, initial, ' inside GROUP');
+        const error = (code, message) => diagnostics.push({
+          code, severity: 'error', rule: ruleNameValue,
+          message: `${displayRuleName(ruleNameValue, prefixes)} ${message}`,
+        });
+        for (const key of clause.keys) {
+          if (!inner.has(key)) error('unbound-group-key', `GROUP key ?${key} is not bound in the group pattern`);
+        }
+        const assigned = new Set();
+        for (const aggregation of clause.aggregations) {
+          const { variable, function: fn } = aggregation;
+          if (inner.has(variable) || bound.has(variable)) error('aggregation-variable-already-bound', `GROUP assigns ?${variable}, but that variable is already bound`);
+          if (assigned.has(variable)) error('duplicate-aggregation-variable', `GROUP assigns ?${variable} more than once`);
+          if (fn.argument !== '*' && !inner.has(fn.argument)) error('unbound-aggregation-argument', `GROUP aggregate uses unbound variable ?${fn.argument}`);
+          assigned.add(variable);
+        }
+        for (const key of clause.keys) bound.add(key);
+        for (const variable of assigned) bound.add(variable);
       }
     }
     return bound;
@@ -388,6 +410,8 @@ function bodyTriplePatterns(clauses, wantNegative, inNegativeContext = false) {
       else out.push(clause.triple);
     } else if (clause.type === 'not') {
       if (!clause.groundData) out.push(...bodyTriplePatterns(clause.body, wantNegative, true));
+    } else if (clause.type === 'group') {
+      out.push(...bodyTriplePatterns(clause.pattern, wantNegative, inNegativeContext));
     }
   }
   return out;
@@ -467,6 +491,8 @@ function bodyPredicates(clauses, wantNegative, inNegativeContext = false) {
       out.push(...predicateIRIs(clause.triple));
     } else if (clause.type === 'not') {
       out.push(...bodyPredicates(clause.body, wantNegative, true));
+    } else if (clause.type === 'group') {
+      out.push(...bodyPredicates(clause.pattern, wantNegative, inNegativeContext));
     }
   }
   return out;
@@ -513,6 +539,11 @@ function assignmentConstantTerms(clauses) {
     }
     if (clause.type === 'filter') continue;
     if (clause.type === 'not') continue;
+    if (clause.type === 'group') {
+      for (const key of clause.keys) bound.add(key);
+      for (const aggregation of clause.aggregations) bound.add(aggregation.variable);
+      continue;
+    }
     if (clause.type === 'set' || clause.type === 'bind') {
       const value = constantExpressionTerm(clause.expr);
       if (value && !bound.has(clause.variable)) constants.set(clause.variable, value);
@@ -543,16 +574,19 @@ function substituteAssignedConstant(term, constants) {
 }
 
 function ruleHasAssignment(rule, options = {}) {
-  return (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind');
+  return (rule.body || []).some((clause) => clause.type === 'set' || clause.type === 'bind'
+    || (clause.type === 'group' && ruleHasAssignment({ body: clause.pattern }, options)));
 }
 
 function ruleHasTermGeneratingAssignment(rule, options = {}) {
-  return (rule.body || []).some((clause) => (clause.type === 'set' || clause.type === 'bind') && assignmentMayCreateNewTerm(clause.expr));
+  return (rule.body || []).some((clause) => ((clause.type === 'set' || clause.type === 'bind') && assignmentMayCreateNewTerm(clause.expr))
+    || (clause.type === 'group' && ruleHasTermGeneratingAssignment({ body: clause.pattern }, options)));
 }
 
 function ruleCreatesTerms(rule, options = {}) {
   return ruleHeadHasBlankNode(rule)
     || (rule.head || []).some(tripleHasVariableTripleTerm)
+    || (rule.body || []).some((clause) => clause.type === 'group')
     || ruleHasTermGeneratingAssignment(rule, options);
 }
 
@@ -576,6 +610,10 @@ function boundVariables(clauses, initialBound = new Set()) {
   for (const clause of clauses) {
     if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
     if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
+    if (clause.type === 'group') {
+      for (const key of clause.keys) vars.add(key);
+      for (const aggregation of clause.aggregations) vars.add(aggregation.variable);
+    }
   }
   return vars;
 }
@@ -585,6 +623,10 @@ function positiveVariables(clauses) {
   for (const clause of clauses) {
     if (clause.type === 'triple' || clause.type === 'path') collectTripleVars(clause.triple, vars);
     if ((clause.type === 'set' || clause.type === 'bind')) vars.add(clause.variable);
+    if (clause.type === 'group') {
+      for (const key of clause.keys) vars.add(key);
+      for (const aggregation of clause.aggregations) vars.add(aggregation.variable);
+    }
     if (clause.type === 'filter') for (const v of expressionVariables(clause.expr)) vars.add(v);
   }
   return vars;
@@ -600,6 +642,14 @@ function bodyVariables(clauses) {
     }
     if (clause.type === 'filter') for (const v of expressionVariables(clause.expr)) vars.add(v);
     if (clause.type === 'not') for (const v of bodyVariables(clause.body)) vars.add(v);
+    if (clause.type === 'group') {
+      for (const key of clause.keys) vars.add(key);
+      for (const aggregation of clause.aggregations) {
+        vars.add(aggregation.variable);
+        if (aggregation.function.argument !== '*') vars.add(aggregation.function.argument);
+      }
+      for (const v of bodyVariables(clause.pattern)) vars.add(v);
+    }
   }
   return vars;
 }

@@ -20,6 +20,7 @@ const preferred = [
   'check-proof.test.js',
   'sparql-rl-manifest-parser.test.js',
   'sparql-rl-regressions.test.js',
+  'group-aggregates.test.js',
   'sparql-rl.test.js',
 ];
 const files = preferred.filter((name) => fs.existsSync(path.join(__dirname, name)));

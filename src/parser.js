@@ -363,6 +363,8 @@ class Parser {
         clauses.push(this.parseFilterClause());
       } else if (this.matchWord('SET')) {
         clauses.push(this.parseSetClause());
+      } else if (this.matchWord('GROUP')) {
+        clauses.push(this.parseGroupClause());
       } else if (this.matchWord('BIND')) {
         throw this.error('BIND is not part of the SPARQL 1.2 RL grammar; use SET');
       } else if (this.matchWord('NOT')) {
@@ -381,17 +383,47 @@ class Parser {
     return clauses;
   }
 
-  parseBodyBasicAlreadyOpen() {
+  parseGroupClause() {
+    const keys = [];
+    if (this.matchWord('BY')) {
+      keys.push(this.expectType('variable').value);
+      while (this.is('variable')) keys.push(this.advance().value);
+    }
+    this.expectValue('{');
+    const pattern = this.parseBodyBasicAlreadyOpen('GROUP');
+    this.expectValue('[');
+    const aggregations = [];
+    if (!this.matchValue(']')) {
+      do {
+        const variable = this.expectType('variable').value;
+        this.expectValue(':=');
+        const name = this.expectType('word').value.toUpperCase();
+        if (!['COUNT', 'MIN', 'MAX', 'SUM'].includes(name)) throw this.error(`Unsupported aggregation function ${name}`);
+        this.expectValue('(');
+        const distinct = name === 'COUNT' && this.matchWord('DISTINCT');
+        const argument = name === 'COUNT' && this.matchValue('*') ? '*' : this.expectType('variable').value;
+        this.expectValue(')');
+        aggregations.push({ variable, function: { name, argument, distinct } });
+      } while (this.matchValue(','));
+      this.expectValue(']');
+    }
+    return { type: 'group', keys: [...new Set(keys)], pattern, aggregations };
+  }
+
+  parseBodyBasicAlreadyOpen(context = 'NOT') {
     const clauses = [];
     while (!this.matchValue('}')) {
       if (this.matchWord('FILTER')) {
         clauses.push(this.parseFilterClause());
       } else if (this.matchWord('SET')) {
-        throw this.error('SET is not allowed inside NOT blocks by the SRL grammar');
+        if (context !== 'GROUP') throw this.error('SET is not allowed inside NOT blocks by the SRL grammar');
+        clauses.push(this.parseSetClause());
       } else if (this.matchWord('BIND')) {
-        throw this.error('BIND is not allowed inside NOT blocks by the SRL grammar');
+        throw this.error(`BIND is not allowed inside ${context} blocks by the SRL grammar`);
       } else if (this.matchWord('NOT')) {
-        throw this.error('Nested NOT is not allowed inside NOT blocks by the SRL grammar');
+        throw this.error(`NOT is not allowed inside ${context} blocks by the SRL grammar`);
+      } else if (this.matchWord('GROUP')) {
+        throw this.error(`GROUP is not allowed inside ${context} blocks by the SRL grammar`);
       } else {
         for (const triple of this.parseTripleStatement({ allowPath: true, context: 'body' })) {
           if (triple.p && triple.p.type === 'path') clauses.push({ type: 'path', triple });

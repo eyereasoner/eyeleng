@@ -4,6 +4,7 @@ const { TripleStore, bindingKey, instantiateTerm } = require('./store.js');
 const { tripleKey, termKey, termEquals, iri, blankNode, literal, tripleTerm, emptyBinding, cloneBinding } = require('./term.js');
 const { evalExpression, booleanValue, asTerm } = require('./builtins.js');
 const { analyze } = require('./analyze.js');
+const { evalAggregate } = require('./aggregates.js');
 
 function evaluate(program, options = {}) {
   const maxIterations = options.maxIterations ?? 10000;
@@ -250,9 +251,8 @@ function applyRuleOnce(program, store, ruleIndex, context) {
   const rule = program.rules[ruleIndex];
   let applications = 0;
   let added = 0;
-  const dedupeBindings = rule.body.some((clause) => clause.type === 'path');
-  const seenBindings = dedupeBindings ? new Set() : null;
   const headBlankLabels = collectHeadBlankLabels(rule.head);
+  const blankBindingOccurrences = headBlankLabels.size > 0 ? new Map() : null;
 
   const bodyStore = rule.groundData ? context.groundStore : store;
   const bodyContext = { ...context };
@@ -263,16 +263,18 @@ function applyRuleOnce(program, store, ruleIndex, context) {
   const bodyBindings = evaluateRuleBodyBindings(rule, bodyStore, bodyContext, initialBindings);
 
   for (const binding of bodyBindings) {
-    if (seenBindings) {
-      const key = bindingKey(binding);
-      if (seenBindings.has(key)) continue;
-      seenBindings.add(key);
-    }
     applications += 1;
     context.perRule[ruleIndex].applications += 1;
 
     const headBlankMap = headBlankLabels.size > 0 ? new Map() : null;
-    const skolemKey = headBlankMap ? skolemizationKey(ruleIndex, binding) : null;
+    let skolemKey = headBlankMap ? skolemizationKey(ruleIndex, binding) : null;
+    if (headBlankMap) {
+      // Property paths can produce repeated mappings. Each needs fresh
+      // head blank nodes, even when all visible bindings are identical.
+      const occurrence = blankBindingOccurrences.get(skolemKey) || 0;
+      blankBindingOccurrences.set(skolemKey, occurrence + 1);
+      if (occurrence > 0) skolemKey += `|occurrence:${occurrence}`;
+    }
     for (const head of rule.head) {
       const triple = instantiateHeadTriple(head, binding, headBlankLabels, headBlankMap, skolemKey);
       if (!triple) continue;
@@ -554,6 +556,35 @@ function* evaluateBodyClause(clause, store, initialBinding, options) {
     const negationStore = clause.groundData ? (options.groundStore || store) : store;
     if (!bodyHasAny(clause.body, negationStore, initialBinding, options)) {
       yield initialBinding;
+    }
+    return;
+  }
+
+  if (clause.type === 'group') {
+    const projectKeys = (binding) => {
+      const projected = emptyBinding();
+      for (const key of clause.keys) if (Object.hasOwn(binding, key)) projected[key] = binding[key];
+      return projected;
+    };
+    const groups = new Map();
+    if (clause.keys.length === 0) groups.set(bindingKey(emptyBinding()), { keys: emptyBinding(), solutions: [] });
+    // Use the stream: deduplicating here would change aggregate cardinalities.
+    for (const binding of evaluateBodyStream(clause.pattern, store, projectKeys(initialBinding), options)) {
+      const keys = projectKeys(binding);
+      const key = bindingKey(keys);
+      if (!groups.has(key)) groups.set(key, { keys, solutions: [] });
+      groups.get(key).solutions.push(binding);
+    }
+    for (const group of groups.values()) {
+      let result;
+      try {
+        result = Object.assign(emptyBinding(), initialBinding, group.keys);
+        for (const aggregation of clause.aggregations) result[aggregation.variable] = evalAggregate(aggregation.function, group.solutions);
+      } catch (_) {
+        // An error in any aggregate rejects this group, not other groups.
+        continue;
+      }
+      yield result;
     }
     return;
   }

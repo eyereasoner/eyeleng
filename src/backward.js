@@ -413,6 +413,7 @@ function bodyPredicateDemands(clauses) {
     if (clause.type === 'not') {
       out.push(...bodyPredicateDemands(clause.body || []));
     }
+    if (clause.type === 'group') out.push(...bodyPredicateDemands(clause.pattern || []));
   }
   return out;
 }
