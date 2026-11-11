@@ -1,5 +1,11 @@
 # Eyeleng
 
+> [!NOTE]
+> New development is happening in
+> [eyemind](https://github.com/eyereasoner/eyemind).
+> `eyemind rules.srl data.ttl` runs an SRL rule set with RDF data, and
+> `eyemind --program rules.srl` prints the compiled program.
+
 **Eyeleng** is a JavaScript implementation of **SPARQL 1.2 RL (SRL)**, following the W3C Recommendation-track specification at <https://www.w3.org/TR/sparql12-rl/>.
 
 > Status: Eyeleng tracks the [SPARQL 1.2 RL Working Draft of 05 November 2026](https://www.w3.org/TR/2026/WD-sparql12-rl-20261105/), checked on 07 November 2026. It may change as the specification advances.
