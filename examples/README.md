@@ -12,6 +12,14 @@ node eyeleng.js --data examples/rdf-messages.trig examples/rdf-messages.srl
 
 The message log is base data. `IMPORTS` is reserved for SPARQL-RL rule sets.
 
+The five `deep-taxonomy-*.srl` examples print their classification triples
+directly, including the initial `:ind a :N0` fact, the taxonomy and side-label
+classes, and the terminal `:ind a :A2` classification:
+
+```sh
+node eyeleng.js examples/deep-taxonomy-10.srl
+```
+
 `output/` holds each example's expected result graph as an `.srl` file, and
 `proof/` its expected `--prove` document — itself an `.srl` rule set, whose
 `DATA` block reifies one step per derived fact. The four rejection examples

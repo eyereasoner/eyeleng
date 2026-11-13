@@ -1,17 +1,12 @@
-PREFIX : <http://example/>
-PREFIX log: <http://www.w3.org/2000/10/swap/log#>
+# Deep Taxonomy - depth 100000
+# One individual starts in class N0. Each rule adds the next taxonomy
+# class and two side labels. Reaching the final level derives A2.
+# The output contains the initial classification and all derived classes.
 
-# Deep Taxonomy - depth 100000 - SRL conversion
-# Source default prefix was written as "@prefix : ."; this file uses http://example/.
-# Generated from the same depth-parametrized rule pattern as the smaller deep-taxonomy examples.
+PREFIX : <http://example/>
 
 DATA {
   :ind a :N0 .
-}
-
-RULE { :test :is true . }
-WHERE {
-  :ind a :A2 .
 }
 
 RULE { ?X a :N1 . ?X a :I1 . ?X a :J1 . }
@@ -300017,72 +300012,4 @@ WHERE { ?X a :N99999 . }
 RULE { ?X a :A2 . }
 WHERE {
   ?X a :N100000 .
-}
-
-# ARC checks
-
-RULE { :arc :check1 "C1 OK - the starting classification N0 is present." . }
-WHERE {
-  :ind a :N0 .
-}
-
-RULE { :arc :check2 "C2 OK - the first expansion produced N1 together with side labels I1 and J1." . }
-WHERE {
-  :ind a :N1 .
-  :ind a :I1 .
-  :ind a :J1 .
-}
-
-RULE { :arc :check3 "C3 OK - the chain reaches the midpoint N50000 and still carries both side-label branches." . }
-WHERE {
-  :ind a :N50000 .
-  :ind a :I50000 .
-  :ind a :J50000 .
-}
-
-RULE { :arc :check4 "C4 OK - the final taxonomy step from N99999 to N100000 was completed." . }
-WHERE {
-  :ind a :N99999 .
-  :ind a :N100000 .
-}
-
-RULE { :arc :check5 "C5 OK - once N100000 is reached, the terminal class A2 is derived." . }
-WHERE {
-  :ind a :N100000 .
-  :ind a :A2 .
-}
-
-RULE { :arc :check6 "C6 OK - the success flag is raised only after the terminal class A2 is present." . }
-WHERE {
-  :ind a :A2 .
-  :test :is true .
-}
-
-# ARC report
-
-RULE {
-  :report log:outputString """Deep Taxonomy - deep classification benchmark
-
-Answer
-The test succeeds: starting from one individual classified as N0, the rules eventually classify it as N100000 and then as A2.
-
-Reason Why
-Each rule moves the same individual one level deeper in the taxonomy and also adds two side labels. Because that chain continues all the way from N0 to N100000, the final rule deriving A2 fires, and that in turn makes the test true.
-
-Check
-C1 OK - the starting classification N0 is present.
-C2 OK - the first expansion produced N1 together with side labels I1 and J1.
-C3 OK - the chain reaches the midpoint N50000 and still carries both side-label branches.
-C4 OK - the final taxonomy step from N99999 to N100000 was completed.
-C5 OK - once N100000 is reached, the terminal class A2 is derived.
-C6 OK - the success flag is raised only after the terminal class A2 is present.""" .
-}
-WHERE {
-  :test :is true .
-  :arc :check1 ?C1 .
-  :arc :check2 ?C2 .
-  :arc :check3 ?C3 .
-  :arc :check4 ?C4 .
-  :arc :check5 ?C5 .
-  :arc :check6 ?C6 .
 }
